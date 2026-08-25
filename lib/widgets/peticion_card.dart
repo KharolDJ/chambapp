@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/peticion.dart';
@@ -88,9 +90,16 @@ class PeticionCard extends StatelessWidget {
             if (peticion.fotoUrl != null)
               Container(
                 height: 100,
+                width: double.infinity,
                 margin: const EdgeInsets.only(bottom: 8),
+                clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
-                child: Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 32),
+                child: Image.file(
+                  File(peticion.fotoUrl!),
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) =>
+                      Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 32),
+                ),
               ),
             Text(
               peticion.descripcion,

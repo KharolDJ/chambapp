@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/peticion.dart';
@@ -116,8 +118,14 @@ class DetallePeticionScreen extends StatelessWidget {
                   height: 180,
                   width: double.infinity,
                   margin: const EdgeInsets.only(bottom: 16),
+                  clipBehavior: Clip.antiAlias,
                   decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(12)),
-                  child: Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 40),
+                  child: Image.file(
+                    File(peticion.fotoUrl!),
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) =>
+                        Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 40),
+                  ),
                 ),
               Text(
                 peticion.descripcion,

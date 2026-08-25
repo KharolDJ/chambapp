@@ -103,6 +103,13 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
                             ],
                           ),
                         ),
+                        IconButton(
+                          icon: Icon(Icons.close, size: 18, color: Colors.grey.shade400),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          tooltip: 'Eliminar notificación',
+                          onPressed: () => context.read<AppProvider>().eliminarNotificacion(n.id),
+                        ),
                       ],
                     ),
                   ),

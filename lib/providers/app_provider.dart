@@ -55,9 +55,52 @@ class AppProvider extends ChangeNotifier {
       calificacionPromedio: 4.2,
       numeroCalificaciones: 8,
     ),
+    Usuario(
+      id: 'u-diego',
+      nombre: 'Diego Fernández',
+      correo: 'diego.f@example.com',
+      celular: '3012345678',
+      oficio: 'Carpintería',
+      calificacionPromedio: 4.6,
+      numeroCalificaciones: 15,
+    ),
+    Usuario(
+      id: 'u-laura',
+      nombre: 'Laura Pinzón',
+      correo: 'laura.p@example.com',
+      celular: '3023456789',
+      oficio: 'Limpieza del hogar',
+      calificacionPromedio: 4.9,
+      numeroCalificaciones: 30,
+    ),
+    Usuario(
+      id: 'u-andres',
+      nombre: 'Andrés Mantilla',
+      correo: 'andres.m@example.com',
+      celular: '3034567890',
+      oficio: 'Jardinería',
+      calificacionPromedio: 4.0,
+      numeroCalificaciones: 5,
+    ),
+    Usuario(
+      id: 'u-sofia',
+      nombre: 'Sofía Ortiz',
+      correo: 'sofia.o@example.com',
+      celular: '3045678901',
+    ),
   ];
 
-  final List<Calificacion> calificaciones = [];
+  final List<Calificacion> calificaciones = [
+    Calificacion(
+      id: 'demo-cal-1',
+      deUsuarioId: 'u-rosa',
+      paraUsuarioId: 'u-diego',
+      estrellas: 5,
+      comentario: 'Excelente trabajo, muy puntual y ordenado.',
+      fecha: DateTime.now().subtract(const Duration(days: 3)),
+      peticionId: '5',
+    ),
+  ];
   final List<Notificacion> notificaciones = [];
 
   late final List<Peticion> peticiones = [
@@ -96,6 +139,61 @@ class AppProvider extends ChangeNotifier {
       lat: 7.1156,
       lng: -73.1257,
       interesados: [usuarios.firstWhere((u) => u.id == 'u-maria')],
+    ),
+    Peticion(
+      id: '4',
+      autorId: 'u-sofia',
+      autorNombre: 'Sofía Ortiz',
+      barrio: 'Cabecera',
+      descripcion: 'Corto circuito en el tablero eléctrico, necesito ayuda urgente hoy mismo',
+      categoria: 'Electricidad',
+      urgente: true,
+      creadaEn: DateTime.now().subtract(const Duration(minutes: 5)),
+      lat: 7.1220,
+      lng: -73.1230,
+      premiumSolicitada: true,
+      premiumAprobada: true,
+      comprobantePago: 'demo-001',
+    ),
+    Peticion(
+      id: '5',
+      autorId: 'u-rosa',
+      autorNombre: 'Rosa T.',
+      barrio: 'Kennedy',
+      descripcion: 'Arreglo de una puerta de closet y un mueble de cocina',
+      categoria: 'Carpintería',
+      creadaEn: DateTime.now().subtract(const Duration(days: 4)),
+      lat: 7.1180,
+      lng: -73.1200,
+      interesados: [usuarios.firstWhere((u) => u.id == 'u-diego')],
+      trabajadorSeleccionadoId: 'u-diego',
+      cerrada: true,
+    ),
+    Peticion(
+      id: '6',
+      autorId: 'u-maria',
+      autorNombre: 'María J.',
+      barrio: 'Cabecera',
+      descripcion: 'Necesito limpieza profunda de apartamento antes de una mudanza',
+      categoria: 'Limpieza del hogar',
+      creadaEn: DateTime.now().subtract(const Duration(hours: 8)),
+      lat: 7.1265,
+      lng: -73.1175,
+      interesados: [
+        usuarios.firstWhere((u) => u.id == 'u-laura'),
+        usuarios.firstWhere((u) => u.id == 'u-rosa'),
+      ],
+    ),
+    Peticion(
+      id: '7',
+      autorId: 'u-carlos',
+      autorNombre: 'Carlos R.',
+      barrio: 'Provenza',
+      descripcion: 'Busco quien me ayude a preparar comida para una reunión familiar el sábado',
+      categoria: 'Cocina',
+      creadaEn: DateTime.now().subtract(const Duration(minutes: 45)),
+      lat: 7.1140,
+      lng: -73.1245,
     ),
   ];
 
@@ -422,6 +520,12 @@ class AppProvider extends ChangeNotifier {
     for (final n in misNotificaciones) {
       n.leida = true;
     }
+    notifyListeners();
+    unawaited(_guardarEstado());
+  }
+
+  void eliminarNotificacion(String id) {
+    notificaciones.removeWhere((n) => n.id == id);
     notifyListeners();
     unawaited(_guardarEstado());
   }
