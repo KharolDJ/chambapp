@@ -1,0 +1,71 @@
+import 'package:flutter/material.dart';
+
+const _petroleo = Color(0xFF0F6E56);
+const _papel = Color(0xFFFAF7F0);
+const _grafito = Color(0xFF26312D);
+
+class PrivacidadScreen extends StatelessWidget {
+  const PrivacidadScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _papel,
+      appBar: AppBar(
+        title: const Text('Política de privacidad'),
+        backgroundColor: _papel,
+        foregroundColor: _grafito,
+        elevation: 0,
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _seccion(
+                'Qué datos recogemos',
+                'Tu nombre, correo electrónico, número de celular, tu oficio (si eres trabajador), '
+                    'y tu ubicación aproximada — nunca exacta — para poder ordenar el feed por cercanía.',
+              ),
+              _seccion(
+                'Para qué los usamos',
+                'Para verificar tu identidad, mostrar tu perfil a otros usuarios de la app, y permitir '
+                    'que un empleador te contacte por WhatsApp si te selecciona para un trabajo.',
+              ),
+              _seccion(
+                'Lo que nunca se muestra públicamente',
+                'Tu número de celular nunca aparece visible para otras personas dentro de la app. Solo '
+                    'se usa para abrir WhatsApp cuando un empleador te selecciona.',
+              ),
+              _seccion(
+                'Marco legal',
+                'El manejo de tus datos personales sigue los lineamientos de la Ley 1581 de 2012 '
+                    '(Habeas Data) de Colombia.',
+              ),
+              _seccion(
+                'Sobre esta versión (prototipo)',
+                'Por ahora tus datos se guardan localmente en tu dispositivo, sin sincronizar con un '
+                    'servidor. Esto cambiará cuando se conecte la base de datos en línea de la aplicación.',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _seccion(String titulo, String texto) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(titulo, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _petroleo)),
+          const SizedBox(height: 6),
+          Text(texto, style: const TextStyle(fontSize: 14, height: 1.4, color: _grafito)),
+        ],
+      ),
+    );
+  }
+}
