@@ -77,8 +77,8 @@ class _InteresadosScreenState extends State<InteresadosScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(usuario.nombre, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-                      if (usuario.oficio != null)
-                        Text(usuario.oficio!, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                      if (usuario.oficios.isNotEmpty)
+                        Text(usuario.oficios.join(', '), style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
                       const SizedBox(height: 6),
                       Row(
                         children: [

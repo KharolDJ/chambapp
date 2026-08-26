@@ -25,7 +25,7 @@ class AppProvider extends ChangeNotifier {
   RolUsuario? rolActual;
   Usuario? usuarioActual;
   bool notificacionesActivas = true;
-  double radioBusquedaKm = 10;
+  double radioBusquedaKm = 50;
 
   final List<Usuario> usuarios = [
     Usuario(
@@ -33,7 +33,7 @@ class AppProvider extends ChangeNotifier {
       nombre: 'Carlos R.',
       correo: 'carlos.r@example.com',
       celular: '3001234567',
-      oficio: 'Pintura',
+      oficios: ['Pintura'],
       calificacionPromedio: 4.5,
       numeroCalificaciones: 12,
     ),
@@ -42,7 +42,7 @@ class AppProvider extends ChangeNotifier {
       nombre: 'Rosa T.',
       correo: 'rosa.t@example.com',
       celular: '3007654321',
-      oficio: 'Electricidad',
+      oficios: ['Electricidad'],
       calificacionPromedio: 4.8,
       numeroCalificaciones: 27,
     ),
@@ -51,7 +51,7 @@ class AppProvider extends ChangeNotifier {
       nombre: 'María J.',
       correo: 'maria.j@example.com',
       celular: '3009876543',
-      oficio: 'Plomería',
+      oficios: ['Plomería'],
       calificacionPromedio: 4.2,
       numeroCalificaciones: 8,
     ),
@@ -60,7 +60,7 @@ class AppProvider extends ChangeNotifier {
       nombre: 'Diego Fernández',
       correo: 'diego.f@example.com',
       celular: '3012345678',
-      oficio: 'Carpintería',
+      oficios: ['Carpintería', 'Pintura'],
       calificacionPromedio: 4.6,
       numeroCalificaciones: 15,
     ),
@@ -69,7 +69,7 @@ class AppProvider extends ChangeNotifier {
       nombre: 'Laura Pinzón',
       correo: 'laura.p@example.com',
       celular: '3023456789',
-      oficio: 'Limpieza del hogar',
+      oficios: ['Limpieza del hogar'],
       calificacionPromedio: 4.9,
       numeroCalificaciones: 30,
     ),
@@ -78,7 +78,7 @@ class AppProvider extends ChangeNotifier {
       nombre: 'Andrés Mantilla',
       correo: 'andres.m@example.com',
       celular: '3034567890',
-      oficio: 'Jardinería',
+      oficios: ['Jardinería'],
       calificacionPromedio: 4.0,
       numeroCalificaciones: 5,
     ),
@@ -115,7 +115,7 @@ class AppProvider extends ChangeNotifier {
       creadaEn: DateTime.now().subtract(const Duration(minutes: 20)),
       lat: 7.1198,
       lng: -73.1210,
-      interesados: [usuarios.firstWhere((u) => u.id == 'u-rosa')],
+      interesados: [...usuarios.where((u) => u.id == 'u-rosa')],
     ),
     Peticion(
       id: '2',
@@ -138,7 +138,7 @@ class AppProvider extends ChangeNotifier {
       creadaEn: DateTime.now().subtract(const Duration(hours: 5)),
       lat: 7.1156,
       lng: -73.1257,
-      interesados: [usuarios.firstWhere((u) => u.id == 'u-maria')],
+      interesados: [...usuarios.where((u) => u.id == 'u-maria')],
     ),
     Peticion(
       id: '4',
@@ -165,7 +165,7 @@ class AppProvider extends ChangeNotifier {
       creadaEn: DateTime.now().subtract(const Duration(days: 4)),
       lat: 7.1180,
       lng: -73.1200,
-      interesados: [usuarios.firstWhere((u) => u.id == 'u-diego')],
+      interesados: [...usuarios.where((u) => u.id == 'u-diego')],
       trabajadorSeleccionadoId: 'u-diego',
       cerrada: true,
     ),
@@ -180,8 +180,8 @@ class AppProvider extends ChangeNotifier {
       lat: 7.1265,
       lng: -73.1175,
       interesados: [
-        usuarios.firstWhere((u) => u.id == 'u-laura'),
-        usuarios.firstWhere((u) => u.id == 'u-rosa'),
+        ...usuarios.where((u) => u.id == 'u-laura'),
+        ...usuarios.where((u) => u.id == 'u-rosa'),
       ],
     ),
     Peticion(
@@ -225,7 +225,7 @@ class AppProvider extends ChangeNotifier {
     }
 
     notificacionesActivas = prefs.getBool(_claveNotificaciones) ?? true;
-    radioBusquedaKm = prefs.getDouble(_claveRadio) ?? 10;
+    radioBusquedaKm = prefs.getDouble(_claveRadio) ?? 50;
 
     final notificacionesJson = prefs.getString(_claveNotificacionesLista);
     if (notificacionesJson != null) {
@@ -325,14 +325,14 @@ class AppProvider extends ChangeNotifier {
   void actualizarPerfil({
     required String nombre,
     required String celular,
-    String? oficio,
+    List<String>? oficios,
     String? fotoPath,
   }) {
     final actual = usuarioActual;
     if (actual == null) return;
     actual.nombre = nombre;
     actual.celular = celular;
-    actual.oficio = oficio;
+    actual.oficios = oficios ?? [];
     if (fotoPath != null) actual.fotoPath = fotoPath;
     notifyListeners();
     unawaited(_guardarEstado());

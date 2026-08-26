@@ -64,12 +64,18 @@ class ConfiguracionScreen extends StatelessWidget {
           ),
           ListTile(
             title: const Text('Radio de búsqueda del feed'),
-            subtitle: Text('Mostrar peticiones hasta ${provider.radioBusquedaKm.toStringAsFixed(0)} km'),
+            subtitle: Text(
+              provider.radioBusquedaKm.isInfinite
+                  ? 'Mostrar todas las peticiones sin límite de distancia'
+                  : 'Mostrar peticiones hasta ${provider.radioBusquedaKm.toStringAsFixed(0)} km',
+            ),
             trailing: DropdownButton<double>(
               value: provider.radioBusquedaKm,
-              items: const [1, 3, 5, 10, 20]
-                  .map((km) => DropdownMenuItem(value: km.toDouble(), child: Text('$km km')))
-                  .toList(),
+              items: [
+                ...const [1, 3, 5, 10, 20, 50]
+                    .map((km) => DropdownMenuItem(value: km.toDouble(), child: Text('$km km'))),
+                const DropdownMenuItem(value: double.infinity, child: Text('Sin límite')),
+              ],
               onChanged: (v) {
                 if (v != null) context.read<AppProvider>().actualizarRadioBusqueda(v);
               },

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "386460869949",
+    "project_id": "chambapp-bceb6",
+    "storage_bucket": "chambapp-bceb6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:386460869949:android:6b11bf2284edb814e65154",
+        "android_client_info": {
+          "package_name": "com.uts.chambapp.chambapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDS-781EQVakM94FVHzrzf3YzPnl5HM9Oo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

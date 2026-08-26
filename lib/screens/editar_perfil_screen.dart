@@ -21,8 +21,9 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nombreController;
   late final TextEditingController _celularController;
-  String? _oficioSeleccionado;
+  final List<String> _oficiosSeleccionados = [];
   String? _fotoPath;
+  bool _mostrarErrorOficios = false;
 
   final List<String> _servicios = [
     'Plomería',
@@ -40,7 +41,7 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
     final usuario = context.read<AppProvider>().usuarioActual!;
     _nombreController = TextEditingController(text: usuario.nombre);
     _celularController = TextEditingController(text: usuario.celular);
-    _oficioSeleccionado = usuario.oficio;
+    _oficiosSeleccionados.addAll(usuario.oficios);
     _fotoPath = usuario.fotoPath;
   }
 
@@ -81,10 +82,15 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
 
   void _guardar() {
     if (!_formKey.currentState!.validate()) return;
+    final esTrabajador = context.read<AppProvider>().rolActual == RolUsuario.trabajador;
+    if (esTrabajador && _oficiosSeleccionados.isEmpty) {
+      setState(() => _mostrarErrorOficios = true);
+      return;
+    }
     context.read<AppProvider>().actualizarPerfil(
           nombre: _nombreController.text.trim(),
           celular: _celularController.text.trim(),
-          oficio: _oficioSeleccionado,
+          oficios: _oficiosSeleccionados,
           fotoPath: _fotoPath,
         );
     ScaffoldMessenger.of(context).showSnackBar(
@@ -180,13 +186,48 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
                 ),
                 if (esTrabajador) ...[
                   const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    initialValue: _oficioSeleccionado,
-                    decoration: _decoracion('Categoría de servicio', Icons.build_outlined),
-                    items: _servicios.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                    onChanged: (value) => setState(() => _oficioSeleccionado = value),
-                    validator: (value) => value == null ? 'Selecciona un servicio' : null,
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Servicios que ofreces (puedes elegir varios)',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _grafito),
+                    ),
                   ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _servicios.map((servicio) {
+                      final seleccionado = _oficiosSeleccionados.contains(servicio);
+                      return FilterChip(
+                        label: Text(servicio),
+                        selected: seleccionado,
+                        onSelected: (value) {
+                          setState(() {
+                            if (value) {
+                              _oficiosSeleccionados.add(servicio);
+                            } else {
+                              _oficiosSeleccionados.remove(servicio);
+                            }
+                            _mostrarErrorOficios = false;
+                          });
+                        },
+                        selectedColor: _petroleo.withValues(alpha: 0.18),
+                        checkmarkColor: _petroleo,
+                        labelStyle: TextStyle(color: seleccionado ? _petroleo : _grafito),
+                        side: BorderSide(color: seleccionado ? _petroleo : Colors.grey.shade300),
+                        backgroundColor: Colors.white,
+                      );
+                    }).toList(),
+                  ),
+                  if (_mostrarErrorOficios)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Text(
+                        'Selecciona al menos un servicio',
+                        style: TextStyle(color: Colors.red, fontSize: 12),
+                      ),
+                    ),
                 ],
                 const SizedBox(height: 32),
                 ElevatedButton(

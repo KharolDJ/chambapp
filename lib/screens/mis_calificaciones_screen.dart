@@ -52,6 +52,12 @@ class MisCalificacionesScreen extends StatelessWidget {
                     itemCount: calificaciones.length,
                     itemBuilder: (context, i) {
                       final c = calificaciones[i];
+                      String nombreAutor;
+                      try {
+                        nombreAutor = provider.usuarios.firstWhere((u) => u.id == c.deUsuarioId).nombre;
+                      } catch (_) {
+                        nombreAutor = 'Usuario eliminado';
+                      }
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(14),
@@ -72,6 +78,11 @@ class MisCalificacionesScreen extends StatelessWidget {
                                   color: const Color(0xFFAD7A16),
                                 ),
                               ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '— $nombreAutor',
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0F6E56)),
                             ),
                             if (c.comentario != null && c.comentario!.trim().isNotEmpty) ...[
                               const SizedBox(height: 8),

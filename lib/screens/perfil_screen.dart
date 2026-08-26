@@ -61,10 +61,13 @@ class PerfilScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              if (usuario.oficio != null)
+              if (usuario.oficios.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
-                  child: Text('Oficio: ${usuario.oficio}', style: TextStyle(fontSize: 13, color: Colors.grey.shade700)),
+                  child: Text(
+                    'Oficios: ${usuario.oficios.join(', ')}',
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                  ),
                 ),
             ] else ...[
               const SizedBox(height: 12),

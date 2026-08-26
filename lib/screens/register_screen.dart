@@ -27,7 +27,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   late final TextEditingController _correoController;
   final _celularController = TextEditingController();
 
-  String? _servicioSeleccionado;
+  final List<String> _oficiosSeleccionados = [];
   String? _fotoPath;
 
   final List<String> _servicios = [
@@ -82,18 +82,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _fotoPath = archivo.path);
   }
 
+  bool _mostrarErrorOficios = false;
+
   void _enviarFormulario() {
     if (!_formKey.currentState!.validate()) return;
 
     final provider = context.read<AppProvider>();
     final esTrabajador = provider.rolActual == RolUsuario.trabajador;
 
+    if (esTrabajador && _oficiosSeleccionados.isEmpty) {
+      setState(() => _mostrarErrorOficios = true);
+      return;
+    }
+
     final usuario = Usuario(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       nombre: _nombreController.text.trim(),
       correo: _correoController.text.trim(),
       celular: _celularController.text.trim(),
-      oficio: esTrabajador ? _servicioSeleccionado : null,
+      oficios: esTrabajador ? _oficiosSeleccionados : null,
       fotoPath: _fotoPath,
     );
 
@@ -219,22 +226,44 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 if (esTrabajador) ...[
                   const SizedBox(height: 24),
                   const Text(
-                    'Servicio que ofreces',
+                    'Servicios que ofreces (puedes elegir varios)',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _grafito),
                   ),
                   const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    initialValue: _servicioSeleccionado,
-                    decoration: _decoracion('Categoría de servicio', Icons.build_outlined),
-                    items: _servicios
-                        .map((servicio) => DropdownMenuItem(value: servicio, child: Text(servicio)))
-                        .toList(),
-                    onChanged: (value) => setState(() => _servicioSeleccionado = value),
-                    validator: (value) {
-                      if (esTrabajador && value == null) return 'Selecciona un servicio';
-                      return null;
-                    },
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _servicios.map((servicio) {
+                      final seleccionado = _oficiosSeleccionados.contains(servicio);
+                      return FilterChip(
+                        label: Text(servicio),
+                        selected: seleccionado,
+                        onSelected: (value) {
+                          setState(() {
+                            if (value) {
+                              _oficiosSeleccionados.add(servicio);
+                            } else {
+                              _oficiosSeleccionados.remove(servicio);
+                            }
+                            _mostrarErrorOficios = false;
+                          });
+                        },
+                        selectedColor: _petroleo.withValues(alpha: 0.18),
+                        checkmarkColor: _petroleo,
+                        labelStyle: TextStyle(color: seleccionado ? _petroleo : _grafito),
+                        side: BorderSide(color: seleccionado ? _petroleo : Colors.grey.shade300),
+                        backgroundColor: Colors.white,
+                      );
+                    }).toList(),
                   ),
+                  if (_mostrarErrorOficios)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Text(
+                        'Selecciona al menos un servicio',
+                        style: TextStyle(color: Colors.red, fontSize: 12),
+                      ),
+                    ),
                 ],
 
                 const SizedBox(height: 40),

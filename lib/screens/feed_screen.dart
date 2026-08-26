@@ -18,11 +18,20 @@ class _FeedScreenState extends State<FeedScreen> {
   String? _categoriaFiltro;
   Position? _posicionActual;
   String? _avisoUbicacion;
+  bool _modoBusqueda = false;
+  String _busqueda = '';
+  final _busquedaController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _obtenerUbicacion();
+  }
+
+  @override
+  void dispose() {
+    _busquedaController.dispose();
+    super.dispose();
   }
 
   Future<void> _obtenerUbicacion() async {
@@ -99,6 +108,16 @@ class _FeedScreenState extends State<FeedScreen> {
     var lista = _categoriaFiltro == null
         ? [...provider.peticiones]
         : provider.peticiones.where((p) => p.categoria == _categoriaFiltro).toList();
+
+    if (_busqueda.trim().isNotEmpty) {
+      final termino = _busqueda.trim().toLowerCase();
+      lista = lista.where((p) {
+        return p.barrio.toLowerCase().contains(termino) ||
+            p.descripcion.toLowerCase().contains(termino) ||
+            p.categoria.toLowerCase().contains(termino);
+      }).toList();
+    }
+
     final listaSinFiltroDeRadio = lista;
 
     if (_posicionActual != null) {
@@ -123,21 +142,47 @@ class _FeedScreenState extends State<FeedScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFFAF7F0),
       appBar: AppBar(
-        title: const Text('Cerca de ti'),
+        title: _modoBusqueda
+            ? TextField(
+                controller: _busquedaController,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: 'Buscar por barrio, categoría o descripción...',
+                  border: InputBorder.none,
+                ),
+                onChanged: (value) => setState(() => _busqueda = value),
+              )
+            : const Text('Cerca de ti'),
         backgroundColor: const Color(0xFFFAF7F0),
         foregroundColor: const Color(0xFF26312D),
         elevation: 0,
         actions: [
-          if (provider.usuarioActual == null)
+          if (_modoBusqueda)
             IconButton(
-              icon: const Icon(Icons.login),
-              tooltip: 'Iniciar sesión o registrarme',
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
+              icon: const Icon(Icons.close),
+              onPressed: () => setState(() {
+                _modoBusqueda = false;
+                _busqueda = '';
+                _busquedaController.clear();
+              }),
+            )
+          else ...[
+            if (provider.usuarioActual == null)
+              IconButton(
+                icon: const Icon(Icons.login),
+                tooltip: 'Iniciar sesión o registrarme',
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
+              ),
+            IconButton(
+              icon: const Icon(Icons.search),
+              tooltip: 'Buscar por barrio o zona',
+              onPressed: () => setState(() => _modoBusqueda = true),
             ),
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: () => _mostrarFiltro(context, categorias),
-          ),
+            IconButton(
+              icon: const Icon(Icons.filter_list),
+              onPressed: () => _mostrarFiltro(context, categorias),
+            ),
+          ],
         ],
       ),
       body: Column(
@@ -168,7 +213,9 @@ class _FeedScreenState extends State<FeedScreen> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
-                                  'No hay publicaciones dentro de tu radio de búsqueda (${provider.radioBusquedaKm.toStringAsFixed(0)} km)',
+                                  provider.radioBusquedaKm.isInfinite
+                                      ? 'No hay publicaciones que coincidan con tu búsqueda'
+                                      : 'No hay publicaciones dentro de tu radio de búsqueda (${provider.radioBusquedaKm.toStringAsFixed(0)} km)',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(color: Colors.grey.shade600),
                                 ),
