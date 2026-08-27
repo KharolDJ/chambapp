@@ -22,6 +22,7 @@ class _PublicarScreenState extends State<PublicarScreen> {
 
   final List<String> _categorias = [
     'Plomería', 'Electricidad', 'Cocina', 'Carpintería', 'Jardinería', 'Limpieza del hogar', 'Pintura',
+    'Albañilería', 'Cerrajería', 'Acarreos',
   ];
 
   Future<void> _elegirFoto() async {

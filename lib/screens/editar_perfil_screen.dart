@@ -33,6 +33,9 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
     'Jardinería',
     'Limpieza del hogar',
     'Pintura',
+    'Albañilería',
+    'Cerrajería',
+    'Acarreos',
   ];
 
   @override

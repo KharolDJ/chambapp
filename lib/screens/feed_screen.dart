@@ -7,6 +7,8 @@ import '../widgets/peticion_card.dart';
 import 'configuracion_screen.dart';
 import 'login_screen.dart';
 
+enum OrdenFeed { cercania, recientes }
+
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
 
@@ -16,9 +18,10 @@ class FeedScreen extends StatefulWidget {
 
 class _FeedScreenState extends State<FeedScreen> {
   String? _categoriaFiltro;
+  bool _soloUrgentes = false;
+  OrdenFeed _ordenPor = OrdenFeed.cercania;
   Position? _posicionActual;
   String? _avisoUbicacion;
-  bool _modoBusqueda = false;
   String _busqueda = '';
   final _busquedaController = TextEditingController();
 
@@ -101,13 +104,88 @@ class _FeedScreenState extends State<FeedScreen> {
     );
   }
 
+  void _mostrarOrden(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('Cercanía'),
+              trailing: _ordenPor == OrdenFeed.cercania ? const Icon(Icons.check, color: Color(0xFF0F6E56)) : null,
+              onTap: () {
+                setState(() => _ordenPor = OrdenFeed.cercania);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: const Text('Más recientes'),
+              trailing: _ordenPor == OrdenFeed.recientes ? const Icon(Icons.check, color: Color(0xFF0F6E56)) : null,
+              onTap: () {
+                setState(() => _ordenPor = OrdenFeed.recientes);
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _chip({
+    required String label,
+    required bool activo,
+    required Color colorActivo,
+    required VoidCallback onTap,
+    IconData? icono,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: activo ? colorActivo : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: activo ? colorActivo : Colors.grey.shade300),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icono != null) ...[
+                Icon(icono, size: 15, color: activo ? Colors.white : Colors.grey.shade700),
+                const SizedBox(width: 4),
+              ],
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: activo ? Colors.white : const Color(0xFF26312D),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
     final categorias = provider.peticiones.map((p) => p.categoria).toSet().toList();
+
     var lista = _categoriaFiltro == null
         ? [...provider.peticiones]
         : provider.peticiones.where((p) => p.categoria == _categoriaFiltro).toList();
+
+    if (_soloUrgentes) {
+      lista = lista.where((p) => p.urgente).toList();
+    }
 
     if (_busqueda.trim().isNotEmpty) {
       final termino = _busqueda.trim().toLowerCase();
@@ -126,63 +204,44 @@ class _FeedScreenState extends State<FeedScreen> {
         if (distancia == null) return true;
         return distancia <= provider.radioBusquedaKm;
       }).toList();
+    }
 
-      lista.sort((a, b) {
+    // Premium primero, luego urgente, luego el criterio elegido (cercanía o
+    // recientes). Se aplica siempre, haya o no ubicación disponible.
+    lista.sort((a, b) {
+      if (a.premiumAprobada != b.premiumAprobada) {
+        return a.premiumAprobada ? -1 : 1;
+      }
+      if (a.urgente != b.urgente) {
+        return a.urgente ? -1 : 1;
+      }
+      if (_ordenPor == OrdenFeed.cercania && _posicionActual != null) {
         final da = _distanciaKm(a);
         final db = _distanciaKm(b);
         if (da == null && db == null) return 0;
         if (da == null) return 1;
         if (db == null) return -1;
         return da.compareTo(db);
-      });
-    }
+      }
+      return b.creadaEn.compareTo(a.creadaEn);
+    });
 
     final cargandoUbicacion = _posicionActual == null && _avisoUbicacion == null;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAF7F0),
       appBar: AppBar(
-        title: _modoBusqueda
-            ? TextField(
-                controller: _busquedaController,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'Buscar por barrio, categoría o descripción...',
-                  border: InputBorder.none,
-                ),
-                onChanged: (value) => setState(() => _busqueda = value),
-              )
-            : const Text('Cerca de ti'),
+        title: const Text('Cerca de ti'),
         backgroundColor: const Color(0xFFFAF7F0),
         foregroundColor: const Color(0xFF26312D),
         elevation: 0,
         actions: [
-          if (_modoBusqueda)
+          if (provider.usuarioActual == null)
             IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: () => setState(() {
-                _modoBusqueda = false;
-                _busqueda = '';
-                _busquedaController.clear();
-              }),
-            )
-          else ...[
-            if (provider.usuarioActual == null)
-              IconButton(
-                icon: const Icon(Icons.login),
-                tooltip: 'Iniciar sesión o registrarme',
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
-              ),
-            IconButton(
-              icon: const Icon(Icons.search),
-              tooltip: 'Buscar por barrio o zona',
-              onPressed: () => setState(() => _modoBusqueda = true),
+              icon: const Icon(Icons.login),
+              tooltip: 'Iniciar sesión o registrarme',
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
             ),
-            IconButton(
-              icon: const Icon(Icons.filter_list),
-              onPressed: () => _mostrarFiltro(context, categorias),
-            ),
-          ],
         ],
       ),
       body: Column(
@@ -203,6 +262,63 @@ class _FeedScreenState extends State<FeedScreen> {
                 style: const TextStyle(fontSize: 12, color: Color(0xFFAD7A16)),
               ),
             ),
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+            color: const Color(0xFFFAF7F0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextField(
+                  controller: _busquedaController,
+                  decoration: InputDecoration(
+                    hintText: 'Buscar por barrio, categoría o descripción...',
+                    prefixIcon: const Icon(Icons.search, size: 20),
+                    suffixIcon: _busqueda.isEmpty
+                        ? null
+                        : IconButton(
+                            icon: const Icon(Icons.close, size: 18),
+                            onPressed: () {
+                              _busquedaController.clear();
+                              setState(() => _busqueda = '');
+                            },
+                          ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  ),
+                  onChanged: (value) => setState(() => _busqueda = value),
+                ),
+                const SizedBox(height: 10),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _chip(
+                        label: _categoriaFiltro == null ? 'Categoría ▾' : '$_categoriaFiltro ▾',
+                        activo: _categoriaFiltro != null,
+                        colorActivo: const Color(0xFF0F6E56),
+                        onTap: () => _mostrarFiltro(context, categorias),
+                      ),
+                      _chip(
+                        label: 'Urgente',
+                        icono: Icons.bolt,
+                        activo: _soloUrgentes,
+                        colorActivo: const Color(0xFFB54834),
+                        onTap: () => setState(() => _soloUrgentes = !_soloUrgentes),
+                      ),
+                      _chip(
+                        label: _ordenPor == OrdenFeed.cercania ? 'Ordenar: Cercanía ▾' : 'Ordenar: Recientes ▾',
+                        activo: false,
+                        colorActivo: const Color(0xFF0F6E56),
+                        onTap: () => _mostrarOrden(context),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
           Expanded(
             child: lista.isEmpty
                 ? Center(
@@ -230,7 +346,12 @@ class _FeedScreenState extends State<FeedScreen> {
                               ],
                             ),
                           )
-                        : const Text('No hay publicaciones en esta categoría'),
+                        : Text(
+                            _soloUrgentes
+                                ? 'No hay publicaciones urgentes con estos filtros'
+                                : 'No hay publicaciones con estos filtros',
+                            style: TextStyle(color: Colors.grey.shade600),
+                          ),
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.all(16),
