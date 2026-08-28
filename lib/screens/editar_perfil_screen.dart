@@ -21,6 +21,7 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nombreController;
   late final TextEditingController _celularController;
+  late final TextEditingController _cedulaController;
   final List<String> _oficiosSeleccionados = [];
   String? _fotoPath;
   bool _mostrarErrorOficios = false;
@@ -44,6 +45,7 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
     final usuario = context.read<AppProvider>().usuarioActual!;
     _nombreController = TextEditingController(text: usuario.nombre);
     _celularController = TextEditingController(text: usuario.celular);
+    _cedulaController = TextEditingController(text: usuario.cedula ?? '');
     _oficiosSeleccionados.addAll(usuario.oficios);
     _fotoPath = usuario.fotoPath;
   }
@@ -80,6 +82,7 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
   void dispose() {
     _nombreController.dispose();
     _celularController.dispose();
+    _cedulaController.dispose();
     super.dispose();
   }
 
@@ -95,6 +98,7 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
           celular: _celularController.text.trim(),
           oficios: _oficiosSeleccionados,
           fotoPath: _fotoPath,
+          cedula: _cedulaController.text.trim(),
         );
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Perfil actualizado'), backgroundColor: _petroleo),
@@ -186,6 +190,16 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
                     }
                     return null;
                   },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _cedulaController,
+                  keyboardType: TextInputType.number,
+                  decoration: _decoracion(
+                    'Documento de identidad (opcional)',
+                    Icons.badge_outlined,
+                    helper: 'Ayuda a generar más confianza en tu perfil',
+                  ),
                 ),
                 if (esTrabajador) ...[
                   const SizedBox(height: 16),

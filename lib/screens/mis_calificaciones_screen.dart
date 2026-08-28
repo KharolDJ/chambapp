@@ -25,19 +25,34 @@ class MisCalificacionesScreen extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.all(20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.star, color: Color(0xFFAD7A16), size: 22),
-                const SizedBox(width: 6),
-                Text(
-                  usuario == null || usuario.numeroCalificaciones == 0
-                      ? 'Sin calificaciones aún'
-                      : '${usuario.calificacionPromedio.toStringAsFixed(1)} promedio · ${usuario.numeroCalificaciones} calificaciones',
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF26312D)),
-                ),
-              ],
-            ),
+            child: (usuario != null && usuario.numeroCalificaciones > 0)
+                ? Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.star, color: Color(0xFFAD7A16), size: 22),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${usuario.calificacionPromedio.toStringAsFixed(1)} promedio · ${usuario.numeroCalificaciones} calificaciones',
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF26312D)),
+                      ),
+                    ],
+                  )
+                : Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration:
+                        BoxDecoration(color: const Color(0xFFFAEEDA), borderRadius: BorderRadius.circular(20)),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.auto_awesome, size: 16, color: Color(0xFFAD7A16)),
+                        SizedBox(width: 6),
+                        Text(
+                          'Nuevo en la plataforma',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFFAD7A16)),
+                        ),
+                      ],
+                    ),
+                  ),
           ),
           Expanded(
             child: calificaciones.isEmpty

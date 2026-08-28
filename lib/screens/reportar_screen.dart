@@ -1,0 +1,126 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/app_provider.dart';
+
+const _petroleo = Color(0xFF0F6E56);
+const _papel = Color(0xFFFAF7F0);
+const _grafito = Color(0xFF26312D);
+const _ladrillo = Color(0xFFB54834);
+
+class ReportarScreen extends StatefulWidget {
+  final String tipo; // 'peticion' o 'usuario'
+  final String contraId;
+
+  const ReportarScreen({super.key, required this.tipo, required this.contraId});
+
+  @override
+  State<ReportarScreen> createState() => _ReportarScreenState();
+}
+
+class _ReportarScreenState extends State<ReportarScreen> {
+  String? _motivo;
+  final _comentarioController = TextEditingController();
+
+  List<String> get _motivos => widget.tipo == 'peticion'
+      ? const [
+          'Contenido inapropiado',
+          'Es spam o publicidad',
+          'Parece un fraude o estafa',
+          'Otro',
+        ]
+      : const [
+          'Comportamiento inapropiado',
+          'No se presentó al trabajo acordado',
+          'Sospecha de fraude',
+          'Otro',
+        ];
+
+  @override
+  void dispose() {
+    _comentarioController.dispose();
+    super.dispose();
+  }
+
+  void _enviar() {
+    if (_motivo == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecciona un motivo')),
+      );
+      return;
+    }
+    context.read<AppProvider>().crearReporte(
+          tipo: widget.tipo,
+          contraId: widget.contraId,
+          motivo: _motivo!,
+          comentario: _comentarioController.text.trim().isEmpty ? null : _comentarioController.text.trim(),
+        );
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Gracias, revisaremos tu reporte'), backgroundColor: _petroleo),
+    );
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final titulo = widget.tipo == 'peticion' ? 'Reportar publicación' : 'Reportar usuario';
+
+    return Scaffold(
+      backgroundColor: _papel,
+      appBar: AppBar(
+        title: Text(titulo),
+        backgroundColor: _papel,
+        foregroundColor: _grafito,
+        elevation: 0,
+      ),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            const Text(
+              '¿Cuál es el motivo?',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: _grafito),
+            ),
+            RadioGroup<String>(
+              groupValue: _motivo,
+              onChanged: (v) => setState(() => _motivo = v),
+              child: Column(
+                children: _motivos
+                    .map(
+                      (m) => RadioListTile<String>(
+                        value: m,
+                        title: Text(m),
+                        activeColor: _petroleo,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _comentarioController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                labelText: 'Comentario (opcional)',
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: _enviar,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _ladrillo,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Enviar reporte', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/peticion.dart';
 import '../models/usuario.dart';
 import '../providers/app_provider.dart';
+import 'reportar_screen.dart';
 
 class InteresadosScreen extends StatefulWidget {
   final Peticion peticion;
@@ -76,22 +77,53 @@ class _InteresadosScreenState extends State<InteresadosScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(usuario.nombre, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-                      if (usuario.oficios.isNotEmpty)
-                        Text(usuario.oficios.join(', '), style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-                      const SizedBox(height: 6),
                       Row(
                         children: [
-                          const Icon(Icons.star, size: 16, color: Color(0xFFAD7A16)),
-                          const SizedBox(width: 4),
-                          Text(
-                            usuario.numeroCalificaciones > 0
-                                ? '${usuario.calificacionPromedio.toStringAsFixed(1)} (${usuario.numeroCalificaciones})'
-                                : 'Sin calificaciones aún',
-                            style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                          Expanded(
+                            child: Text(usuario.nombre, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                          ),
+                          InkWell(
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ReportarScreen(tipo: 'usuario', contraId: usuario.id),
+                              ),
+                            ),
+                            child: Icon(Icons.flag_outlined, size: 16, color: Colors.grey.shade400),
                           ),
                         ],
                       ),
+                      if (usuario.oficios.isNotEmpty)
+                        Text(usuario.oficios.join(', '), style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                      const SizedBox(height: 6),
+                      if (usuario.numeroCalificaciones > 0)
+                        Row(
+                          children: [
+                            const Icon(Icons.star, size: 16, color: Color(0xFFAD7A16)),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${usuario.calificacionPromedio.toStringAsFixed(1)} (${usuario.numeroCalificaciones})',
+                              style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                            ),
+                          ],
+                        )
+                      else
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration:
+                              BoxDecoration(color: const Color(0xFFFAEEDA), borderRadius: BorderRadius.circular(20)),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.auto_awesome, size: 12, color: Color(0xFFAD7A16)),
+                              SizedBox(width: 4),
+                              Text(
+                                'Nuevo en la plataforma',
+                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFFAD7A16)),
+                              ),
+                            ],
+                          ),
+                        ),
                       const SizedBox(height: 10),
                       SizedBox(
                         width: double.infinity,

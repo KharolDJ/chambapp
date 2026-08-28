@@ -5,6 +5,7 @@ class Usuario {
   String celular;
   List<String> oficios;
   String? fotoPath;
+  String? cedula;
   double calificacionPromedio;
   int numeroCalificaciones;
 
@@ -15,6 +16,7 @@ class Usuario {
     required this.celular,
     List<String>? oficios,
     this.fotoPath,
+    this.cedula,
     this.calificacionPromedio = 0,
     this.numeroCalificaciones = 0,
   }) : oficios = oficios ?? [];
@@ -26,6 +28,7 @@ class Usuario {
         'celular': celular,
         'oficios': oficios,
         'fotoPath': fotoPath,
+        'cedula': cedula,
         'calificacionPromedio': calificacionPromedio,
         'numeroCalificaciones': numeroCalificaciones,
       };
@@ -49,6 +52,7 @@ class Usuario {
       celular: json['celular'] as String,
       oficios: oficios,
       fotoPath: json['fotoPath'] as String?,
+      cedula: json['cedula'] as String?,
       calificacionPromedio: (json['calificacionPromedio'] as num?)?.toDouble() ?? 0,
       numeroCalificaciones: (json['numeroCalificaciones'] as num?)?.toInt() ?? 0,
     );

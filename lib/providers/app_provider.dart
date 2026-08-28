@@ -7,6 +7,7 @@ import '../models/peticion.dart';
 import '../models/usuario.dart';
 import '../models/calificacion.dart';
 import '../models/notificacion.dart';
+import '../models/reporte.dart';
 
 enum RolUsuario { empleador, trabajador }
 
@@ -21,6 +22,7 @@ class AppProvider extends ChangeNotifier {
   static const _claveNotificacionesLista = 'chambapp_notificaciones';
   static const _clavePeticiones = 'chambapp_peticiones';
   static const _claveCalificaciones = 'chambapp_calificaciones';
+  static const _claveReportes = 'chambapp_reportes';
 
   RolUsuario? rolActual;
   Usuario? usuarioActual;
@@ -102,6 +104,7 @@ class AppProvider extends ChangeNotifier {
     ),
   ];
   final List<Notificacion> notificaciones = [];
+  final List<Reporte> reportes = [];
 
   late final List<Peticion> peticiones = [
     Peticion(
@@ -259,6 +262,15 @@ class AppProvider extends ChangeNotifier {
         ..addAll(lista);
     }
 
+    final reportesJson = prefs.getString(_claveReportes);
+    if (reportesJson != null) {
+      final lista =
+          (jsonDecode(reportesJson) as List).map((e) => Reporte.fromJson(e as Map<String, dynamic>)).toList();
+      reportes
+        ..clear()
+        ..addAll(lista);
+    }
+
     notifyListeners();
   }
 
@@ -291,6 +303,9 @@ class AppProvider extends ChangeNotifier {
 
     final calificacionesJson = jsonEncode(calificaciones.map((c) => c.toJson()).toList());
     await prefs.setString(_claveCalificaciones, calificacionesJson);
+
+    final reportesJson = jsonEncode(reportes.map((r) => r.toJson()).toList());
+    await prefs.setString(_claveReportes, reportesJson);
   }
 
   void _crearNotificacion({required String paraUsuarioId, required String mensaje, String? peticionId}) {
@@ -327,6 +342,7 @@ class AppProvider extends ChangeNotifier {
     required String celular,
     List<String>? oficios,
     String? fotoPath,
+    String? cedula,
   }) {
     final actual = usuarioActual;
     if (actual == null) return;
@@ -334,6 +350,7 @@ class AppProvider extends ChangeNotifier {
     actual.celular = celular;
     actual.oficios = oficios ?? [];
     if (fotoPath != null) actual.fotoPath = fotoPath;
+    if (cedula != null) actual.cedula = cedula;
     notifyListeners();
     unawaited(_guardarEstado());
   }
@@ -526,6 +543,22 @@ class AppProvider extends ChangeNotifier {
 
   void eliminarNotificacion(String id) {
     notificaciones.removeWhere((n) => n.id == id);
+    notifyListeners();
+    unawaited(_guardarEstado());
+  }
+
+  void crearReporte({required String tipo, required String contraId, required String motivo, String? comentario}) {
+    final usuario = usuarioActual;
+    if (usuario == null) return;
+    reportes.add(Reporte(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      deUsuarioId: usuario.id,
+      tipo: tipo,
+      contraId: contraId,
+      motivo: motivo,
+      comentario: comentario,
+      fecha: DateTime.now(),
+    ));
     notifyListeners();
     unawaited(_guardarEstado());
   }

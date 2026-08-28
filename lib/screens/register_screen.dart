@@ -27,6 +27,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nombreController = TextEditingController();
   late final TextEditingController _correoController;
   final _celularController = TextEditingController();
+  final _cedulaController = TextEditingController();
 
   final List<String> _oficiosSeleccionados = [];
   String? _fotoPath;
@@ -68,6 +69,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _nombreController.dispose();
     _correoController.dispose();
     _celularController.dispose();
+    _cedulaController.dispose();
     super.dispose();
   }
 
@@ -163,6 +165,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       celular: texto,
       oficios: _esTrabajador ? _oficiosSeleccionados : null,
       fotoPath: _fotoPath,
+      cedula: _cedulaController.text.trim().isEmpty ? null : _cedulaController.text.trim(),
     );
     provider.registrarUsuario(usuario);
     Navigator.of(context).pop(true);
@@ -412,6 +415,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
               onChanged: (_) {
                 if (_errorCelular != null) setState(() => _errorCelular = null);
               },
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _cedulaController,
+              keyboardType: TextInputType.number,
+              decoration: _decoracion(
+                'Documento de identidad (opcional)',
+                Icons.badge_outlined,
+                helper: 'Ayuda a generar más confianza en tu perfil',
+              ),
             ),
           ],
         );

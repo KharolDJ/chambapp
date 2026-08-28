@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../models/peticion.dart';
 import '../providers/app_provider.dart';
 import 'login_screen.dart';
+import 'reportar_screen.dart';
 
 class DetallePeticionScreen extends StatelessWidget {
   final Peticion peticion;
@@ -70,6 +71,17 @@ class DetallePeticionScreen extends StatelessWidget {
         backgroundColor: const Color(0xFFFAF7F0),
         foregroundColor: const Color(0xFF26312D),
         elevation: 0,
+        actions: [
+          if (provider.usuarioActual != null)
+            IconButton(
+              icon: const Icon(Icons.flag_outlined),
+              tooltip: 'Reportar publicación',
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => ReportarScreen(tipo: 'peticion', contraId: peticion.id)),
+              ),
+            ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(

@@ -48,19 +48,46 @@ class PerfilScreen extends StatelessWidget {
             ),
             if (usuario != null) ...[
               const SizedBox(height: 6),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.star, size: 16, color: Color(0xFFAD7A16)),
-                  const SizedBox(width: 4),
-                  Text(
-                    usuario.numeroCalificaciones > 0
-                        ? '${usuario.calificacionPromedio.toStringAsFixed(1)} (${usuario.numeroCalificaciones} calificaciones)'
-                        : 'Sin calificaciones aún',
-                    style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+              if (usuario.numeroCalificaciones > 0)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.star, size: 16, color: Color(0xFFAD7A16)),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${usuario.calificacionPromedio.toStringAsFixed(1)} (${usuario.numeroCalificaciones} calificaciones)',
+                      style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                    ),
+                  ],
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(color: const Color(0xFFFAEEDA), borderRadius: BorderRadius.circular(20)),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.auto_awesome, size: 14, color: Color(0xFFAD7A16)),
+                      SizedBox(width: 4),
+                      Text(
+                        'Nuevo en la plataforma',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFAD7A16)),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              if (usuario.cedula != null && usuario.cedula!.trim().isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.badge_outlined, size: 13, color: Colors.grey.shade600),
+                      const SizedBox(width: 4),
+                      Text('Documento registrado', style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+                    ],
+                  ),
+                ),
               if (usuario.oficios.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
@@ -102,15 +129,9 @@ class PerfilScreen extends StatelessWidget {
                   : () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EditarPerfilScreen())),
             ),
             ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Cambiar de rol'),
-              onTap: () {
-                context.read<AppProvider>().cerrarSesion();
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const RoleSelectorScreen()),
-                  (route) => false,
-                );
-              },
+              leading: const Icon(Icons.swap_horiz),
+              title: const Text('Cambiar de modo (Empleador/Trabajador)'),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RoleSelectorScreen())),
             ),
             ListTile(
               leading: const Icon(Icons.settings_outlined),

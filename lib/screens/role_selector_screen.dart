@@ -8,15 +8,22 @@ class RoleSelectorScreen extends StatelessWidget {
 
   void _seleccionarRol(BuildContext context, RolUsuario rol) {
     context.read<AppProvider>().seleccionarRol(rol);
-    Navigator.of(context).pushReplacement(
+    Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const MainNavScreen()),
+      (route) => false,
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<AppProvider>();
+    final yaTieneCuenta = provider.usuarioActual != null;
+
     return Scaffold(
       backgroundColor: const Color(0xFFFAF7F0),
+      appBar: yaTieneCuenta
+          ? AppBar(backgroundColor: const Color(0xFFFAF7F0), elevation: 0, foregroundColor: const Color(0xFF26312D))
+          : null,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 28),
@@ -37,6 +44,14 @@ class RoleSelectorScreen extends StatelessWidget {
               const SizedBox(height: 6),
               Text('Servicios de tu barrio, gente de confianza', textAlign: TextAlign.center, style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
               const SizedBox(height: 48),
+              if (yaTieneCuenta) ...[
+                Text(
+                  'Modo actual: ${provider.rolActual == RolUsuario.empleador ? 'Empleador' : 'Trabajador'}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F6E56)),
+                ),
+                const SizedBox(height: 8),
+              ],
               Text('¿Qué necesitas hoy?', textAlign: TextAlign.center, style: TextStyle(fontSize: 15, color: Colors.grey.shade700)),
               const SizedBox(height: 16),
               _RolCard(
