@@ -28,12 +28,14 @@ class ConfiguracionScreen extends StatelessWidget {
     );
     if (confirmar != true) return;
     if (!context.mounted) return;
-    context.read<AppProvider>().eliminarCuentaActual();
+    await context.read<AppProvider>().eliminarCuentaActual();
+    if (!context.mounted) return;
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
-  void _cerrarSesion(BuildContext context) {
-    context.read<AppProvider>().cerrarSesion();
+  Future<void> _cerrarSesion(BuildContext context) async {
+    await context.read<AppProvider>().cerrarSesion();
+    if (!context.mounted) return;
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
@@ -62,23 +64,11 @@ class ConfiguracionScreen extends StatelessWidget {
             subtitle: const Text('Avisa cuando cambia la etapa de una de tus aplicaciones'),
             activeThumbColor: _petroleo,
           ),
-          ListTile(
-            title: const Text('Radio de búsqueda del feed'),
-            subtitle: Text(
-              provider.radioBusquedaKm.isInfinite
-                  ? 'Mostrar todas las peticiones sin límite de distancia'
-                  : 'Mostrar peticiones hasta ${provider.radioBusquedaKm.toStringAsFixed(0)} km',
-            ),
-            trailing: DropdownButton<double>(
-              value: provider.radioBusquedaKm,
-              items: [
-                ...const [1, 3, 5, 10, 20, 50]
-                    .map((km) => DropdownMenuItem(value: km.toDouble(), child: Text('$km km'))),
-                const DropdownMenuItem(value: double.infinity, child: Text('Sin límite')),
-              ],
-              onChanged: (v) {
-                if (v != null) context.read<AppProvider>().actualizarRadioBusqueda(v);
-              },
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Text(
+              'El radio de búsqueda ahora se ajusta directo desde el feed ("Cerca de ti").',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
           ),
           const Divider(),

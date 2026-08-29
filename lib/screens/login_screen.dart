@@ -18,28 +18,40 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _correoController = TextEditingController();
+  final _passwordController = TextEditingController();
   String? _errorCorreo;
+  bool _enviando = false;
 
   @override
   void dispose() {
     _correoController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
   Future<void> _continuar() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final correo = _correoController.text.trim();
-    final provider = context.read<AppProvider>();
-    final encontrado = provider.buscarPorCorreo(correo);
+    setState(() {
+      _enviando = true;
+      _errorCorreo = null;
+    });
 
-    if (encontrado != null) {
-      provider.iniciarSesion(encontrado);
+    final provider = context.read<AppProvider>();
+    final error = await provider.iniciarSesionConFirebase(
+      correo: _correoController.text.trim(),
+      password: _passwordController.text,
+    );
+
+    if (!mounted) return;
+    setState(() => _enviando = false);
+
+    if (error == null) {
       Navigator.of(context).pop(true);
       return;
     }
 
-    setState(() => _errorCorreo = 'No encontramos una cuenta con ese correo');
+    setState(() => _errorCorreo = error);
   }
 
   Future<void> _irARegistro() async {
@@ -109,27 +121,47 @@ class _LoginScreenState extends State<LoginScreen> {
                     return null;
                   },
                 ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _passwordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: 'Contraseña',
+                    prefixIcon: const Icon(Icons.lock_outline, color: _mostazaTexto),
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.length < 6) return 'Ingresa tu contraseña (mínimo 6 caracteres)';
+                    return null;
+                  },
+                ),
                 const SizedBox(height: 24),
                 ElevatedButton(
-                  onPressed: _continuar,
+                  onPressed: _enviando ? null : _continuar,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _petroleo,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: const Text('Continuar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  child: _enviando
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Text('Continuar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
-                if (_errorCorreo != null) ...[
-                  const SizedBox(height: 16),
-                  Center(
-                    child: TextButton.icon(
-                      onPressed: _irARegistro,
-                      icon: const Icon(Icons.person_add_outlined, color: _petroleo),
-                      label: const Text('Registrarme con este correo', style: TextStyle(color: _petroleo)),
-                    ),
+                const SizedBox(height: 16),
+                Center(
+                  child: TextButton.icon(
+                    onPressed: _irARegistro,
+                    icon: const Icon(Icons.person_add_outlined, color: _petroleo),
+                    label: const Text('¿No tienes cuenta? Regístrate', style: TextStyle(color: _petroleo)),
                   ),
-                ],
+                ),
               ],
             ),
           ),

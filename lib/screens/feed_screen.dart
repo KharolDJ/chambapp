@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../models/peticion.dart';
 import '../providers/app_provider.dart';
 import '../widgets/peticion_card.dart';
-import 'configuracion_screen.dart';
 import 'login_screen.dart';
 
 enum OrdenFeed { cercania, recientes }
@@ -128,6 +127,30 @@ class _FeedScreenState extends State<FeedScreen> {
               },
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _mostrarRadio(BuildContext context) {
+    final provider = context.read<AppProvider>();
+    const opciones = [1.0, 5.0, 10.0, 20.0, double.infinity];
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: opciones.map((km) {
+            final activo = provider.radioBusquedaKm == km;
+            return ListTile(
+              title: Text(km.isInfinite ? 'Toda la ciudad' : '${km.toStringAsFixed(0)} km'),
+              trailing: activo ? const Icon(Icons.check, color: Color(0xFF0F6E56)) : null,
+              onTap: () {
+                context.read<AppProvider>().actualizarRadioBusqueda(km);
+                Navigator.pop(context);
+              },
+            );
+          }).toList(),
         ),
       ),
     );
@@ -313,6 +336,15 @@ class _FeedScreenState extends State<FeedScreen> {
                         colorActivo: const Color(0xFF0F6E56),
                         onTap: () => _mostrarOrden(context),
                       ),
+                      _chip(
+                        label: provider.radioBusquedaKm.isInfinite
+                            ? 'Toda la ciudad ▾'
+                            : '${provider.radioBusquedaKm.toStringAsFixed(0)} km ▾',
+                        icono: Icons.location_on_outlined,
+                        activo: false,
+                        colorActivo: const Color(0xFF0F6E56),
+                        onTap: () => _mostrarRadio(context),
+                      ),
                     ],
                   ),
                 ),
@@ -337,10 +369,7 @@ class _FeedScreenState extends State<FeedScreen> {
                                 ),
                                 const SizedBox(height: 12),
                                 TextButton(
-                                  onPressed: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (_) => const ConfiguracionScreen()),
-                                  ),
+                                  onPressed: () => _mostrarRadio(context),
                                   child: const Text('Ampliar radio de búsqueda'),
                                 ),
                               ],

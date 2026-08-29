@@ -42,6 +42,7 @@ class _MainNavScreenState extends State<MainNavScreen> {
     final hayNotificacionesSinLeer = provider.notificacionesSinLeerCount > 0;
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: _pantallas[_indice],
       floatingActionButton: esEmpleador
           ? FloatingActionButton(

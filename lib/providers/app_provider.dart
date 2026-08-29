@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/peticion.dart';
@@ -11,18 +13,35 @@ import '../models/reporte.dart';
 
 enum RolUsuario { empleador, trabajador }
 
-// Persistencia local temporal (solo este dispositivo, no sincroniza entre
-// celulares). Se reemplaza por Firebase Auth + Firestore en la Fase B.
+// Identidad y perfil ahora viven en Firebase Auth + Firestore (colección
+// `usuarios`, documento por uid). Peticiones/calificaciones/notificaciones/
+// reportes siguen en shared_preferences por ahora — esa migración es un
+// paso aparte, todavía pendiente.
 class AppProvider extends ChangeNotifier {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
+
   static const _claveUsuarios = 'chambapp_usuarios';
   static const _claveRol = 'chambapp_rol_actual';
-  static const _claveUsuarioActualId = 'chambapp_usuario_actual_id';
   static const _claveNotificaciones = 'chambapp_notificaciones_activas';
   static const _claveRadio = 'chambapp_radio_busqueda_km';
   static const _claveNotificacionesLista = 'chambapp_notificaciones';
   static const _clavePeticiones = 'chambapp_peticiones';
   static const _claveCalificaciones = 'chambapp_calificaciones';
   static const _claveReportes = 'chambapp_reportes';
+
+  // Cuentas de los autores del proyecto — únicas con acceso al panel de
+  // Administración (reportes). Lista fija por ahora; se reemplaza por un
+  // campo real de rol de administrador cuando exista un backend (Fase B).
+  static const _correosAdmin = {
+    'kharoljcalderon@uts.edu.co',
+    'carojasperales@uts.edu.co',
+  };
+
+  bool get esAdmin {
+    final correo = usuarioActual?.correo.trim().toLowerCase();
+    return correo != null && _correosAdmin.contains(correo);
+  }
 
   RolUsuario? rolActual;
   Usuario? usuarioActual;
@@ -218,15 +237,6 @@ class AppProvider extends ChangeNotifier {
       rolActual = RolUsuario.values.byName(rolGuardado);
     }
 
-    final usuarioId = prefs.getString(_claveUsuarioActualId);
-    if (usuarioId != null) {
-      try {
-        usuarioActual = usuarios.firstWhere((u) => u.id == usuarioId);
-      } catch (_) {
-        usuarioActual = null;
-      }
-    }
-
     notificacionesActivas = prefs.getBool(_claveNotificaciones) ?? true;
     radioBusquedaKm = prefs.getDouble(_claveRadio) ?? 50;
 
@@ -271,7 +281,25 @@ class AppProvider extends ChangeNotifier {
         ..addAll(lista);
     }
 
+    // La sesión real de identidad viene de Firebase Auth, no de lo guardado
+    // localmente — si hay una sesión activa, tiene prioridad.
+    await restaurarSesionFirebase();
+
     notifyListeners();
+  }
+
+  Future<void> restaurarSesionFirebase() async {
+    final actual = _auth.currentUser;
+    if (actual == null) return;
+    try {
+      final doc = await _db.collection('usuarios').doc(actual.uid).get();
+      if (doc.exists) {
+        usuarioActual = Usuario.fromJson(doc.data()!);
+      }
+    } catch (_) {
+      // Sin conexión u otro error transitorio: se reintenta en el próximo
+      // arranque de la app, no es un fallo crítico dejarlo así por ahora.
+    }
   }
 
   Future<void> _guardarEstado() async {
@@ -284,12 +312,6 @@ class AppProvider extends ChangeNotifier {
       await prefs.setString(_claveRol, rolActual!.name);
     } else {
       await prefs.remove(_claveRol);
-    }
-
-    if (usuarioActual != null) {
-      await prefs.setString(_claveUsuarioActualId, usuarioActual!.id);
-    } else {
-      await prefs.remove(_claveUsuarioActualId);
     }
 
     await prefs.setBool(_claveNotificaciones, notificacionesActivas);
@@ -327,23 +349,85 @@ class AppProvider extends ChangeNotifier {
     unawaited(_guardarEstado());
   }
 
-  void registrarUsuario(Usuario usuario) {
-    final existente = usuarios.any((u) => u.id == usuario.id);
-    if (!existente) {
-      usuarios.add(usuario);
+  String _mensajeErrorAuth(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'email-already-in-use':
+        return 'Ya existe una cuenta con ese correo, intenta iniciar sesión.';
+      case 'weak-password':
+        return 'La contraseña debe tener al menos 6 caracteres.';
+      case 'invalid-email':
+        return 'Ese correo no es válido.';
+      case 'user-not-found':
+        return 'No encontramos una cuenta con ese correo.';
+      case 'wrong-password':
+      case 'invalid-credential':
+        return 'Correo o contraseña incorrectos.';
+      default:
+        return 'Ocurrió un problema (${e.code}). Intenta de nuevo.';
     }
-    usuarioActual = usuario;
-    notifyListeners();
-    unawaited(_guardarEstado());
   }
 
-  void actualizarPerfil({
+  Future<String?> registrarConFirebase({
+    required String nombre,
+    required String correo,
+    required String password,
+    required String celular,
+    List<String>? oficios,
+    String? fotoPath,
+    String? cedula,
+  }) async {
+    try {
+      final credencial = await _auth.createUserWithEmailAndPassword(
+        email: correo.trim(),
+        password: password,
+      );
+      final uid = credencial.user!.uid;
+      final nuevoUsuario = Usuario(
+        id: uid,
+        nombre: nombre,
+        correo: correo.trim(),
+        celular: celular,
+        oficios: oficios,
+        fotoPath: fotoPath,
+        cedula: cedula,
+      );
+      await _db.collection('usuarios').doc(uid).set(nuevoUsuario.toJson());
+      usuarioActual = nuevoUsuario;
+      notifyListeners();
+      unawaited(_guardarEstado());
+      return null;
+    } on FirebaseAuthException catch (e) {
+      return _mensajeErrorAuth(e);
+    } catch (_) {
+      return 'No se pudo completar el registro. Intenta de nuevo.';
+    }
+  }
+
+  Future<String?> iniciarSesionConFirebase({required String correo, required String password}) async {
+    try {
+      final credencial = await _auth.signInWithEmailAndPassword(email: correo.trim(), password: password);
+      final doc = await _db.collection('usuarios').doc(credencial.user!.uid).get();
+      if (!doc.exists) {
+        return 'No encontramos tu perfil. Contacta soporte.';
+      }
+      usuarioActual = Usuario.fromJson(doc.data()!);
+      notifyListeners();
+      unawaited(_guardarEstado());
+      return null;
+    } on FirebaseAuthException catch (e) {
+      return _mensajeErrorAuth(e);
+    } catch (_) {
+      return 'No se pudo iniciar sesión. Intenta de nuevo.';
+    }
+  }
+
+  Future<void> actualizarPerfil({
     required String nombre,
     required String celular,
     List<String>? oficios,
     String? fotoPath,
     String? cedula,
-  }) {
+  }) async {
     final actual = usuarioActual;
     if (actual == null) return;
     actual.nombre = nombre;
@@ -353,19 +437,38 @@ class AppProvider extends ChangeNotifier {
     if (cedula != null) actual.cedula = cedula;
     notifyListeners();
     unawaited(_guardarEstado());
+    try {
+      await _db.collection('usuarios').doc(actual.id).update(actual.toJson());
+    } catch (_) {
+      // La copia local (memoria + shared_preferences) ya quedó actualizada
+      // para la UI; si Firestore falla por conexión, no tumbamos la app.
+    }
   }
 
-  void cerrarSesion() {
+  Future<void> cerrarSesion() async {
+    await _auth.signOut();
     rolActual = null;
     usuarioActual = null;
     notifyListeners();
     unawaited(_guardarEstado());
   }
 
-  void eliminarCuentaActual() {
+  Future<void> eliminarCuentaActual() async {
     final actual = usuarioActual;
     if (actual == null) return;
-    usuarios.removeWhere((u) => u.id == actual.id);
+    try {
+      await _db.collection('usuarios').doc(actual.id).delete();
+    } catch (_) {
+      // Continúa con la limpieza local aunque Firestore falle.
+    }
+    try {
+      await _auth.currentUser?.delete();
+    } on FirebaseAuthException catch (e) {
+      if (e.code != 'requires-recent-login') rethrow;
+      // Firebase exige haber iniciado sesión recientemente para borrar la
+      // cuenta de Auth. Por ahora dejamos esa cuenta huérfana (sin perfil
+      // en Firestore) — es una limitación aceptable del prototipo.
+    }
     usuarioActual = null;
     rolActual = null;
     notifyListeners();
@@ -380,21 +483,6 @@ class AppProvider extends ChangeNotifier {
 
   void actualizarRadioBusqueda(double km) {
     radioBusquedaKm = km;
-    notifyListeners();
-    unawaited(_guardarEstado());
-  }
-
-  Usuario? buscarPorCorreo(String correo) {
-    final normalizado = correo.trim().toLowerCase();
-    try {
-      return usuarios.firstWhere((u) => u.correo.trim().toLowerCase() == normalizado);
-    } catch (_) {
-      return null;
-    }
-  }
-
-  void iniciarSesion(Usuario usuario) {
-    usuarioActual = usuario;
     notifyListeners();
     unawaited(_guardarEstado());
   }

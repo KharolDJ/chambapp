@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
+import 'administracion_screen.dart';
 import 'configuracion_screen.dart';
 import 'editar_perfil_screen.dart';
 import 'login_screen.dart';
@@ -138,6 +139,12 @@ class PerfilScreen extends StatelessWidget {
               title: const Text('Configuración'),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ConfiguracionScreen())),
             ),
+            if (provider.esAdmin)
+              ListTile(
+                leading: const Icon(Icons.shield_outlined),
+                title: const Text('Administración (reportes)'),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdministracionScreen())),
+              ),
           ],
         ),
       ),

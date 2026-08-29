@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import '../models/usuario.dart';
 import '../providers/app_provider.dart';
 import 'login_screen.dart';
 
@@ -26,6 +25,7 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final _nombreController = TextEditingController();
   late final TextEditingController _correoController;
+  final _passwordController = TextEditingController();
   final _celularController = TextEditingController();
   final _cedulaController = TextEditingController();
 
@@ -34,9 +34,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   int _paso = 0;
   late final bool _esTrabajador;
+  bool _enviando = false;
 
   String? _errorNombre;
   String? _errorCorreo;
+  String? _errorPassword;
   bool _mostrarErrorOficios = false;
   String? _errorCelular;
 
@@ -68,6 +70,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void dispose() {
     _nombreController.dispose();
     _correoController.dispose();
+    _passwordController.dispose();
     _celularController.dispose();
     _cedulaController.dispose();
     super.dispose();
@@ -109,7 +112,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  void _siguiente() {
+  Future<void> _siguiente() async {
     final tipo = _pasos[_paso];
 
     if (tipo == _TipoPaso.nombre) {
@@ -131,8 +134,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
         setState(() => _errorCorreo = 'Ingresa un correo válido');
         return;
       }
+      if (_passwordController.text.length < 6) {
+        setState(() => _errorPassword = 'La contraseña debe tener al menos 6 caracteres');
+        return;
+      }
       setState(() {
         _errorCorreo = null;
+        _errorPassword = null;
         _paso += 1;
       });
       return;
@@ -157,17 +165,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
+    setState(() => _enviando = true);
     final provider = context.read<AppProvider>();
-    final usuario = Usuario(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+    final error = await provider.registrarConFirebase(
       nombre: _nombreController.text.trim(),
       correo: _correoController.text.trim(),
+      password: _passwordController.text,
       celular: texto,
       oficios: _esTrabajador ? _oficiosSeleccionados : null,
       fotoPath: _fotoPath,
       cedula: _cedulaController.text.trim().isEmpty ? null : _cedulaController.text.trim(),
     );
-    provider.registrarUsuario(usuario);
+
+    if (!mounted) return;
+    setState(() => _enviando = false);
+
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+      return;
+    }
     Navigator.of(context).pop(true);
   }
 
@@ -239,17 +255,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: _siguiente,
+                onPressed: _enviando ? null : _siguiente,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _petroleo,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: Text(
-                  esUltimoPaso ? 'Registrarme' : 'Continuar',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
+                child: _enviando
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : Text(
+                        esUltimoPaso ? 'Registrarme' : 'Continuar',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
               ),
               if (_paso == 0) ...[
                 const SizedBox(height: 8),
@@ -310,6 +332,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
               decoration: _decoracion('Correo electrónico', Icons.email_outlined, error: _errorCorreo),
               onChanged: (_) {
                 if (_errorCorreo != null) setState(() => _errorCorreo = null);
+              },
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _passwordController,
+              obscureText: true,
+              decoration: _decoracion(
+                'Contraseña',
+                Icons.lock_outline,
+                helper: 'Mínimo 6 caracteres',
+                error: _errorPassword,
+              ),
+              onChanged: (_) {
+                if (_errorPassword != null) setState(() => _errorPassword = null);
               },
             ),
           ],
