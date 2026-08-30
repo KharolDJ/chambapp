@@ -42,8 +42,38 @@ class Peticion {
   }) : interesados = interesados ?? [],
        vistosPorEmpleador = vistosPorEmpleador ?? {};
 
-  Map<String, dynamic> toJson() => {
-        'id': id,
+  /// Snapshot denormalizado de un interesado, tal como se guarda dentro del
+  /// documento de la petición en Firestore. Evita tener que leer el
+  /// documento `usuarios/{id}` de cada interesado solo para mostrar su
+  /// tarjeta en la pantalla de Interesados — a cambio, la calificación
+  /// mostrada ahí puede quedar levemente desactualizada si cambia después
+  /// de que esa persona aplicó a esta petición específica (trade-off
+  /// aceptado para el prototipo).
+  static Map<String, dynamic> interesadoAMapa(Usuario u) => {
+        'id': u.id,
+        'nombre': u.nombre,
+        'celular': u.celular,
+        'oficios': u.oficios,
+        'calificacionPromedio': u.calificacionPromedio,
+        'numeroCalificaciones': u.numeroCalificaciones,
+        'fotoPath': u.fotoPath,
+      };
+
+  static Usuario _interesadoDesdeMapa(Map<String, dynamic> m) => Usuario(
+        id: m['id'] as String,
+        nombre: m['nombre'] as String,
+        correo: '',
+        celular: m['celular'] as String? ?? '',
+        oficios: (m['oficios'] as List?)?.cast<String>(),
+        fotoPath: m['fotoPath'] as String?,
+        calificacionPromedio: (m['calificacionPromedio'] as num?)?.toDouble() ?? 0,
+        numeroCalificaciones: (m['numeroCalificaciones'] as num?)?.toInt() ?? 0,
+      );
+
+  /// Serializa para guardar como documento de Firestore (colección
+  /// `peticiones`). El id del documento es el propio [id] de esta clase —
+  /// no se repite dentro del mapa.
+  Map<String, dynamic> toFirestore() => {
         'autorId': autorId,
         'autorNombre': autorNombre,
         'barrio': barrio,
@@ -54,7 +84,7 @@ class Peticion {
         'creadaEn': creadaEn.toIso8601String(),
         'lat': lat,
         'lng': lng,
-        'interesadosIds': interesados.map((u) => u.id).toList(),
+        'interesados': interesados.map(interesadoAMapa).toList(),
         'vistosPorEmpleador': vistosPorEmpleador.toList(),
         'trabajadorSeleccionadoId': trabajadorSeleccionadoId,
         'cerrada': cerrada,
@@ -63,37 +93,29 @@ class Peticion {
         'comprobantePago': comprobantePago,
       };
 
-  /// [usuariosDisponibles] se usa para resolver los interesados (guardados
-  /// solo como id) de vuelta a los objetos `Usuario` reales ya cargados.
-  /// Un id que ya no exista (ej. cuenta eliminada) se omite en silencio.
-  factory Peticion.fromJson(Map<String, dynamic> json, List<Usuario> usuariosDisponibles) {
-    Usuario? buscar(String id) {
-      for (final u in usuariosDisponibles) {
-        if (u.id == id) return u;
-      }
-      return null;
-    }
-
-    final interesadosIds = (json['interesadosIds'] as List).cast<String>();
+  factory Peticion.fromFirestore(Map<String, dynamic> data, String id) {
+    final interesadosRaw = (data['interesados'] as List?) ?? const [];
     return Peticion(
-      id: json['id'] as String,
-      autorId: json['autorId'] as String,
-      autorNombre: json['autorNombre'] as String,
-      barrio: json['barrio'] as String,
-      descripcion: json['descripcion'] as String,
-      categoria: json['categoria'] as String,
-      urgente: json['urgente'] as bool? ?? false,
-      fotoUrl: json['fotoUrl'] as String?,
-      creadaEn: DateTime.parse(json['creadaEn'] as String),
-      lat: (json['lat'] as num?)?.toDouble(),
-      lng: (json['lng'] as num?)?.toDouble(),
-      interesados: interesadosIds.map(buscar).whereType<Usuario>().toList(),
-      vistosPorEmpleador: (json['vistosPorEmpleador'] as List).cast<String>().toSet(),
-      trabajadorSeleccionadoId: json['trabajadorSeleccionadoId'] as String?,
-      cerrada: json['cerrada'] as bool? ?? false,
-      premiumSolicitada: json['premiumSolicitada'] as bool? ?? false,
-      premiumAprobada: json['premiumAprobada'] as bool? ?? false,
-      comprobantePago: json['comprobantePago'] as String?,
+      id: id,
+      autorId: data['autorId'] as String,
+      autorNombre: data['autorNombre'] as String,
+      barrio: data['barrio'] as String,
+      descripcion: data['descripcion'] as String,
+      categoria: data['categoria'] as String,
+      urgente: data['urgente'] as bool? ?? false,
+      fotoUrl: data['fotoUrl'] as String?,
+      creadaEn: DateTime.parse(data['creadaEn'] as String),
+      lat: (data['lat'] as num?)?.toDouble(),
+      lng: (data['lng'] as num?)?.toDouble(),
+      interesados: interesadosRaw
+          .map((m) => _interesadoDesdeMapa(Map<String, dynamic>.from(m as Map)))
+          .toList(),
+      vistosPorEmpleador: ((data['vistosPorEmpleador'] as List?) ?? const []).cast<String>().toSet(),
+      trabajadorSeleccionadoId: data['trabajadorSeleccionadoId'] as String?,
+      cerrada: data['cerrada'] as bool? ?? false,
+      premiumSolicitada: data['premiumSolicitada'] as bool? ?? false,
+      premiumAprobada: data['premiumAprobada'] as bool? ?? false,
+      comprobantePago: data['comprobantePago'] as String?,
     );
   }
 }

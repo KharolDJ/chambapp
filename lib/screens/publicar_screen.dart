@@ -53,7 +53,9 @@ class _PublicarScreenState extends State<PublicarScreen> {
     setState(() => _fotoPath = archivo.path);
   }
 
-  void _publicar() {
+  bool _publicando = false;
+
+  Future<void> _publicar() async {
     if (_descripcionController.text.trim().isEmpty || _barrioController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Completa la descripción y el barrio')),
@@ -64,7 +66,8 @@ class _PublicarScreenState extends State<PublicarScreen> {
     final usuarioActual = context.read<AppProvider>().usuarioActual;
     if (usuarioActual == null) return;
 
-    context.read<AppProvider>().publicarPeticion(
+    setState(() => _publicando = true);
+    await context.read<AppProvider>().publicarPeticion(
           Peticion(
             id: DateTime.now().millisecondsSinceEpoch.toString(),
             autorId: usuarioActual.id,
@@ -77,6 +80,7 @@ class _PublicarScreenState extends State<PublicarScreen> {
             fotoUrl: _fotoPath,
           ),
         );
+    if (!mounted) return;
     Navigator.pop(context);
   }
 
@@ -174,14 +178,20 @@ class _PublicarScreenState extends State<PublicarScreen> {
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: _publicar,
+              onPressed: _publicando ? null : _publicar,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0F6E56),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text('Publicar', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: _publicando
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('Publicar', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),

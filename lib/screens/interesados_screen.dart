@@ -25,7 +25,8 @@ class _InteresadosScreenState extends State<InteresadosScreen> {
   }
 
   Future<void> _contactarPorWhatsApp(BuildContext context, Usuario usuario) async {
-    context.read<AppProvider>().seleccionarTrabajador(widget.peticion.id, usuario.id);
+    await context.read<AppProvider>().seleccionarTrabajador(widget.peticion.id, usuario.id);
+    if (!context.mounted) return;
 
     final numero = usuario.celular.replaceAll(RegExp(r'\D'), '');
     final uri = Uri.parse('https://wa.me/57$numero');
