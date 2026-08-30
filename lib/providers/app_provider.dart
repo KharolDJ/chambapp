@@ -13,23 +13,22 @@ import '../models/reporte.dart';
 
 enum RolUsuario { empleador, trabajador }
 
-// Identidad/perfil (usuarios), peticiones y calificaciones ahora viven en
-// Firebase Auth + Firestore, con escucha en tiempo real. Notificaciones y
-// reportes siguen en shared_preferences por ahora — esa migración es un
-// paso aparte, todavía pendiente.
+// Identidad/perfil (usuarios), peticiones, calificaciones, notificaciones y
+// reportes viven todos en Firebase Auth + Firestore. Notificaciones se
+// escuchan en tiempo real (filtradas por usuario); reportes se cargan bajo
+// demanda solo cuando un administrador abre el panel de Administración.
 class AppProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _suscripcionPeticiones;
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _suscripcionCalificaciones;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _suscripcionNotificaciones;
 
   static const _claveUsuarios = 'chambapp_usuarios';
   static const _claveRol = 'chambapp_rol_actual';
   static const _claveNotificaciones = 'chambapp_notificaciones_activas';
   static const _claveRadio = 'chambapp_radio_busqueda_km';
-  static const _claveNotificacionesLista = 'chambapp_notificaciones';
-  static const _claveReportes = 'chambapp_reportes';
 
   // Cuentas de los autores del proyecto — únicas con acceso al panel de
   // Administración (reportes). Lista fija por ahora; se reemplaza por un
@@ -248,25 +247,6 @@ class AppProvider extends ChangeNotifier {
     notificacionesActivas = prefs.getBool(_claveNotificaciones) ?? true;
     radioBusquedaKm = prefs.getDouble(_claveRadio) ?? 50;
 
-    final notificacionesJson = prefs.getString(_claveNotificacionesLista);
-    if (notificacionesJson != null) {
-      final lista = (jsonDecode(notificacionesJson) as List)
-          .map((e) => Notificacion.fromJson(e as Map<String, dynamic>))
-          .toList();
-      notificaciones
-        ..clear()
-        ..addAll(lista);
-    }
-
-    final reportesJson = prefs.getString(_claveReportes);
-    if (reportesJson != null) {
-      final lista =
-          (jsonDecode(reportesJson) as List).map((e) => Reporte.fromJson(e as Map<String, dynamic>)).toList();
-      reportes
-        ..clear()
-        ..addAll(lista);
-    }
-
     // La sesión real de identidad viene de Firebase Auth, no de lo guardado
     // localmente — si hay una sesión activa, tiene prioridad.
     await restaurarSesionFirebase();
@@ -281,7 +261,10 @@ class AppProvider extends ChangeNotifier {
 
   Future<void> restaurarSesionFirebase() async {
     final actual = _auth.currentUser;
-    if (actual == null) return;
+    if (actual == null) {
+      unawaited(_escucharNotificaciones(null));
+      return;
+    }
     try {
       final doc = await _db.collection('usuarios').doc(actual.uid).get();
       if (doc.exists) {
@@ -291,6 +274,27 @@ class AppProvider extends ChangeNotifier {
       // Sin conexión u otro error transitorio: se reintenta en el próximo
       // arranque de la app, no es un fallo crítico dejarlo así por ahora.
     }
+    unawaited(_escucharNotificaciones(usuarioActual?.id));
+  }
+
+  /// Escucha en tiempo real las notificaciones del usuario [uid]. Se
+  /// re-arma cada vez que cambia la identidad activa (login, registro,
+  /// logout, borrado de cuenta) para no arrastrar notificaciones de una
+  /// cuenta hacia otra en el mismo dispositivo.
+  Future<void> _escucharNotificaciones(String? uid) async {
+    await _suscripcionNotificaciones?.cancel();
+    if (uid == null) {
+      notificaciones.clear();
+      notifyListeners();
+      return;
+    }
+    _suscripcionNotificaciones =
+        _db.collection('notificaciones').where('paraUsuarioId', isEqualTo: uid).snapshots().listen((snapshot) {
+      notificaciones
+        ..clear()
+        ..addAll(snapshot.docs.map((doc) => Notificacion.fromFirestore(doc.data(), doc.id)));
+      notifyListeners();
+    });
   }
 
   Future<void> iniciarEscuchaFirestore() async {
@@ -342,6 +346,7 @@ class AppProvider extends ChangeNotifier {
   void dispose() {
     _suscripcionPeticiones?.cancel();
     _suscripcionCalificaciones?.cancel();
+    _suscripcionNotificaciones?.cancel();
     super.dispose();
   }
 
@@ -359,22 +364,22 @@ class AppProvider extends ChangeNotifier {
 
     await prefs.setBool(_claveNotificaciones, notificacionesActivas);
     await prefs.setDouble(_claveRadio, radioBusquedaKm);
-
-    final notificacionesJson = jsonEncode(notificaciones.map((n) => n.toJson()).toList());
-    await prefs.setString(_claveNotificacionesLista, notificacionesJson);
-
-    final reportesJson = jsonEncode(reportes.map((r) => r.toJson()).toList());
-    await prefs.setString(_claveReportes, reportesJson);
   }
 
-  void _crearNotificacion({required String paraUsuarioId, required String mensaje, String? peticionId}) {
-    notificaciones.add(Notificacion(
+  Future<void> _crearNotificacion({required String paraUsuarioId, required String mensaje, String? peticionId}) async {
+    final notif = Notificacion(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       paraUsuarioId: paraUsuarioId,
       mensaje: mensaje,
       fecha: DateTime.now(),
       peticionId: peticionId,
-    ));
+    );
+    try {
+      await _db.collection('notificaciones').doc(notif.id).set(notif.toFirestore());
+    } catch (_) {
+      // Si falla, simplemente no se genera el aviso; no debe tumbar la
+      // operación principal que la disparó (marcar interés, calificar, etc.).
+    }
   }
 
   String _truncar(String texto, [int limite = 40]) =>
@@ -430,6 +435,7 @@ class AppProvider extends ChangeNotifier {
       );
       await _db.collection('usuarios').doc(uid).set(nuevoUsuario.toJson());
       usuarioActual = nuevoUsuario;
+      unawaited(_escucharNotificaciones(uid));
       notifyListeners();
       unawaited(_guardarEstado());
       return null;
@@ -448,6 +454,7 @@ class AppProvider extends ChangeNotifier {
         return 'No encontramos tu perfil. Contacta soporte.';
       }
       usuarioActual = Usuario.fromJson(doc.data()!);
+      unawaited(_escucharNotificaciones(credencial.user!.uid));
       notifyListeners();
       unawaited(_guardarEstado());
       return null;
@@ -486,6 +493,7 @@ class AppProvider extends ChangeNotifier {
     await _auth.signOut();
     rolActual = null;
     usuarioActual = null;
+    unawaited(_escucharNotificaciones(null));
     notifyListeners();
     unawaited(_guardarEstado());
   }
@@ -508,6 +516,7 @@ class AppProvider extends ChangeNotifier {
     }
     usuarioActual = null;
     rolActual = null;
+    unawaited(_escucharNotificaciones(null));
     notifyListeners();
     unawaited(_guardarEstado());
   }
@@ -563,11 +572,11 @@ class AppProvider extends ChangeNotifier {
     }
 
     if (!yaInteresado) {
-      _crearNotificacion(
+      unawaited(_crearNotificacion(
         paraUsuarioId: peticion.autorId,
         mensaje: '${usuario.nombre} se interesó en tu publicación "${_truncar(peticion.descripcion)}"',
         peticionId: peticion.id,
-      );
+      ));
       unawaited(_guardarEstado());
     }
   }
@@ -579,19 +588,19 @@ class AppProvider extends ChangeNotifier {
     if (nuevos.isEmpty) return;
 
     for (final id in nuevos) {
-      _crearNotificacion(
+      unawaited(_crearNotificacion(
         paraUsuarioId: id,
         mensaje: 'El empleador vio tu perfil en "${_truncar(peticion.descripcion)}"',
         peticionId: peticion.id,
-      );
+      ));
     }
 
     final actualizados = {...peticion.vistosPorEmpleador, ...nuevos}.toList();
     try {
       await _db.collection('peticiones').doc(peticionId).update({'vistosPorEmpleador': actualizados});
     } catch (_) {
-      // Las notificaciones ya se generaron localmente; si Firestore falla,
-      // se puede volver a marcar como visto en un próximo intento.
+      // Las notificaciones ya se generaron en Firestore; si esta escritura
+      // falla, se puede volver a marcar como visto en un próximo intento.
     }
     unawaited(_guardarEstado());
   }
@@ -603,12 +612,12 @@ class AppProvider extends ChangeNotifier {
       return;
     }
     final peticion = peticiones.firstWhere((p) => p.id == peticionId);
-    _crearNotificacion(
+    unawaited(_crearNotificacion(
       paraUsuarioId: usuarioId,
       mensaje:
           '¡Fuiste seleccionado para "${_truncar(peticion.descripcion)}"! El empleador te contactará por WhatsApp',
       peticionId: peticionId,
-    );
+    ));
     unawaited(_guardarEstado());
   }
 
@@ -628,10 +637,10 @@ class AppProvider extends ChangeNotifier {
       return;
     }
 
-    _crearNotificacion(
+    unawaited(_crearNotificacion(
       paraUsuarioId: calificacion.paraUsuarioId,
       mensaje: 'Recibiste una calificación de ${calificacion.estrellas} estrellas',
-    );
+    ));
     unawaited(_guardarEstado());
 
     // El promedio se calcula incluyendo esta calificación aunque el
@@ -684,11 +693,11 @@ class AppProvider extends ChangeNotifier {
       return;
     }
     final peticion = peticiones.firstWhere((p) => p.id == peticionId);
-    _crearNotificacion(
+    unawaited(_crearNotificacion(
       paraUsuarioId: peticion.autorId,
       mensaje: 'Tu Visibilidad Premium fue aprobada para "${_truncar(peticion.descripcion)}"',
       peticionId: peticionId,
-    );
+    ));
     unawaited(_guardarEstado());
   }
 
@@ -709,24 +718,32 @@ class AppProvider extends ChangeNotifier {
 
   int get notificacionesSinLeerCount => misNotificaciones.where((n) => !n.leida).length;
 
-  void marcarTodasNotificacionesLeidas() {
-    for (final n in misNotificaciones) {
-      n.leida = true;
+  Future<void> marcarTodasNotificacionesLeidas() async {
+    final noLeidas = misNotificaciones.where((n) => !n.leida).toList();
+    if (noLeidas.isEmpty) return;
+    final batch = _db.batch();
+    for (final n in noLeidas) {
+      batch.update(_db.collection('notificaciones').doc(n.id), {'leida': true});
     }
-    notifyListeners();
-    unawaited(_guardarEstado());
+    try {
+      await batch.commit();
+    } catch (_) {
+      // El listener reflejará el estado real cuando se reconecte.
+    }
   }
 
-  void eliminarNotificacion(String id) {
-    notificaciones.removeWhere((n) => n.id == id);
-    notifyListeners();
-    unawaited(_guardarEstado());
+  Future<void> eliminarNotificacion(String id) async {
+    try {
+      await _db.collection('notificaciones').doc(id).delete();
+    } catch (_) {
+      // El listener reflejará el estado real cuando se reconecte.
+    }
   }
 
-  void crearReporte({required String tipo, required String contraId, required String motivo, String? comentario}) {
+  Future<void> crearReporte({required String tipo, required String contraId, required String motivo, String? comentario}) async {
     final usuario = usuarioActual;
     if (usuario == null) return;
-    reportes.add(Reporte(
+    final reporte = Reporte(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       deUsuarioId: usuario.id,
       tipo: tipo,
@@ -734,8 +751,41 @@ class AppProvider extends ChangeNotifier {
       motivo: motivo,
       comentario: comentario,
       fecha: DateTime.now(),
-    ));
-    notifyListeners();
-    unawaited(_guardarEstado());
+    );
+    try {
+      await _db.collection('reportes').doc(reporte.id).set(reporte.toFirestore());
+    } catch (_) {
+      // Silencioso: el usuario ya recibió confirmación visual del envío.
+    }
+  }
+
+  /// Carga los reportes bajo demanda (no hay escucha en tiempo real: solo
+  /// los administradores abren esta pantalla, y no necesitan verla
+  /// actualizarse sola mientras la tienen abierta).
+  Future<void> cargarReportes() async {
+    try {
+      final snapshot = await _db.collection('reportes').get();
+      reportes
+        ..clear()
+        ..addAll(snapshot.docs.map((doc) => Reporte.fromFirestore(doc.data(), doc.id)));
+      notifyListeners();
+    } catch (_) {
+      // Sin conexión o sin permiso: se deja la lista como estaba.
+    }
+  }
+
+  /// Resuelve el nombre de un usuario para mostrar en el panel de
+  /// Administración: primero busca en la lista local de demo (rápido, sin
+  /// red), y si no está ahí, lo busca en Firestore (cuenta real).
+  Future<String> nombreDeUsuario(String usuarioId) async {
+    final local = usuarios.where((u) => u.id == usuarioId);
+    if (local.isNotEmpty) return local.first.nombre;
+    try {
+      final doc = await _db.collection('usuarios').doc(usuarioId).get();
+      if (doc.exists) return (doc.data()?['nombre'] as String?) ?? 'Usuario eliminado';
+    } catch (_) {
+      // Sin conexión: se informa como no disponible más abajo.
+    }
+    return 'Usuario eliminado';
   }
 }

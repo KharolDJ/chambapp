@@ -41,19 +41,23 @@ class _ReportarScreenState extends State<ReportarScreen> {
     super.dispose();
   }
 
-  void _enviar() {
+  bool _enviando = false;
+
+  Future<void> _enviar() async {
     if (_motivo == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Selecciona un motivo')),
       );
       return;
     }
-    context.read<AppProvider>().crearReporte(
+    setState(() => _enviando = true);
+    await context.read<AppProvider>().crearReporte(
           tipo: widget.tipo,
           contraId: widget.contraId,
           motivo: _motivo!,
           comentario: _comentarioController.text.trim().isEmpty ? null : _comentarioController.text.trim(),
         );
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Gracias, revisaremos tu reporte'), backgroundColor: _petroleo),
     );
@@ -109,14 +113,20 @@ class _ReportarScreenState extends State<ReportarScreen> {
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: _enviar,
+              onPressed: _enviando ? null : _enviar,
               style: ElevatedButton.styleFrom(
                 backgroundColor: _ladrillo,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text('Enviar reporte', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: _enviando
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('Enviar reporte', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),

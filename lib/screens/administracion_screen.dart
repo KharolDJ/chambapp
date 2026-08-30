@@ -7,8 +7,22 @@ const _ladrillo = Color(0xFFB54834);
 const _papel = Color(0xFFFAF7F0);
 const _grafito = Color(0xFF26312D);
 
-class AdministracionScreen extends StatelessWidget {
+class AdministracionScreen extends StatefulWidget {
   const AdministracionScreen({super.key});
+
+  @override
+  State<AdministracionScreen> createState() => _AdministracionScreenState();
+}
+
+class _AdministracionScreenState extends State<AdministracionScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<AppProvider>().cargarReportes();
+    });
+  }
 
   String _tiempoTranscurrido(DateTime fecha) {
     final diff = DateTime.now().difference(fecha);
@@ -17,22 +31,28 @@ class AdministracionScreen extends StatelessWidget {
     return 'hace ${diff.inDays} d';
   }
 
-  String _nombreDe(AppProvider provider, String usuarioId) {
-    try {
-      return provider.usuarios.firstWhere((u) => u.id == usuarioId).nombre;
-    } catch (_) {
-      return 'Usuario eliminado';
-    }
+  Widget _nombreAsync(AppProvider provider, String prefijo, String usuarioId) {
+    return FutureBuilder<String>(
+      future: provider.nombreDeUsuario(usuarioId),
+      builder: (context, snapshot) {
+        final texto = snapshot.connectionState == ConnectionState.waiting
+            ? 'Cargando...'
+            : (snapshot.data ?? 'Usuario eliminado');
+        return Text('$prefijo$texto', style: TextStyle(fontSize: 13, color: Colors.grey.shade700));
+      },
+    );
   }
 
-  String _descripcionDeReportado(AppProvider provider, Reporte r) {
-    if (r.tipo == 'usuario') return _nombreDe(provider, r.contraId);
+  Widget _descripcionDeReportado(AppProvider provider, Reporte r) {
+    if (r.tipo == 'usuario') return _nombreAsync(provider, 'Contra: ', r.contraId);
+    String descripcion;
     try {
       final peticion = provider.peticiones.firstWhere((p) => p.id == r.contraId);
-      return '"${peticion.descripcion}"';
+      descripcion = '"${peticion.descripcion}"';
     } catch (_) {
-      return 'Publicación eliminada';
+      descripcion = 'Publicación eliminada';
     }
+    return Text('Contra: $descripcion', style: TextStyle(fontSize: 13, color: Colors.grey.shade700));
   }
 
   @override
@@ -53,9 +73,7 @@ class AdministracionScreen extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 32),
                 child: Text(
-                  'No hay reportes registrados en este dispositivo todavía.\n\n'
-                  'Nota: hasta que conectemos Firebase, cada celular solo ve los '
-                  'reportes hechos desde ese mismo celular.',
+                  'No hay reportes registrados todavía.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.grey.shade600),
                 ),
@@ -100,14 +118,8 @@ class AdministracionScreen extends StatelessWidget {
                         style: const TextStyle(fontWeight: FontWeight.w600, color: _grafito),
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        'Contra: ${_descripcionDeReportado(provider, r)}',
-                        style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
-                      ),
-                      Text(
-                        'Reportado por: ${_nombreDe(provider, r.deUsuarioId)}',
-                        style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
-                      ),
+                      _descripcionDeReportado(provider, r),
+                      _nombreAsync(provider, 'Reportado por: ', r.deUsuarioId),
                       if (r.comentario != null && r.comentario!.trim().isNotEmpty) ...[
                         const SizedBox(height: 6),
                         Text(r.comentario!, style: const TextStyle(fontSize: 13, fontStyle: FontStyle.italic)),
