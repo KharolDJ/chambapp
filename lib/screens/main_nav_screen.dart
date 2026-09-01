@@ -32,6 +32,12 @@ class _MainNavScreenState extends State<MainNavScreen> {
     }
 
     if (!context.mounted) return;
+    if (!context.read<AppProvider>().correoVerificado) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Verifica tu correo antes de publicar — revisa tu perfil')),
+      );
+      return;
+    }
     Navigator.push(context, MaterialPageRoute(builder: (_) => const PublicarScreen()));
   }
 

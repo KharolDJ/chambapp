@@ -40,6 +40,12 @@ class DetallePeticionScreen extends StatelessWidget {
     }
 
     final providerActualizado = context.read<AppProvider>();
+    if (!providerActualizado.correoVerificado) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Verifica tu correo antes de aplicar — revisa tu perfil')),
+      );
+      return;
+    }
     final yaEstaba = peticion.interesados.any((u) => u.id == providerActualizado.usuarioActual!.id);
     providerActualizado.marcarInteres(peticion.id);
     if (!context.mounted) return;

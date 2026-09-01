@@ -46,6 +46,31 @@ class AppProvider extends ChangeNotifier {
     return correo != null && _correosAdmin.contains(correo);
   }
 
+  // El estado de verificación vive en el objeto de Firebase Auth
+  // (`currentUser.emailVerified`), no en el documento de Firestore — y no
+  // se actualiza solo, así que hay que refrescarlo explícitamente
+  // (`recargarVerificacionCorreo`) después de que la persona confirme el
+  // correo desde su bandeja de entrada.
+  bool get correoVerificado => usuarioActual == null || (_auth.currentUser?.emailVerified ?? false);
+
+  Future<void> recargarVerificacionCorreo() async {
+    try {
+      await _auth.currentUser?.reload();
+    } catch (_) {
+      // Sin conexión u otro error transitorio: se reintenta la próxima vez.
+    }
+    notifyListeners();
+  }
+
+  Future<void> reenviarCorreoVerificacion() async {
+    try {
+      await _auth.currentUser?.sendEmailVerification();
+    } catch (_) {
+      // Silencioso — el botón de reenviar puede tocarse varias veces sin
+      // que un error transitorio rompa la pantalla.
+    }
+  }
+
   RolUsuario? rolActual;
   Usuario? usuarioActual;
   bool notificacionesActivas = true;
@@ -302,6 +327,9 @@ class AppProvider extends ChangeNotifier {
       if (doc.exists) {
         usuarioActual = Usuario.fromJson(doc.data()!);
       }
+      // Refresca el estado de verificación al abrir la app, por si se
+      // confirmó el correo desde el buzón en una sesión anterior.
+      await actual.reload();
     } catch (_) {
       // Sin conexión u otro error transitorio: se reintenta en el próximo
       // arranque de la app, no es un fallo crítico dejarlo así por ahora.
@@ -488,6 +516,7 @@ class AppProvider extends ChangeNotifier {
         password: password,
       );
       final uid = credencial.user!.uid;
+      unawaited(credencial.user!.sendEmailVerification());
       final nuevoUsuario = Usuario(
         id: uid,
         nombre: nombre,

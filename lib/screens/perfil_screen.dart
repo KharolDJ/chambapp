@@ -31,6 +31,7 @@ class PerfilScreen extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
+            if (usuario != null && !provider.correoVerificado) const _AvisoCorreoSinVerificar(),
             CircleAvatar(
               radius: 45,
               backgroundColor: const Color(0xFFE1F5EE),
@@ -154,6 +155,85 @@ class PerfilScreen extends StatelessWidget {
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _AvisoCorreoSinVerificar extends StatefulWidget {
+  const _AvisoCorreoSinVerificar();
+
+  @override
+  State<_AvisoCorreoSinVerificar> createState() => _AvisoCorreoSinVerificarState();
+}
+
+class _AvisoCorreoSinVerificarState extends State<_AvisoCorreoSinVerificar> {
+  bool _reenviando = false;
+  bool _verificando = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: const Color(0xFFFAEEDA), borderRadius: BorderRadius.circular(12)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.mark_email_unread_outlined, color: Color(0xFFAD7A16), size: 20),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Verifica tu correo para poder aplicar a publicaciones o publicar',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFFAD7A16)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              TextButton(
+                onPressed: _reenviando
+                    ? null
+                    : () async {
+                        setState(() => _reenviando = true);
+                        await context.read<AppProvider>().reenviarCorreoVerificacion();
+                        if (!context.mounted) return;
+                        setState(() => _reenviando = false);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Correo de verificación reenviado')),
+                        );
+                      },
+                child: Text(_reenviando ? 'Enviando...' : 'Reenviar correo'),
+              ),
+              const SizedBox(width: 4),
+              TextButton(
+                onPressed: _verificando
+                    ? null
+                    : () async {
+                        setState(() => _verificando = true);
+                        await context.read<AppProvider>().recargarVerificacionCorreo();
+                        if (!context.mounted) return;
+                        setState(() => _verificando = false);
+                        if (context.read<AppProvider>().correoVerificado) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('¡Correo verificado!')),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Todavía no aparece verificado — revisa tu bandeja de entrada')),
+                          );
+                        }
+                      },
+                child: Text(_verificando ? 'Revisando...' : 'Ya verifiqué mi correo'),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

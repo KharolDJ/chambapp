@@ -1,0 +1,158 @@
+ENCUESTA DE VALIDACIÓN DE MERCADO — CHAMBAPP
+Para armar en Google Forms y aplicar en salones de la UTS
+==============================================================
+
+CÓMO ARMARLA EN GOOGLE FORMS (rápido)
+- Cada "SECCIÓN" de abajo = un bloque de "Sección" nuevo en Forms (el botón de
+  las dos líneas horizontales en la barra de herramientas).
+- El tipo de pregunta entre paréntesis ya indica qué elegir en el desplegable
+  de tipo de pregunta de Forms:
+    (opción múltiple)      -> "Opción múltiple" (una sola respuesta)
+    (casillas)              -> "Casillas de verificación" (varias respuestas)
+    (escala lineal 1-5)     -> "Escala lineal"
+    (respuesta corta)       -> "Respuesta corta"
+    (párrafo)                -> "Párrafo"
+- Todo lo marcado "(opcional)" debe quedar SIN el interruptor de "Obligatoria"
+  activado. Todo lo demás, déjalo obligatorio.
+- Activa "Recopilar direcciones de correo" en Configuración SOLO si quieres
+  poder contactarlos después — si quieres que sea 100% anónima, déjalo
+  apagado (recomendado, para que la gente responda con más sinceridad).
+
+TÍTULO DEL FORMULARIO
+Chambapp — Encuesta sobre servicios técnicos y del hogar en Bucaramanga
+
+DESCRIPCIÓN DEL FORMULARIO (pégala debajo del título)
+Esta encuesta es parte de un trabajo de grado de Tecnología en Desarrollo de
+Sistemas Informáticos (UTS). Es anónima y toma unos 5 minutos. Buscamos
+entender cómo la gente encuentra y contrata servicios como plomería,
+electricidad, cocina, etc. — y si alguien cercano a ti ofrece esos servicios
+de forma independiente. ¡Gracias por tu tiempo!
+
+==============================================================
+SECCIÓN A — Datos generales
+==============================================================
+
+A1. Edad (opción múltiple)
+  - 18-24
+  - 25-34
+  - 35-44
+  - 45 o más
+
+A2. ¿En qué barrio o comuna vives actualmente? (respuesta corta)
+
+A3. ¿Con cuál de estas opciones te identificas más para responder esta
+    encuesta? (opción múltiple)
+  - Contrato o busco contratar servicios técnicos/del hogar
+  - Ofrezco o me interesaría ofrecer servicios técnicos/del hogar
+  - Ambos
+  - Ninguno de los dos, pero conozco a alguien que sí
+
+==============================================================
+SECCIÓN B — Como posible EMPLEADOR (persona que contrata el servicio)
+==============================================================
+
+B1. ¿Alguna vez has necesitado contratar un servicio técnico o del hogar
+    (plomería, electricidad, cocina, carpintería, jardinería, limpieza,
+    pintura, albañilería, cerrajería, acarreos)? (opción múltiple)
+  - Sí
+  - No
+
+B2. ¿Cómo encontraste normalmente a esa persona? (casillas — puede marcar
+    varias)
+  - Recomendación de un familiar o vecino
+  - Ya lo conocía de mi barrio
+  - Redes sociales o grupos de WhatsApp
+  - Página web o app de servicios
+  - Buscando en la calle o por letreros
+  - Otro
+
+B3. ¿Qué tan difícil ha sido encontrar a alguien confiable para estos
+    trabajos? (escala lineal 1-5, 1 = muy fácil, 5 = muy difícil)
+
+B4. Si tuvieras la misma confianza en ambos, ¿preferirías contratar a
+    alguien de tu propio barrio o comunidad en vez de una empresa externa?
+    (opción múltiple)
+  - Sí
+  - No
+  - Me da igual
+
+B5. Si existiera una app GRATUITA donde puedas ver el perfil, la
+    calificación y el oficio de trabajadores cercanos a ti, y contactarlos
+    directo por WhatsApp, ¿la usarías? (escala lineal 1-5, 1 = nunca,
+    5 = definitivamente sí)
+
+==============================================================
+SECCIÓN C — Como posible TRABAJADOR (tú, un familiar o alguien cercano)
+==============================================================
+
+C1. ¿Tú, un familiar o alguien cercano a ti ofrece servicios técnicos o del
+    hogar de manera independiente (sin estar contratado formalmente por una
+    empresa)? (opción múltiple)
+  - Sí
+  - No
+
+C2. Si respondiste sí, ¿qué oficio(s)? (casillas — puede marcar varias)
+  - Plomería
+  - Electricidad
+  - Cocina
+  - Carpintería
+  - Jardinería
+  - Limpieza del hogar
+  - Pintura
+  - Albañilería
+  - Cerrajería
+  - Acarreos
+  - Otro
+
+C3. ¿Cómo consigue esa persona la mayoría de sus clientes hoy en día?
+    (casillas — puede marcar varias)
+  - Recomendación de familiares o vecinos
+  - Ya lo conocen en el barrio
+  - Redes sociales o grupos de WhatsApp
+  - Letreros o volantes
+  - Otro
+
+C4. ¿Esa persona estaría dispuesta a registrarse GRATIS en una app para
+    conseguir más clientes cerca de su zona? (opción múltiple)
+  - Sí
+  - No
+  - No sabe
+
+C5. Si pudiera pagar $10.000 (pago único, no mensual) para aparecer
+    destacado durante 30 días en su categoría dentro de la app y así
+    conseguir más clientes, ¿lo haría? (escala lineal 1-5, 1 = nunca,
+    5 = definitivamente sí)
+
+==============================================================
+SECCIÓN D — Confianza y reputación
+==============================================================
+
+D1. ¿Qué tanto confiarías en las calificaciones de otros usuarios
+    (estrellas y comentarios) para decidir contratar a alguien que no
+    conoces? (escala lineal 1-5, 1 = nada, 5 = totalmente)
+
+D2. ¿Qué es lo que más te preocuparía de contratar o ser contratado a
+    través de una app como esta? (párrafo) (opcional)
+
+==============================================================
+SECCIÓN E — Cierre
+==============================================================
+
+E1. ¿Te gustaría que te contactáramos cuando la app esté lista para
+    probarla? Si es así, deja tu celular o correo. (respuesta corta)
+    (opcional)
+
+E2. Comentarios adicionales. (párrafo) (opcional)
+
+==============================================================
+NOTA METODOLÓGICA (para el informe, no para el formulario)
+==============================================================
+Esta encuesta se aplica a estudiantes de la UTS como muestra de
+conveniencia — no es exactamente la población objetivo del proyecto
+(trabajadores y vecinos de barrios vulnerables de Bucaramanga), pero sirve
+como primera señal de validación según la metodología Lean Startup ya
+citada en la propuesta de trabajo de grado. Si es posible, prioricen
+aplicarla también a estudiantes que vengan de esos barrios o que tengan
+familiares en oficios informales, para que la muestra se acerque más al
+segmento real. Menciónenlo como limitación en el Informe de Validación de
+Mercado.
