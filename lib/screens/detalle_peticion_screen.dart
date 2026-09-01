@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../models/peticion.dart';
 import '../providers/app_provider.dart';
 import 'login_screen.dart';
+import 'perfil_publico_screen.dart';
 import 'reportar_screen.dart';
 
 class DetallePeticionScreen extends StatelessWidget {
@@ -54,6 +55,22 @@ class DetallePeticionScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _tocarNombreAutor(BuildContext context) async {
+    if (context.read<AppProvider>().usuarioActual == null) {
+      final autenticado = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+      if (autenticado != true) return;
+      if (!context.mounted) return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => PerfilPublicoScreen(usuarioId: peticion.autorId)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
@@ -89,30 +106,46 @@ class DetallePeticionScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 22,
-                    backgroundColor: const Color(0xFFFAEEDA),
-                    child: Text(
-                      peticion.autorNombre[0],
-                      style: const TextStyle(color: Color(0xFFAD7A16), fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(peticion.autorNombre, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-                        Text(
-                          [peticion.barrio, ?distanciaTexto, _tiempoTranscurrido()].join(' · '),
-                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () => _tocarNombreAutor(context),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 22,
+                        backgroundColor: const Color(0xFFFAEEDA),
+                        child: Text(
+                          peticion.autorNombre[0],
+                          style: const TextStyle(color: Color(0xFFAD7A16), fontWeight: FontWeight.bold, fontSize: 16),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  peticion.autorNombre,
+                                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(Icons.chevron_right, size: 16, color: Colors.grey.shade500),
+                              ],
+                            ),
+                            Text(
+                              [peticion.barrio, ?distanciaTexto, _tiempoTranscurrido()].join(' · '),
+                              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
               const SizedBox(height: 16),
               Row(

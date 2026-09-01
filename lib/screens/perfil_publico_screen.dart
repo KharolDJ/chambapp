@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/usuario.dart';
 import '../providers/app_provider.dart';
+import '../widgets/peticion_card.dart';
 
 /// Perfil de solo lectura de otro usuario (empleador o trabajador),
 /// alcanzable desde la búsqueda de personas en el feed. A diferencia de
@@ -98,6 +99,10 @@ class _CuerpoPerfil extends StatelessWidget {
     final foto = _fotoSiExiste();
     final calificaciones =
         provider.calificaciones.where((c) => c.paraUsuarioId == usuario.id).toList().reversed.toList();
+    final publicaciones = provider.peticiones.where((p) => p.autorId == usuario.id).toList()
+      ..sort((a, b) => b.creadaEn.compareTo(a.creadaEn));
+    final publicacionesActivas = publicaciones.where((p) => !p.cerrada).toList();
+    final publicacionesFinalizadas = publicaciones.where((p) => p.cerrada).toList();
 
     return ListView(
       padding: const EdgeInsets.all(24),
@@ -151,6 +156,36 @@ class _CuerpoPerfil extends StatelessWidget {
               ),
           ],
         ),
+        if (publicaciones.isNotEmpty) ...[
+          const SizedBox(height: 24),
+          const Divider(),
+          const SizedBox(height: 12),
+          Text(
+            'Publicaciones',
+            style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey.shade800),
+          ),
+          const SizedBox(height: 12),
+          if (publicacionesActivas.isNotEmpty) ...[
+            Text(
+              'ACTIVAS',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5, color: Colors.grey.shade500),
+            ),
+            const SizedBox(height: 8),
+            ...publicacionesActivas.map((p) => PeticionCard(peticion: p)),
+          ],
+          if (publicacionesFinalizadas.isNotEmpty) ...[
+            Padding(
+              padding: EdgeInsets.only(top: publicacionesActivas.isNotEmpty ? 8 : 0),
+              child: Text(
+                'FINALIZADAS',
+                style:
+                    TextStyle(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5, color: Colors.grey.shade500),
+              ),
+            ),
+            const SizedBox(height: 8),
+            ...publicacionesFinalizadas.map((p) => PeticionCard(peticion: p)),
+          ],
+        ],
         const SizedBox(height: 24),
         const Divider(),
         const SizedBox(height: 12),
