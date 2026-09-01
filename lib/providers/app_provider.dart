@@ -9,6 +9,7 @@ import '../models/peticion.dart';
 import '../models/usuario.dart';
 import '../models/calificacion.dart';
 import '../models/notificacion.dart';
+import '../models/premium_trabajador.dart';
 import '../models/reporte.dart';
 
 enum RolUsuario { empleador, trabajador }
@@ -25,6 +26,7 @@ class AppProvider extends ChangeNotifier {
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _suscripcionCalificaciones;
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _suscripcionNotificaciones;
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _suscripcionUsuarios;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _suscripcionPremiumTrabajadores;
 
   static const _claveUsuarios = 'chambapp_usuarios';
   static const _claveRol = 'chambapp_rol_actual';
@@ -53,6 +55,21 @@ class AppProvider extends ChangeNotifier {
   // Firestore (a diferencia de [usuarios] abajo, que es solo la lista fija de
   // siembra/demo). Alimenta la búsqueda de personas por nombre en el feed.
   final List<Usuario> todosLosUsuarios = [];
+
+  // Solicitudes de Visibilidad Premium de trabajadores, sincronizadas en
+  // tiempo real desde Firestore. A diferencia de [todosLosUsuarios], no
+  // requiere sesión activa: no contiene datos sensibles (solo usuarioId,
+  // oficio y fechas), y el Podio de Recomendados debe verse igual que el
+  // feed, sin necesidad de cuenta.
+  final List<PremiumTrabajador> premiumTrabajadores = [];
+
+  List<PremiumTrabajador> podioPara(String oficio) {
+    final activos = premiumTrabajadores.where((p) => p.oficio == oficio && p.activo).toList()
+      ..sort((a, b) => (a.expiraEn ?? a.solicitadaEn).compareTo(b.expiraEn ?? b.solicitadaEn));
+    return activos.take(3).toList();
+  }
+
+  bool podioLleno(String oficio) => podioPara(oficio).length >= 3;
 
   List<Usuario> buscarUsuariosPorNombre(String termino) {
     final t = termino.trim().toLowerCase();
@@ -377,6 +394,14 @@ class AppProvider extends ChangeNotifier {
         ..addAll(snapshot.docs.map((doc) => Calificacion.fromJson(doc.data())));
       notifyListeners();
     });
+
+    await _suscripcionPremiumTrabajadores?.cancel();
+    _suscripcionPremiumTrabajadores = _db.collection('premiumTrabajador').snapshots().listen((snapshot) {
+      premiumTrabajadores
+        ..clear()
+        ..addAll(snapshot.docs.map((doc) => PremiumTrabajador.fromFirestore(doc.data(), doc.id)));
+      notifyListeners();
+    });
   }
 
   @override
@@ -385,6 +410,7 @@ class AppProvider extends ChangeNotifier {
     _suscripcionCalificaciones?.cancel();
     _suscripcionNotificaciones?.cancel();
     _suscripcionUsuarios?.cancel();
+    _suscripcionPremiumTrabajadores?.cancel();
     super.dispose();
   }
 
@@ -747,6 +773,67 @@ class AppProvider extends ChangeNotifier {
       peticionId: peticionId,
     ));
     unawaited(_guardarEstado());
+  }
+
+  Future<String?> solicitarPremiumTrabajador({
+    required String oficio,
+    required String comprobante,
+  }) async {
+    final actual = usuarioActual;
+    if (actual == null) return 'Debes iniciar sesión para solicitar Visibilidad Premium.';
+    if (podioLleno(oficio)) {
+      return 'Los 3 cupos de "$oficio" ya están ocupados. Vuelve a intentar cuando se libere uno.';
+    }
+    final yaTiene = premiumTrabajadores.any(
+      (p) => p.usuarioId == actual.id && p.oficio == oficio && (p.activo || (p.solicitada && !p.aprobada)),
+    );
+    if (yaTiene) return 'Ya tienes una solicitud activa o en revisión para "$oficio".';
+
+    final doc = PremiumTrabajador(
+      id: _db.collection('premiumTrabajador').doc().id,
+      usuarioId: actual.id,
+      oficio: oficio,
+      solicitada: true,
+      comprobantePago: comprobante,
+      solicitadaEn: DateTime.now(),
+      usuarioNombre: actual.nombre,
+      usuarioFotoPath: actual.fotoPath,
+      calificacionPromedio: actual.calificacionPromedio,
+      numeroCalificaciones: actual.numeroCalificaciones,
+    );
+    try {
+      await _db.collection('premiumTrabajador').doc(doc.id).set(doc.toFirestore());
+    } catch (_) {
+      return 'No se pudo enviar la solicitud. Intenta de nuevo.';
+    }
+    return null;
+  }
+
+  Future<void> aprobarPremiumTrabajadorDemo(String id) async {
+    PremiumTrabajador? solicitud;
+    try {
+      solicitud = premiumTrabajadores.firstWhere((p) => p.id == id);
+    } catch (_) {
+      return;
+    }
+    // Chequeo de cupo repetido al momento de aprobar, no solo al solicitar
+    // — evita que un 4to cupo del mismo oficio quede activo si se aprueban
+    // solicitudes fuera de orden.
+    if (podioLleno(solicitud.oficio)) return;
+
+    final expiraEn = DateTime.now().add(const Duration(days: 30));
+    try {
+      await _db.collection('premiumTrabajador').doc(id).update({
+        'aprobada': true,
+        'expiraEn': expiraEn.toIso8601String(),
+      });
+    } catch (_) {
+      return;
+    }
+    unawaited(_crearNotificacion(
+      paraUsuarioId: solicitud.usuarioId,
+      mensaje: 'Tu Visibilidad Premium fue aprobada para "${solicitud.oficio}"',
+    ));
   }
 
   bool yaCalifique({required String deUsuarioId, required String peticionId}) =>

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import '../models/peticion.dart';
+import '../models/premium_trabajador.dart';
 import '../models/usuario.dart';
 import '../providers/app_provider.dart';
 import '../widgets/peticion_card.dart';
@@ -254,6 +255,7 @@ class _FeedScreenState extends State<FeedScreen> {
     });
 
     final personasEncontradas = provider.buscarUsuariosPorNombre(_busqueda);
+    final podioCategoria = _categoriaFiltro == null ? const <PremiumTrabajador>[] : provider.podioPara(_categoriaFiltro!);
 
     final cargandoUbicacion = _posicionActual == null && _avisoUbicacion == null;
 
@@ -358,6 +360,7 @@ class _FeedScreenState extends State<FeedScreen> {
             ),
           ),
           if (personasEncontradas.isNotEmpty) _FranjaPersonas(personas: personasEncontradas),
+          if (podioCategoria.isNotEmpty) _FranjaPodio(categoria: _categoriaFiltro!, podio: podioCategoria),
           Expanded(
             child: lista.isEmpty
                 ? Center(
@@ -464,6 +467,93 @@ class _FranjaPersonas extends StatelessWidget {
                           const SizedBox(height: 4),
                           Text(
                             u.nombre,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF26312D)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Franja horizontal con los trabajadores destacados en el oficio filtrado
+/// actualmente. Las 3 tarjetas se ven exactamente iguales entre sí — el
+/// orden es solo quién se aprobó primero, no un ranking por calidad; darle
+/// un tratamiento visual de 1°/2°/3° insinuaría una recomendación que no
+/// corresponde a lo que se está vendiendo.
+class _FranjaPodio extends StatelessWidget {
+  final String categoria;
+  final List<PremiumTrabajador> podio;
+  const _FranjaPodio({required this.categoria, required this.podio});
+
+  ImageProvider? _fotoSiExiste(String? ruta) {
+    if (ruta == null) return null;
+    final archivo = File(ruta);
+    if (!archivo.existsSync()) return null;
+    return FileImage(archivo);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: const Color(0xFFFAF7F0),
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 16, bottom: 6),
+            child: Row(
+              children: [
+                const Icon(Icons.star, size: 13, color: Color(0xFFAD7A16)),
+                const SizedBox(width: 4),
+                Text(
+                  'PODIO DE RECOMENDADOS · ${categoria.toUpperCase()}',
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5, color: Color(0xFFAD7A16)),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(
+            height: 88,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: podio.length,
+              itemBuilder: (context, i) {
+                final p = podio[i];
+                final foto = _fotoSiExiste(p.usuarioFotoPath);
+                return Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => PerfilPublicoScreen(usuarioId: p.usuarioId)),
+                    ),
+                    child: SizedBox(
+                      width: 72,
+                      child: Column(
+                        children: [
+                          CircleAvatar(
+                            radius: 26,
+                            backgroundColor: const Color(0xFFFAEEDA),
+                            backgroundImage: foto,
+                            child: foto == null ? const Icon(Icons.person, color: Color(0xFFAD7A16)) : null,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            p.usuarioNombre,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             textAlign: TextAlign.center,

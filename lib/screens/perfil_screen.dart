@@ -8,6 +8,7 @@ import 'configuracion_screen.dart';
 import 'editar_perfil_screen.dart';
 import 'login_screen.dart';
 import 'mis_calificaciones_screen.dart';
+import 'premium_trabajador_screen.dart';
 import 'role_selector_screen.dart';
 
 class PerfilScreen extends StatelessWidget {
@@ -129,6 +130,12 @@ class PerfilScreen extends StatelessWidget {
                   ? null
                   : () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EditarPerfilScreen())),
             ),
+            if (provider.rolActual == RolUsuario.trabajador && usuario != null && usuario.oficios.isNotEmpty)
+              ListTile(
+                leading: const Icon(Icons.star_outline),
+                title: const Text('Visibilidad Premium'),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PremiumTrabajadorScreen())),
+              ),
             ListTile(
               leading: const Icon(Icons.swap_horiz),
               title: const Text('Cambiar de modo (Empleador/Trabajador)'),
