@@ -24,6 +24,7 @@ class AppProvider extends ChangeNotifier {
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _suscripcionPeticiones;
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _suscripcionCalificaciones;
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _suscripcionNotificaciones;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _suscripcionUsuarios;
 
   static const _claveUsuarios = 'chambapp_usuarios';
   static const _claveRol = 'chambapp_rol_actual';
@@ -47,6 +48,19 @@ class AppProvider extends ChangeNotifier {
   Usuario? usuarioActual;
   bool notificacionesActivas = true;
   double radioBusquedaKm = 50;
+
+  // Todos los usuarios reales registrados, sincronizados en tiempo real desde
+  // Firestore (a diferencia de [usuarios] abajo, que es solo la lista fija de
+  // siembra/demo). Alimenta la búsqueda de personas por nombre en el feed.
+  final List<Usuario> todosLosUsuarios = [];
+
+  List<Usuario> buscarUsuariosPorNombre(String termino) {
+    final t = termino.trim().toLowerCase();
+    if (t.isEmpty) return const [];
+    return todosLosUsuarios
+        .where((u) => u.id != usuarioActual?.id && u.nombre.toLowerCase().contains(t))
+        .toList();
+  }
 
   // Usuarios de referencia (Carlos, Rosa, etc.) — no son cuentas reales de
   // Firebase Auth, solo se usan para sembrar Firestore la primera vez y
@@ -263,6 +277,7 @@ class AppProvider extends ChangeNotifier {
     final actual = _auth.currentUser;
     if (actual == null) {
       unawaited(_escucharNotificaciones(null));
+      unawaited(_escucharUsuarios(null));
       return;
     }
     try {
@@ -275,6 +290,7 @@ class AppProvider extends ChangeNotifier {
       // arranque de la app, no es un fallo crítico dejarlo así por ahora.
     }
     unawaited(_escucharNotificaciones(usuarioActual?.id));
+    unawaited(_escucharUsuarios(usuarioActual?.id));
   }
 
   /// Escucha en tiempo real las notificaciones del usuario [uid]. Se
@@ -293,6 +309,27 @@ class AppProvider extends ChangeNotifier {
       notificaciones
         ..clear()
         ..addAll(snapshot.docs.map((doc) => Notificacion.fromFirestore(doc.data(), doc.id)));
+      notifyListeners();
+    });
+  }
+
+  /// Escucha en tiempo real el directorio completo de usuarios (para la
+  /// búsqueda de personas por nombre en el feed). Se arma/rearma junto con
+  /// [_escucharNotificaciones] en cada cambio de sesión, y **solo cuando hay
+  /// sesión activa** — a diferencia de peticiones/calificaciones, este es un
+  /// listado con datos sensibles por usuario (celular, cédula), así que no
+  /// se sincroniza para quien navega sin haber iniciado sesión.
+  Future<void> _escucharUsuarios(String? uid) async {
+    await _suscripcionUsuarios?.cancel();
+    if (uid == null) {
+      todosLosUsuarios.clear();
+      notifyListeners();
+      return;
+    }
+    _suscripcionUsuarios = _db.collection('usuarios').snapshots().listen((snapshot) {
+      todosLosUsuarios
+        ..clear()
+        ..addAll(snapshot.docs.map((doc) => Usuario.fromJson(doc.data())));
       notifyListeners();
     });
   }
@@ -347,6 +384,7 @@ class AppProvider extends ChangeNotifier {
     _suscripcionPeticiones?.cancel();
     _suscripcionCalificaciones?.cancel();
     _suscripcionNotificaciones?.cancel();
+    _suscripcionUsuarios?.cancel();
     super.dispose();
   }
 
@@ -436,6 +474,7 @@ class AppProvider extends ChangeNotifier {
       await _db.collection('usuarios').doc(uid).set(nuevoUsuario.toJson());
       usuarioActual = nuevoUsuario;
       unawaited(_escucharNotificaciones(uid));
+      unawaited(_escucharUsuarios(uid));
       notifyListeners();
       unawaited(_guardarEstado());
       return null;
@@ -455,6 +494,7 @@ class AppProvider extends ChangeNotifier {
       }
       usuarioActual = Usuario.fromJson(doc.data()!);
       unawaited(_escucharNotificaciones(credencial.user!.uid));
+      unawaited(_escucharUsuarios(credencial.user!.uid));
       notifyListeners();
       unawaited(_guardarEstado());
       return null;
@@ -494,6 +534,7 @@ class AppProvider extends ChangeNotifier {
     rolActual = null;
     usuarioActual = null;
     unawaited(_escucharNotificaciones(null));
+    unawaited(_escucharUsuarios(null));
     notifyListeners();
     unawaited(_guardarEstado());
   }
@@ -517,6 +558,7 @@ class AppProvider extends ChangeNotifier {
     usuarioActual = null;
     rolActual = null;
     unawaited(_escucharNotificaciones(null));
+    unawaited(_escucharUsuarios(null));
     notifyListeners();
     unawaited(_guardarEstado());
   }

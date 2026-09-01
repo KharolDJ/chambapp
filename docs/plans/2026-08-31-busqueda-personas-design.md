@@ -1,8 +1,9 @@
 # Diseño: Búsqueda de personas por nombre + perfil público
 
-_Fecha: 2026-08-31._ Diseño validado en conversación antes de implementar. Objetivo:
-que la barra de búsqueda del feed también encuentre trabajadores/empleadores por
-nombre, y que al tocar un resultado se abra su perfil público de solo lectura.
+_Fecha: 2026-08-31. Implementado el mismo día — ver "Nota de implementación" al final._
+Diseño validado en conversación antes de implementar. Objetivo: que la barra de
+búsqueda del feed también encuentre trabajadores/empleadores por nombre, y que al
+tocar un resultado se abra su perfil público de solo lectura.
 
 ## Contexto
 
@@ -166,6 +167,26 @@ real antes de dar por cerrada la funcionalidad.
 
 Mejora contenida: tres piezas aditivas, cero cambios a lógica existente. El mayor
 riesgo es de configuración de Firestore, no de código.
+
+## Nota de implementación (cambio respecto al plan original)
+
+El plan original sincronizaba `usuarios.snapshots()` sin condición, dentro de
+`iniciarEscuchaFirestore()` (que corre en cada apertura de la app, con o sin sesión).
+Al implementar se detectó que eso exponía el directorio completo (celular, cédula
+incluidos) también a quien navega sin cuenta — el muro de sesión a nivel de UI no
+alcanzaba a evitarlo, porque los datos ya estarían en memoria desde el arranque.
+
+Se cambió a un método `_escucharUsuarios(String? uid)`, que se arma y rearma en los
+mismos puntos donde ya se arma `_escucharNotificaciones` (login, registro, logout,
+borrado de cuenta, restauración de sesión al abrir la app) — si `uid` es `null`
+(sin sesión), `todosLosUsuarios` se mantiene vacío y la suscripción se cancela. Esto
+resuelve el riesgo de privacidad en el origen: la colección completa de usuarios
+nunca llega a la memoria de quien no ha iniciado sesión, en vez de solo ocultarse en
+la interfaz.
+
+**Pendiente de validar contra el proyecto real (no verificable desde el código):**
+que las reglas de Firestore permitan `usuarios.snapshots()` para un usuario
+autenticado — confirmar en la consola de Firebase.
 
 ## Pendiente relacionado (fuera de alcance, no resuelto aquí)
 

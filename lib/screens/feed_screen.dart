@@ -1,10 +1,14 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import '../models/peticion.dart';
+import '../models/usuario.dart';
 import '../providers/app_provider.dart';
 import '../widgets/peticion_card.dart';
 import 'login_screen.dart';
+import 'perfil_publico_screen.dart';
 
 enum OrdenFeed { cercania, recientes }
 
@@ -249,6 +253,8 @@ class _FeedScreenState extends State<FeedScreen> {
       return b.creadaEn.compareTo(a.creadaEn);
     });
 
+    final personasEncontradas = provider.buscarUsuariosPorNombre(_busqueda);
+
     final cargandoUbicacion = _posicionActual == null && _avisoUbicacion == null;
 
     return Scaffold(
@@ -351,6 +357,7 @@ class _FeedScreenState extends State<FeedScreen> {
               ],
             ),
           ),
+          if (personasEncontradas.isNotEmpty) _FranjaPersonas(personas: personasEncontradas),
           Expanded(
             child: lista.isEmpty
                 ? Center(
@@ -390,6 +397,85 @@ class _FeedScreenState extends State<FeedScreen> {
                       distanciaKm: _distanciaKm(lista[i]),
                     ),
                   ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Franja horizontal deslizable con los usuarios cuyo nombre coincide con la
+/// búsqueda actual del feed. Aparte de la lista de publicaciones para no
+/// alterar su lógica de orden (premium/urgente/cercanía).
+class _FranjaPersonas extends StatelessWidget {
+  final List<Usuario> personas;
+  const _FranjaPersonas({required this.personas});
+
+  ImageProvider? _fotoSiExiste(Usuario u) {
+    final ruta = u.fotoPath;
+    if (ruta == null) return null;
+    final archivo = File(ruta);
+    if (!archivo.existsSync()) return null;
+    return FileImage(archivo);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: const Color(0xFFFAF7F0),
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(left: 16, bottom: 6),
+            child: Text(
+              'PERSONAS',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5, color: Colors.grey),
+            ),
+          ),
+          SizedBox(
+            height: 88,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: personas.length,
+              itemBuilder: (context, i) {
+                final u = personas[i];
+                final foto = _fotoSiExiste(u);
+                return Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => PerfilPublicoScreen(usuarioId: u.id)),
+                    ),
+                    child: SizedBox(
+                      width: 72,
+                      child: Column(
+                        children: [
+                          CircleAvatar(
+                            radius: 26,
+                            backgroundColor: const Color(0xFFE1F5EE),
+                            backgroundImage: foto,
+                            child: foto == null ? const Icon(Icons.person, color: Color(0xFF0F6E56)) : null,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            u.nombre,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF26312D)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),
