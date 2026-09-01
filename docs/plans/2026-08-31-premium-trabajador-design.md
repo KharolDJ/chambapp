@@ -149,9 +149,21 @@ estado vacío ni espacio en blanco, igual que la franja de "Personas" sin coinci
   trade-off que el snapshot desactualizado de interesados en una petición
   (`peticion.dart:45-51`).
 
-## Pendiente de validar al implementar
+## Validado en dispositivo real (2026-09-01)
 
-- Reglas de Firestore para la nueva colección `premiumTrabajador` — probablemente
-  `allow read: if true` (no es sensible, debe verse sin cuenta) y `allow create/update`
-  solo para el dueño del `usuarioId` — confirmar en la consola de Firebase, mismo tipo de
-  verificación que ya hicimos para `usuarios`.
+Probado en un Moto G72 (Android 13) con `flutter run`. Al principio las escrituras a
+`premiumTrabajador` fallaban con `PERMISSION_DENIED` porque la colección no tenía reglas
+en la consola de Firebase. Se agregó:
+
+```
+match /premiumTrabajador/{id} {
+  allow read: if true;
+  allow create, update: if request.auth != null;
+  allow delete: if false;
+}
+```
+
+Mismo patrón que ya usan `peticiones` y `calificaciones` (lectura pública, escritura solo
+autenticada, sin borrado). Tras publicar la regla, el flujo completo (solicitar → "Simular
+aprobación (demo)" → aparecer en el Podio al filtrar por categoría) funcionó de punta a
+punta en el dispositivo.
