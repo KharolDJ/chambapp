@@ -45,8 +45,10 @@ class PrivacidadScreen extends StatelessWidget {
               ),
               _seccion(
                 'Sobre esta versión (prototipo)',
-                'Por ahora tus datos se guardan localmente en tu dispositivo, sin sincronizar con un '
-                    'servidor. Esto cambiará cuando se conecte la base de datos en línea de la aplicación.',
+                'Tus datos (perfil, publicaciones, calificaciones y notificaciones) se guardan en '
+                    'Firebase, la plataforma en la nube de Google, y se sincronizan entre tus '
+                    'dispositivos. Tu celular y tu cédula solo son visibles para ti y no se muestran '
+                    'públicamente a otros usuarios.',
               ),
             ],
           ),

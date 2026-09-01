@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/calificacion.dart';
@@ -35,7 +36,7 @@ class _CalificarScreenState extends State<CalificarScreen> {
 
     context.read<AppProvider>().calificarUsuario(
           Calificacion(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            id: FirebaseFirestore.instance.collection('calificaciones').doc().id,
             deUsuarioId: usuarioActual.id,
             paraUsuarioId: widget.paraUsuarioId,
             estrellas: _estrellas,

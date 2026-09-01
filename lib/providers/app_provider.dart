@@ -406,7 +406,7 @@ class AppProvider extends ChangeNotifier {
 
   Future<void> _crearNotificacion({required String paraUsuarioId, required String mensaje, String? peticionId}) async {
     final notif = Notificacion(
-      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      id: _db.collection('notificaciones').doc().id,
       paraUsuarioId: paraUsuarioId,
       mensaje: mensaje,
       fecha: DateTime.now(),
@@ -701,6 +701,12 @@ class AppProvider extends ChangeNotifier {
         u.numeroCalificaciones = calificacionesDelUsuario.length;
       }
     }
+    for (final u in todosLosUsuarios) {
+      if (u.id == calificacion.paraUsuarioId) {
+        u.calificacionPromedio = promedio;
+        u.numeroCalificaciones = calificacionesDelUsuario.length;
+      }
+    }
     if (usuarioActual?.id == calificacion.paraUsuarioId) {
       usuarioActual!.calificacionPromedio = promedio;
       usuarioActual!.numeroCalificaciones = calificacionesDelUsuario.length;
@@ -786,7 +792,7 @@ class AppProvider extends ChangeNotifier {
     final usuario = usuarioActual;
     if (usuario == null) return;
     final reporte = Reporte(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: _db.collection('reportes').doc().id,
       deUsuarioId: usuario.id,
       tipo: tipo,
       contraId: contraId,

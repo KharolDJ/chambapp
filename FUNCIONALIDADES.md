@@ -92,7 +92,8 @@ del trabajo de grado.
 
 - Foto, nombre, rol, calificación promedio, oficios (si aplica).
 - Acceso a "Mis calificaciones", "Editar perfil" (incluye cambiar foto y oficios),
-  "Cambiar de rol" (cierra sesión y vuelve al selector de rol), y "Configuración".
+  "Cambiar de rol" (vuelve al selector de rol sin cerrar sesión — la misma cuenta
+  puede usarse como empleador o trabajador según convenga), y "Configuración".
 
 ## 10. Configuración
 

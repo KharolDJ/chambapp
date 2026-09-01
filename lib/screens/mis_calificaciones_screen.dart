@@ -69,7 +69,7 @@ class MisCalificacionesScreen extends StatelessWidget {
                       final c = calificaciones[i];
                       String nombreAutor;
                       try {
-                        nombreAutor = provider.usuarios.firstWhere((u) => u.id == c.deUsuarioId).nombre;
+                        nombreAutor = provider.todosLosUsuarios.firstWhere((u) => u.id == c.deUsuarioId).nombre;
                       } catch (_) {
                         nombreAutor = 'Usuario eliminado';
                       }

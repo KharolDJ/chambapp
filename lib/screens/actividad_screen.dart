@@ -54,7 +54,7 @@ class _ItemEmpleador extends StatelessWidget {
       trabajador = peticion.interesados.firstWhere((u) => u.id == peticion.trabajadorSeleccionadoId);
     } catch (_) {
       try {
-        trabajador = provider.usuarios.firstWhere((u) => u.id == peticion.trabajadorSeleccionadoId);
+        trabajador = provider.todosLosUsuarios.firstWhere((u) => u.id == peticion.trabajadorSeleccionadoId);
       } catch (_) {
         trabajador = null;
       }

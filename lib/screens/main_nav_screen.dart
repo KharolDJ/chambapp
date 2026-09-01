@@ -43,7 +43,7 @@ class _MainNavScreenState extends State<MainNavScreen> {
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      body: _pantallas[_indice],
+      body: IndexedStack(index: _indice, children: _pantallas),
       floatingActionButton: esEmpleador
           ? FloatingActionButton(
               backgroundColor: const Color(0xFF0F6E56),

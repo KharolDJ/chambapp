@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -69,7 +70,7 @@ class _PublicarScreenState extends State<PublicarScreen> {
     setState(() => _publicando = true);
     await context.read<AppProvider>().publicarPeticion(
           Peticion(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            id: FirebaseFirestore.instance.collection('peticiones').doc().id,
             autorId: usuarioActual.id,
             autorNombre: usuarioActual.nombre,
             barrio: _barrioController.text.trim(),
