@@ -147,12 +147,30 @@ class PerfilScreen extends StatelessWidget {
               title: const Text('Configuración'),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ConfiguracionScreen())),
             ),
-            if (provider.esAdmin)
+            if (provider.esAdmin) ...[
+              const SizedBox(height: 8),
+              const Divider(),
+              Padding(
+                padding: const EdgeInsets.only(top: 8, bottom: 4),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'HERRAMIENTAS DEL EQUIPO',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                      color: Colors.grey.shade500,
+                    ),
+                  ),
+                ),
+              ),
               ListTile(
                 leading: const Icon(Icons.shield_outlined),
                 title: const Text('Administración (reportes)'),
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdministracionScreen())),
               ),
+            ],
           ],
         ),
       ),
