@@ -96,6 +96,21 @@ class AppProvider extends ChangeNotifier {
 
   bool podioLleno(String oficio) => podioPara(oficio).length >= 3;
 
+  // Señal de navegación efímera: "ve al feed y filtra por esta categoría".
+  // No es un dato de negocio, solo un puente entre PremiumTrabajadorScreen
+  // (que vive en otra rama de navegación) y FeedScreen, que persiste su
+  // estado dentro del IndexedStack de MainNavScreen.
+  String? categoriaParaVerEnFeed;
+
+  void irAlPodioDe(String categoria) {
+    categoriaParaVerEnFeed = categoria;
+    notifyListeners();
+  }
+
+  void categoriaParaVerEnFeedConsumida() {
+    categoriaParaVerEnFeed = null;
+  }
+
   List<Usuario> buscarUsuariosPorNombre(String termino) {
     final t = termino.trim().toLowerCase();
     if (t.isEmpty) return const [];

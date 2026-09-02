@@ -47,6 +47,13 @@ class _MainNavScreenState extends State<MainNavScreen> {
     final esEmpleador = provider.rolActual == RolUsuario.empleador;
     final hayNotificacionesSinLeer = provider.notificacionesSinLeerCount > 0;
 
+    if (provider.categoriaParaVerEnFeed != null && _indice != 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() => _indice = 0);
+      });
+    }
+
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: IndexedStack(index: _indice, children: _pantallas),

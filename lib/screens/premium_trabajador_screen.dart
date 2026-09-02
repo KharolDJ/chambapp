@@ -133,6 +133,18 @@ class PremiumTrabajadorScreen extends StatelessWidget {
                             ),
                           ],
                         ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              context.read<AppProvider>().irAlPodioDe(oficio);
+                              Navigator.of(context).popUntil((route) => route.isFirst);
+                            },
+                            icon: const Icon(Icons.visibility_outlined, size: 16),
+                            label: const Text('Ver mi podio'),
+                          ),
+                        ),
                       ] else if (vigente != null && vigente.solicitada && !vigente.aprobada) ...[
                         Row(
                           children: [

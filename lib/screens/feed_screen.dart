@@ -207,6 +207,15 @@ class _FeedScreenState extends State<FeedScreen> {
     final provider = context.watch<AppProvider>();
     final categorias = provider.peticiones.map((p) => p.categoria).toSet().toList();
 
+    if (provider.categoriaParaVerEnFeed != null) {
+      final categoriaPendiente = provider.categoriaParaVerEnFeed!;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() => _categoriaFiltro = categoriaPendiente);
+        provider.categoriaParaVerEnFeedConsumida();
+      });
+    }
+
     var lista = _categoriaFiltro == null
         ? [...provider.peticiones]
         : provider.peticiones.where((p) => p.categoria == _categoriaFiltro).toList();
