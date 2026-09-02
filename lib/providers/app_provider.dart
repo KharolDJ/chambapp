@@ -613,6 +613,35 @@ class AppProvider extends ChangeNotifier {
     final actual = usuarioActual;
     if (actual == null) return;
     try {
+      // Archiva sus peticiones y libera cualquier cupo del Podio antes de
+      // borrar la cuenta — de lo contrario quedan "vivas" indefinidamente:
+      // publicaciones sin dueño real aceptando "Aplicar", y un cupo de
+      // Visibilidad Premium ocupado hasta por 30 días aunque la cuenta ya
+      // no exista.
+      final batch = _db.batch();
+      final peticionesActivas = await _db
+          .collection('peticiones')
+          .where('autorId', isEqualTo: actual.id)
+          .where('archivada', isEqualTo: false)
+          .get();
+      for (final doc in peticionesActivas.docs) {
+        batch.update(doc.reference, {'archivada': true});
+      }
+      final premiumActivo = await _db
+          .collection('premiumTrabajador')
+          .where('usuarioId', isEqualTo: actual.id)
+          .where('aprobada', isEqualTo: true)
+          .get();
+      for (final doc in premiumActivo.docs) {
+        batch.update(doc.reference, {'expiraEn': DateTime.now().subtract(const Duration(seconds: 1)).toIso8601String()});
+      }
+      await batch.commit();
+    } catch (_) {
+      // Sin conexión u otro error transitorio: la cuenta igual se borra;
+      // sus peticiones/cupos quedan pendientes de limpiar en un futuro
+      // intento, no es un fallo crítico para el borrado en sí.
+    }
+    try {
       await _db.collection('usuarios').doc(actual.id).delete();
     } catch (_) {
       // Continúa con la limpieza local aunque Firestore falle.

@@ -82,8 +82,10 @@ class _ItemEmpleador extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('¿Archivar esta publicación?'),
-        content: const Text(
-          'Ya no aparecerá en el feed ni en tus publicaciones. Los interesados y calificaciones asociados se conservan.',
+        content: Text(
+          peticion.premiumAprobada
+              ? 'Ya no aparecerá en el feed ni en tus publicaciones. Los interesados y calificaciones asociados se conservan, pero perderás la Visibilidad Premium activa — no se reembolsa.'
+              : 'Ya no aparecerá en el feed ni en tus publicaciones. Los interesados y calificaciones asociados se conservan.',
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
