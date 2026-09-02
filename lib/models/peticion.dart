@@ -19,6 +19,7 @@ class Peticion {
   bool premiumSolicitada;
   bool premiumAprobada;
   String? comprobantePago;
+  bool archivada;
 
   Peticion({
     required this.id,
@@ -39,6 +40,7 @@ class Peticion {
     this.premiumSolicitada = false,
     this.premiumAprobada = false,
     this.comprobantePago,
+    this.archivada = false,
   }) : interesados = interesados ?? [],
        vistosPorEmpleador = vistosPorEmpleador ?? {};
 
@@ -91,6 +93,7 @@ class Peticion {
         'premiumSolicitada': premiumSolicitada,
         'premiumAprobada': premiumAprobada,
         'comprobantePago': comprobantePago,
+        'archivada': archivada,
       };
 
   factory Peticion.fromFirestore(Map<String, dynamic> data, String id) {
@@ -116,6 +119,7 @@ class Peticion {
       premiumSolicitada: data['premiumSolicitada'] as bool? ?? false,
       premiumAprobada: data['premiumAprobada'] as bool? ?? false,
       comprobantePago: data['comprobantePago'] as String?,
+      archivada: data['archivada'] as bool? ?? false,
     );
   }
 }

@@ -77,6 +77,25 @@ class _ItemEmpleador extends StatelessWidget {
     );
   }
 
+  Future<void> _confirmarArchivar(BuildContext context) async {
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('¿Archivar esta publicación?'),
+        content: const Text(
+          'Ya no aparecerá en el feed ni en tus publicaciones. Los interesados y calificaciones asociados se conservan.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Archivar')),
+        ],
+      ),
+    );
+    if (confirmado != true) return;
+    if (!context.mounted) return;
+    context.read<AppProvider>().archivarPeticion(peticion.id);
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
@@ -127,6 +146,11 @@ class _ItemEmpleador extends StatelessWidget {
                     icon: const Icon(Icons.star_outline, size: 16),
                     label: const Text('Calificar al trabajador'),
                   ),
+              OutlinedButton.icon(
+                onPressed: () => _confirmarArchivar(context),
+                icon: Icon(Icons.archive_outlined, size: 16, color: Colors.grey.shade700),
+                label: Text('Archivar', style: TextStyle(color: Colors.grey.shade700)),
+              ),
             ],
           ),
         ),

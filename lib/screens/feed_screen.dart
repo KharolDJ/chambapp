@@ -205,7 +205,7 @@ class _FeedScreenState extends State<FeedScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
-    final categorias = provider.peticiones.map((p) => p.categoria).toSet().toList();
+    final categorias = provider.peticiones.where((p) => !p.archivada).map((p) => p.categoria).toSet().toList();
 
     if (provider.categoriaParaVerEnFeed != null) {
       final categoriaPendiente = provider.categoriaParaVerEnFeed!;
@@ -216,9 +216,10 @@ class _FeedScreenState extends State<FeedScreen> {
       });
     }
 
+    final peticionesVisibles = provider.peticiones.where((p) => !p.archivada);
     var lista = _categoriaFiltro == null
-        ? [...provider.peticiones]
-        : provider.peticiones.where((p) => p.categoria == _categoriaFiltro).toList();
+        ? [...peticionesVisibles]
+        : peticionesVisibles.where((p) => p.categoria == _categoriaFiltro).toList();
 
     if (_soloUrgentes) {
       lista = lista.where((p) => p.urgente).toList();

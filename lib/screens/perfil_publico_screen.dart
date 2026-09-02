@@ -99,7 +99,7 @@ class _CuerpoPerfil extends StatelessWidget {
     final foto = _fotoSiExiste();
     final calificaciones =
         provider.calificaciones.where((c) => c.paraUsuarioId == usuario.id).toList().reversed.toList();
-    final publicaciones = provider.peticiones.where((p) => p.autorId == usuario.id).toList()
+    final publicaciones = provider.peticiones.where((p) => p.autorId == usuario.id && !p.archivada).toList()
       ..sort((a, b) => b.creadaEn.compareTo(a.creadaEn));
     final publicacionesActivas = publicaciones.where((p) => !p.cerrada).toList();
     final publicacionesFinalizadas = publicaciones.where((p) => p.cerrada).toList();

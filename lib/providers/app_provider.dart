@@ -742,6 +742,18 @@ class AppProvider extends ChangeNotifier {
     }
   }
 
+  // Las reglas de Firestore no permiten borrar peticiones (para no dejar
+  // huérfanas las calificaciones/interesados que las referencian) — en vez
+  // de eso se archivan: dejan de verse en el feed y en "Mis publicaciones",
+  // pero el documento sigue existiendo.
+  Future<void> archivarPeticion(String peticionId) async {
+    try {
+      await _db.collection('peticiones').doc(peticionId).update({'archivada': true});
+    } catch (_) {
+      // Silencioso, igual que el resto de escrituras de estado de petición.
+    }
+  }
+
   Future<void> calificarUsuario(Calificacion calificacion) async {
     try {
       await _db.collection('calificaciones').doc(calificacion.id).set(calificacion.toJson());
@@ -884,7 +896,7 @@ class AppProvider extends ChangeNotifier {
       calificaciones.any((c) => c.deUsuarioId == deUsuarioId && c.peticionId == peticionId);
 
   List<Peticion> get misPublicaciones =>
-      peticiones.where((p) => p.autorId == usuarioActual?.id).toList();
+      peticiones.where((p) => p.autorId == usuarioActual?.id && !p.archivada).toList();
 
   List<Peticion> get misIntereses =>
       peticiones.where((p) => p.interesados.any((u) => u.id == usuarioActual?.id)).toList();
