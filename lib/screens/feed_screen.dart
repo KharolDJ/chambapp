@@ -516,35 +516,43 @@ class _FranjaPodio extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFFAF7F0),
-      padding: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [const Color(0xFFFAEEDA), const Color(0xFFD9A441).withValues(alpha: 0.18)],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFD9A441), width: 1.2),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 16, bottom: 6),
-            child: Row(
-              children: [
-                const Icon(Icons.star, size: 13, color: Color(0xFFAD7A16)),
-                const SizedBox(width: 4),
-                Text(
+          Row(
+            children: [
+              const Icon(Icons.emoji_events, size: 15, color: Color(0xFFAD7A16)),
+              const SizedBox(width: 5),
+              Expanded(
+                child: Text(
                   'PODIO DE RECOMENDADOS · ${categoria.toUpperCase()}',
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5, color: Color(0xFFAD7A16)),
+                  style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, letterSpacing: 0.4, color: Color(0xFFAD7A16)),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
+          const SizedBox(height: 8),
           SizedBox(
-            height: 88,
+            height: 90,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: podio.length,
               itemBuilder: (context, i) {
                 final p = podio[i];
                 final foto = _fotoSiExiste(p.usuarioFotoPath);
                 return Padding(
-                  padding: const EdgeInsets.only(right: 12),
+                  padding: const EdgeInsets.only(right: 14),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(12),
                     onTap: () => Navigator.push(
@@ -555,13 +563,34 @@ class _FranjaPodio extends StatelessWidget {
                       width: 72,
                       child: Column(
                         children: [
-                          CircleAvatar(
-                            radius: 26,
-                            backgroundColor: const Color(0xFFFAEEDA),
-                            backgroundImage: foto,
-                            child: foto == null ? const Icon(Icons.person, color: Color(0xFFAD7A16)) : null,
+                          Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: LinearGradient(colors: [Color(0xFFD9A441), Color(0xFFAD7A16)]),
+                                ),
+                                child: CircleAvatar(
+                                  radius: 24,
+                                  backgroundColor: const Color(0xFFFAEEDA),
+                                  backgroundImage: foto,
+                                  child: foto == null ? const Icon(Icons.person, color: Color(0xFFAD7A16)) : null,
+                                ),
+                              ),
+                              Positioned(
+                                bottom: -2,
+                                right: -2,
+                                child: Container(
+                                  padding: const EdgeInsets.all(3),
+                                  decoration: const BoxDecoration(color: Color(0xFFAD7A16), shape: BoxShape.circle),
+                                  child: const Icon(Icons.star, size: 9, color: Colors.white),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 5),
                           Text(
                             p.usuarioNombre,
                             maxLines: 1,

@@ -49,12 +49,43 @@ class PeticionCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: peticion.premiumAprobada ? const Color(0xFFD9A441) : Colors.grey.shade200,
-            width: peticion.premiumAprobada ? 1.5 : 1,
+            width: peticion.premiumAprobada ? 1.8 : 1,
           ),
+          boxShadow: peticion.premiumAprobada
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFFD9A441).withValues(alpha: 0.32),
+                    blurRadius: 16,
+                    offset: const Offset(0, 5),
+                  ),
+                ]
+              : null,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (peticion.premiumAprobada)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: [Color(0xFFD9A441), Color(0xFFAD7A16)]),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.star, size: 12, color: Colors.white),
+                      SizedBox(width: 4),
+                      Text(
+                        'DESTACADO',
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.4),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             Row(
               children: [
                 CircleAvatar(
@@ -82,8 +113,6 @@ class PeticionCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (peticion.premiumAprobada)
-                  const Icon(Icons.star, size: 18, color: Color(0xFFAD7A16)),
               ],
             ),
             const SizedBox(height: 10),
