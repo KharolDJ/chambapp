@@ -108,33 +108,10 @@ class _FeedScreenState extends State<FeedScreen> {
     );
   }
 
-  void _mostrarOrden(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: const Text('Cercanía'),
-              trailing: _ordenPor == OrdenFeed.cercania ? const Icon(Icons.check, color: Color(0xFF0F6E56)) : null,
-              onTap: () {
-                setState(() => _ordenPor = OrdenFeed.cercania);
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              title: const Text('Más recientes'),
-              trailing: _ordenPor == OrdenFeed.recientes ? const Icon(Icons.check, color: Color(0xFF0F6E56)) : null,
-              onTap: () {
-                setState(() => _ordenPor = OrdenFeed.recientes);
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
+  void _alternarOrden() {
+    setState(() {
+      _ordenPor = _ordenPor == OrdenFeed.cercania ? OrdenFeed.recientes : OrdenFeed.cercania;
+    });
   }
 
   void _mostrarRadio(BuildContext context) {
@@ -349,10 +326,11 @@ class _FeedScreenState extends State<FeedScreen> {
                         onTap: () => setState(() => _soloUrgentes = !_soloUrgentes),
                       ),
                       _chip(
-                        label: _ordenPor == OrdenFeed.cercania ? 'Ordenar: Cercanía ▾' : 'Ordenar: Recientes ▾',
+                        label: _ordenPor == OrdenFeed.cercania ? 'Cercanía' : 'Recientes',
+                        icono: _ordenPor == OrdenFeed.cercania ? Icons.near_me : Icons.access_time,
                         activo: false,
                         colorActivo: const Color(0xFF0F6E56),
-                        onTap: () => _mostrarOrden(context),
+                        onTap: _alternarOrden,
                       ),
                       _chip(
                         label: provider.radioBusquedaKm.isInfinite
