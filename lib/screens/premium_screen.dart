@@ -36,98 +36,315 @@ class _PremiumScreenState extends State<PremiumScreen> {
         foregroundColor: const Color(0xFF26312D),
         elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFAEEDA),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.star, color: Color(0xFFAD7A16), size: 28),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text(
-                      'Destaca tu publicación por \$10.000 y aparece primero en el feed de tu zona',
-                      style: TextStyle(color: Color(0xFFAD7A16), fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ],
-              ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          _Encabezado(descripcion: actualizada.descripcion),
+          const SizedBox(height: 20),
+          const _FilaBeneficios(
+            beneficios: [
+              _Beneficio(icono: Icons.trending_up, texto: 'Hasta 5x más\npostulaciones'),
+              _Beneficio(icono: Icons.vertical_align_top, texto: 'Primero en el\nfeed de tu zona'),
+              _Beneficio(icono: Icons.workspace_premium, texto: 'Insignia dorada\n"Destacado"'),
+            ],
+          ),
+          const SizedBox(height: 24),
+          const _VistaPrevia(),
+          const SizedBox(height: 28),
+          if (actualizada.premiumAprobada)
+            const _EstadoSimple(
+              icono: Icons.check_circle,
+              color: Color(0xFF0F6E56),
+              texto: '¡Tu publicación ya tiene Visibilidad Premium activa!',
+            )
+          else if (actualizada.premiumSolicitada) ...[
+            const _EstadoSimple(
+              icono: Icons.hourglass_top,
+              color: Color(0xFFAD7A16),
+              texto: 'Tu solicitud está en revisión',
             ),
-            const SizedBox(height: 24),
-            if (actualizada.premiumAprobada) ...[
-              const Icon(Icons.check_circle, color: Color(0xFF0F6E56), size: 48),
-              const SizedBox(height: 12),
-              const Text('¡Tu publicación ya tiene Visibilidad Premium activa!', textAlign: TextAlign.center),
-            ] else if (actualizada.premiumSolicitada) ...[
-              const Icon(Icons.hourglass_top, color: Color(0xFFAD7A16), size: 48),
-              const SizedBox(height: 12),
-              const Text('Tu solicitud está en revisión', textAlign: TextAlign.center),
-              const SizedBox(height: 4),
-              Text(
-                'Comprobante: ${actualizada.comprobantePago}',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-              ),
-              const SizedBox(height: 20),
-              OutlinedButton(
+            const SizedBox(height: 4),
+            Text(
+              'Comprobante: ${actualizada.comprobantePago}',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 20),
+            Center(
+              child: OutlinedButton(
                 onPressed: () => context.read<AppProvider>().aprobarPremiumDemo(actualizada.id),
                 child: const Text('Simular aprobación (demo)'),
               ),
-            ] else if (actualizada.cerrada) ...[
-              Icon(Icons.info_outline, color: Colors.grey.shade500, size: 48),
-              const SizedBox(height: 12),
-              Text(
-                'Esta publicación ya está finalizada, no se puede solicitar Visibilidad Premium',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey.shade600),
+            ),
+          ] else if (actualizada.cerrada)
+            _EstadoSimple(
+              icono: Icons.info_outline,
+              color: Colors.grey.shade500,
+              texto: 'Esta publicación ya está finalizada, no se puede solicitar Visibilidad Premium',
+            )
+          else ...[
+            const Text('Cómo funciona', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            const SizedBox(height: 12),
+            const _Paso(numero: '1', texto: 'Transfiere \$10.000 a la cuenta indicada por el equipo Chambapp.'),
+            const _Paso(numero: '2', texto: 'Ingresa abajo la referencia de tu comprobante de pago.'),
+            const _Paso(numero: '3', texto: 'El equipo revisa y aprueba tu solicitud — tu publicación queda destacada.'),
+            const SizedBox(height: 20),
+            const Text('Referencia del comprobante de pago', style: TextStyle(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _comprobanteController,
+              decoration: InputDecoration(
+                hintText: 'Ej: código de la transferencia',
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
               ),
-            ] else ...[
-              const Text(
-                'Referencia del comprobante de pago',
-                style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                if (_comprobanteController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Ingresa la referencia del comprobante')),
+                  );
+                  return;
+                }
+                context.read<AppProvider>().solicitarPremium(actualizada.id, _comprobanteController.text.trim());
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0F6E56),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _comprobanteController,
-                decoration: InputDecoration(
-                  hintText: 'Ej: código de la transferencia',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              child: const Text('Solicitar Visibilidad Premium', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _Encabezado extends StatelessWidget {
+  final String descripcion;
+  const _Encabezado({required this.descripcion});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF0F6E56), Color(0xFF0B5344)],
+        ),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(colors: [Color(0xFFD9A441), Color(0xFFAD7A16)]),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  if (_comprobanteController.text.trim().isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Ingresa la referencia del comprobante')),
-                    );
-                    return;
-                  }
-                  context
-                      .read<AppProvider>()
-                      .solicitarPremium(actualizada.id, _comprobanteController.text.trim());
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0F6E56),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.star, size: 13, color: Colors.white),
+                    SizedBox(width: 4),
+                    Text('PREMIUM', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.5)),
+                  ],
                 ),
-                child: const Text('Solicitar Visibilidad Premium', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ],
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Destaca tu publicación',
+            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Aparece primero cuando alguien busque servicios en tu zona',
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              const Text('\$10.000', style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold)),
+              const SizedBox(width: 6),
+              Text('pago único', style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 12)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Beneficio {
+  final IconData icono;
+  final String texto;
+  const _Beneficio({required this.icono, required this.texto});
+}
+
+class _FilaBeneficios extends StatelessWidget {
+  final List<_Beneficio> beneficios;
+  const _FilaBeneficios({required this.beneficios});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: beneficios
+          .map(
+            (b) => Expanded(
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFAEEDA),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFD9A441).withValues(alpha: 0.4)),
+                ),
+                child: Column(
+                  children: [
+                    Icon(b.icono, color: const Color(0xFFAD7A16), size: 22),
+                    const SizedBox(height: 8),
+                    Text(
+                      b.texto,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF26312D), height: 1.25),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          )
+          .toList(),
+    );
+  }
+}
+
+class _VistaPrevia extends StatelessWidget {
+  const _VistaPrevia();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Así se ve en el feed', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(child: _tarjetaEjemplo(destacada: false)),
+            const SizedBox(width: 10),
+            Expanded(child: _tarjetaEjemplo(destacada: true)),
           ],
         ),
+      ],
+    );
+  }
+
+  Widget _tarjetaEjemplo({required bool destacada}) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: destacada ? const Color(0xFFFAEEDA) : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: destacada ? const Color(0xFFD9A441) : Colors.grey.shade200, width: destacada ? 1.6 : 1),
+            boxShadow: destacada
+                ? [BoxShadow(color: const Color(0xFFD9A441).withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 3))]
+                : null,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (destacada)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: [Color(0xFFD9A441), Color(0xFFAD7A16)]),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text('DESTACADO', style: TextStyle(fontSize: 7, fontWeight: FontWeight.bold, color: Colors.white)),
+                ),
+              Row(
+                children: [
+                  CircleAvatar(radius: 10, backgroundColor: const Color(0xFFFAEEDA), child: Text('T', style: TextStyle(fontSize: 9, color: Colors.grey.shade600))),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Container(height: 6, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(3))),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Container(height: 6, width: 60, decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(3))),
+            ],
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          destacada ? 'Con Premium' : 'Sin Premium',
+          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: destacada ? const Color(0xFFAD7A16) : Colors.grey.shade500),
+        ),
+      ],
+    );
+  }
+}
+
+class _Paso extends StatelessWidget {
+  final String numero;
+  final String texto;
+  const _Paso({required this.numero, required this.texto});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 22,
+            height: 22,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(color: Color(0xFF0F6E56), shape: BoxShape.circle),
+            child: Text(numero, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+          ),
+          const SizedBox(width: 10),
+          Expanded(child: Text(texto, style: const TextStyle(fontSize: 13, height: 1.4))),
+        ],
       ),
+    );
+  }
+}
+
+class _EstadoSimple extends StatelessWidget {
+  final IconData icono;
+  final Color color;
+  final String texto;
+  const _EstadoSimple({required this.icono, required this.color, required this.texto});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Icon(icono, color: color, size: 48),
+        const SizedBox(height: 12),
+        Text(texto, textAlign: TextAlign.center, style: TextStyle(color: color == Colors.grey.shade500 ? color : null)),
+      ],
     );
   }
 }
