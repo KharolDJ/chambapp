@@ -54,6 +54,47 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.8
+
+# Configuración de flutter_launcher_icons (se corre con:
+# dart run flutter_launcher_icons). Genera el ícono para cada plataforma a
+# partir del logo en assets/icon/.
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  remove_alpha_ios: true
+  image_path: "assets/icon/icon_master.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#0A656D"
+  adaptive_icon_foreground: "assets/icon/icon_foreground.png"
+  web:
+    generate: true
+    image_path: "assets/icon/icon_master.png"
+    background_color: "#0A656D"
+    theme_color: "#0A656D"
+  windows:
+    generate: true
+    image_path: "assets/icon/icon_master.png"
+    icon_size: 48
+  macos:
+    generate: true
+    image_path: "assets/icon/icon_master.png"
+
+# Configuración de flutter_native_splash (se corre con:
+# dart run flutter_native_splash:create). Genera la pantalla de carga
+# nativa a partir del logo en assets/splash/.
+flutter_native_splash:
+  color: "#0A656D"
+  image: assets/splash/splash_logo.png
+  color_dark: "#0A656D"
+  image_dark: assets/splash/splash_logo.png
+  android_12:
+    image: assets/splash/splash_logo.png
+    color: "#0A656D"
+    image_dark: assets/splash/splash_logo.png
+    color_dark: "#0A656D"
+  web: false
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -65,6 +106,10 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  assets:
+    - assets/icon/
+    - assets/splash/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
