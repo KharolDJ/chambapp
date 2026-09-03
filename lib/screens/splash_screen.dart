@@ -5,10 +5,9 @@ import '../providers/app_provider.dart';
 import 'main_nav_screen.dart';
 import 'role_selector_screen.dart';
 
-/// Pantalla de entrada animada — se muestra justo después del splash nativo
-/// del sistema operativo (mismo color de fondo, #0A656D, para que la
-/// transición entre ambos sea sin salto de color) y navega automáticamente
-/// al feed o al selector de rol una vez termina la animación.
+/// Pantalla de entrada: tarjeta redondeada con el isotipo sobre fondo
+/// petróleo, con un detalle sutil en mostaza. Sin splash nativo del sistema
+/// (se quitó aparte) — esta es la primera pantalla que ve el usuario.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -17,30 +16,30 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  static const _duracionAnimacion = Duration(milliseconds: 900);
-  static const _duracionTotal = Duration(milliseconds: 1700);
+  static const _petroleo = Color(0xFF0F6E56);
+  static const _mostaza = Color(0xFFD9A441);
+  static const _papel = Color(0xFFFAF7F0);
 
   bool _visible = false;
 
   @override
   void initState() {
     super.initState();
-    // Arranca en el siguiente frame para que el estado inicial (invisible,
-    // escala reducida) se pinte primero, y así AnimatedOpacity/AnimatedScale
-    // tengan un punto de partida real desde el cual animar.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       setState(() => _visible = true);
     });
-    Future.delayed(_duracionTotal, _irASiguientePantalla);
+    Future.delayed(const Duration(milliseconds: 2000), _irASiguientePantalla);
   }
 
   void _irASiguientePantalla() {
     if (!mounted) return;
     final provider = context.read<AppProvider>();
+    final siguiente = provider.rolActual == null ? const RoleSelectorScreen() : const MainNavScreen();
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => provider.rolActual == null ? const RoleSelectorScreen() : const MainNavScreen(),
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 500),
+        pageBuilder: (_, animation, _) => FadeTransition(opacity: animation, child: siguiente),
       ),
     );
   }
@@ -48,32 +47,44 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A656D),
+      backgroundColor: _petroleo,
       body: Center(
         child: AnimatedOpacity(
           opacity: _visible ? 1 : 0,
-          duration: _duracionAnimacion,
+          duration: const Duration(milliseconds: 700),
           curve: Curves.easeOut,
-          child: AnimatedScale(
-            scale: _visible ? 1 : 0.6,
-            duration: _duracionAnimacion,
-            curve: Curves.easeOutBack,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Image.asset('assets/icon/icon_foreground.png', width: 110, height: 110),
-                const SizedBox(height: 18),
-                Text(
-                  'chambapp',
-                  style: GoogleFonts.sora(
-                    color: Colors.white,
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
-                  ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 148,
+                height: 148,
+                padding: const EdgeInsets.all(34),
+                decoration: BoxDecoration(
+                  color: _papel,
+                  borderRadius: BorderRadius.circular(32),
+                  border: Border.all(color: _mostaza, width: 1.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.18),
+                      blurRadius: 24,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+                child: Image.asset('assets/icon/mark_petroleo.png'),
+              ),
+              const SizedBox(height: 22),
+              Text(
+                'chambapp',
+                style: GoogleFonts.sora(
+                  color: Colors.white.withValues(alpha: 0.92),
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.8,
+                ),
+              ),
+            ],
           ),
         ),
       ),
