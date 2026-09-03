@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'providers/app_provider.dart';
-import 'screens/splash_screen.dart';
+import 'screens/main_nav_screen.dart';
+import 'screens/role_selector_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,7 +42,10 @@ class ChambappApp extends StatelessWidget {
         useMaterial3: true,
         textTheme: textTheme,
       ),
-      home: const SplashScreen(),
+      home: Consumer<AppProvider>(
+        builder: (context, provider, _) =>
+            provider.rolActual == null ? const RoleSelectorScreen() : const MainNavScreen(),
+      ),
     );
   }
 }
