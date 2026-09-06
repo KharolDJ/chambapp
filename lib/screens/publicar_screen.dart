@@ -279,13 +279,15 @@ class _PublicarScreenState extends State<PublicarScreen> {
                     color: Colors.grey.shade500,
                   ),
                   const SizedBox(width: 6),
-                  Text(
-                    _obteniendoUbicacion
-                        ? 'Obteniendo tu ubicación...'
-                        : (_lat != null
-                            ? 'Ubicación detectada — se usará para ordenar tu publicación por cercanía'
-                            : 'Sin ubicación disponible — activa el GPS para que te encuentren más rápido'),
-                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                  Expanded(
+                    child: Text(
+                      _obteniendoUbicacion
+                          ? 'Obteniendo tu ubicación...'
+                          : (_lat != null
+                              ? 'Ubicación detectada — se usará para ordenar tu publicación por cercanía'
+                              : 'Sin ubicación disponible — activa el GPS para que te encuentren más rápido'),
+                      style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                    ),
                   ),
                 ],
               ),
