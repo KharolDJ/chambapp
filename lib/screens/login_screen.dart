@@ -87,10 +87,17 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 Center(
                   child: Container(
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(color: _petroleo, borderRadius: BorderRadius.circular(18)),
-                    child: const Icon(Icons.person_outline, color: Colors.white, size: 32),
+                    width: 72,
+                    height: 72,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: _petroleo,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(color: _petroleo.withValues(alpha: 0.28), blurRadius: 14, offset: const Offset(0, 5)),
+                      ],
+                    ),
+                    child: Image.asset('assets/icon/icon_foreground.png'),
                   ),
                 ),
                 const SizedBox(height: 24),

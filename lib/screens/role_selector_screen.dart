@@ -33,10 +33,21 @@ class RoleSelectorScreen extends StatelessWidget {
             children: [
               Center(
                 child: Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(color: const Color(0xFF0F6E56), borderRadius: BorderRadius.circular(20)),
-                  child: const Icon(Icons.handyman_outlined, color: Colors.white, size: 36),
+                  width: 84,
+                  height: 84,
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F6E56),
+                    borderRadius: BorderRadius.circular(22),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF0F6E56).withValues(alpha: 0.32),
+                        blurRadius: 18,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Image.asset('assets/icon/icon_foreground.png'),
                 ),
               ),
               const SizedBox(height: 16),
@@ -103,7 +114,13 @@ class _RolCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(color: colorFondo, borderRadius: BorderRadius.circular(16)),
+        decoration: BoxDecoration(
+          color: colorFondo,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(color: color.withValues(alpha: 0.14), blurRadius: 12, offset: const Offset(0, 4)),
+          ],
+        ),
         child: Row(
           children: [
             Icon(icono, size: 30, color: color),

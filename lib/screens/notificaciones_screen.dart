@@ -26,6 +26,16 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
     });
   }
 
+  IconData _iconoPara(String mensaje) {
+    final m = mensaje.toLowerCase();
+    if (m.contains('premium') || m.contains('podio')) return Icons.star;
+    if (m.contains('calific')) return Icons.star_rate_rounded;
+    if (m.contains('seleccion')) return Icons.check_circle;
+    if (m.contains('vio tu perfil')) return Icons.visibility;
+    if (m.contains('interes')) return Icons.person_add_alt_1;
+    return Icons.notifications;
+  }
+
   String _tiempoTranscurrido(DateTime fecha) {
     final diff = DateTime.now().difference(fecha);
     if (diff.inMinutes < 60) return 'hace ${diff.inMinutes} min';
@@ -61,7 +71,14 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
       ),
       body: lista.isEmpty
           ? Center(
-              child: Text('No tienes notificaciones todavía', style: TextStyle(color: Colors.grey.shade600)),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.notifications_none, size: 56, color: Colors.grey.shade300),
+                  const SizedBox(height: 16),
+                  Text('No tienes notificaciones todavía', style: TextStyle(color: Colors.grey.shade600)),
+                ],
+              ),
             )
           : ListView.builder(
               padding: const EdgeInsets.all(16),
@@ -83,13 +100,32 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (eraNoLeida)
-                          const Padding(
-                            padding: EdgeInsets.only(top: 4, right: 8),
-                            child: CircleAvatar(radius: 4, backgroundColor: Color(0xFF0F6E56)),
-                          )
-                        else
-                          const SizedBox(width: 12),
+                        Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: const BoxDecoration(color: Color(0xFFE1F5EE), shape: BoxShape.circle),
+                              child: Icon(_iconoPara(n.mensaje), size: 18, color: const Color(0xFF0F6E56)),
+                            ),
+                            if (eraNoLeida)
+                              Positioned(
+                                top: -2,
+                                right: -2,
+                                child: Container(
+                                  width: 11,
+                                  height: 11,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFB54834),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 1.5),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,

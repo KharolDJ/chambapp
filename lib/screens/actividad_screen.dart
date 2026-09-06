@@ -27,9 +27,32 @@ class ActividadScreen extends StatelessWidget {
       ),
       body: lista.isEmpty
           ? Center(
-              child: Text(
-                esEmpleador ? 'Aún no has publicado nada' : 'Aún no marcaste interés en ninguna',
-                style: TextStyle(color: Colors.grey.shade600),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      esEmpleador ? Icons.post_add_outlined : Icons.search_outlined,
+                      size: 56,
+                      color: Colors.grey.shade300,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      esEmpleador ? 'Aún no has publicado nada' : 'Aún no marcaste interés en ninguna',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey.shade700),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      esEmpleador
+                          ? 'Toca el botón "+" para publicar tu primera petición'
+                          : 'Explora el feed y toca "Aplicar" en lo que te interese',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                    ),
+                  ],
+                ),
               ),
             )
           : ListView.builder(
