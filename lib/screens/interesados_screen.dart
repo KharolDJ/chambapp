@@ -56,7 +56,22 @@ class _InteresadosScreenState extends State<InteresadosScreen> {
       ),
       body: actualizada.interesados.isEmpty
           ? Center(
-              child: Text('Nadie ha marcado interés todavía', style: TextStyle(color: Colors.grey.shade600)),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.people_outline, size: 56, color: Colors.grey.shade300),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Nadie ha marcado interés todavía',
+                    style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey.shade700),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Te avisaremos apenas alguien aplique',
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                  ),
+                ],
+              ),
             )
           : ListView.builder(
               padding: const EdgeInsets.all(16),

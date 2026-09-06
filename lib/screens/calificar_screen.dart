@@ -63,21 +63,46 @@ class _CalificarScreenState extends State<CalificarScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Calificando a: ${widget.paraNombre}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(5, (i) {
-                final valor = i + 1;
-                return IconButton(
-                  iconSize: 36,
-                  onPressed: () => setState(() => _estrellas = valor),
-                  icon: Icon(
-                    valor <= _estrellas ? Icons.star : Icons.star_border,
-                    color: const Color(0xFFAD7A16),
+            Center(
+              child: Column(
+                children: [
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: const BoxDecoration(color: Color(0xFFE1F5EE), shape: BoxShape.circle),
+                    child: const Icon(Icons.person, size: 32, color: Color(0xFF0F6E56)),
                   ),
-                );
-              }),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Calificando a ${widget.paraNombre}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF26312D)),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(5, (i) {
+                  final valor = i + 1;
+                  return IconButton(
+                    iconSize: 36,
+                    onPressed: () => setState(() => _estrellas = valor),
+                    icon: Icon(
+                      valor <= _estrellas ? Icons.star : Icons.star_border,
+                      color: const Color(0xFFAD7A16),
+                    ),
+                  );
+                }),
+              ),
             ),
             const SizedBox(height: 20),
             TextField(

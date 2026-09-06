@@ -57,9 +57,16 @@ class MisCalificacionesScreen extends StatelessWidget {
           Expanded(
             child: calificaciones.isEmpty
                 ? Center(
-                    child: Text(
-                      'Todavía nadie te ha calificado',
-                      style: TextStyle(color: Colors.grey.shade600),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.star_border_rounded, size: 56, color: Colors.grey.shade300),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Todavía nadie te ha calificado',
+                          style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey.shade700),
+                        ),
+                      ],
                     ),
                   )
                 : ListView.builder(

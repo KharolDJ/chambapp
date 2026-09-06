@@ -72,10 +72,17 @@ class _AdministracionScreenState extends State<AdministracionScreen> {
           ? Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: Text(
-                  'No hay reportes registrados todavía.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey.shade600),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.shield_outlined, size: 56, color: Colors.grey.shade300),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No hay reportes registrados todavía',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey.shade700),
+                    ),
+                  ],
                 ),
               ),
             )

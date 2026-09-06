@@ -80,27 +80,41 @@ class _ReportarScreenState extends State<ReportarScreen> {
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: const BoxDecoration(color: Color(0xFFF7E3DD), shape: BoxShape.circle),
+              child: const Icon(Icons.flag_outlined, size: 26, color: _ladrillo),
+            ),
+            const SizedBox(height: 16),
             const Text(
               '¿Cuál es el motivo?',
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: _grafito),
             ),
-            RadioGroup<String>(
-              groupValue: _motivo,
-              onChanged: (v) => setState(() => _motivo = v),
-              child: Column(
-                children: _motivos
-                    .map(
-                      (m) => RadioListTile<String>(
-                        value: m,
-                        title: Text(m),
-                        activeColor: _petroleo,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                    )
-                    .toList(),
+            const SizedBox(height: 8),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: RadioGroup<String>(
+                groupValue: _motivo,
+                onChanged: (v) => setState(() => _motivo = v),
+                child: Column(
+                  children: _motivos
+                      .map(
+                        (m) => RadioListTile<String>(
+                          value: m,
+                          title: Text(m),
+                          activeColor: _petroleo,
+                        ),
+                      )
+                      .toList(),
+                ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             TextField(
               controller: _comentarioController,
               maxLines: 3,
