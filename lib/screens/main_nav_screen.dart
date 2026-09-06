@@ -75,32 +75,35 @@ class _MainNavScreenState extends State<MainNavScreen> {
                   children: [
                     Expanded(
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          _botonNav(Icons.home_outlined, 'Inicio', 0),
-                          _botonNav(Icons.list_alt_outlined, 'Actividad', 1),
+                          Expanded(child: _botonNav(Icons.home_outlined, 'Inicio', 0)),
+                          Expanded(child: _botonNav(Icons.list_alt_outlined, 'Actividad', 1)),
                         ],
                       ),
                     ),
                     const SizedBox(width: 56),
                     Expanded(
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          _botonNav(Icons.notifications_outlined, 'Avisos', 2, mostrarPunto: hayNotificacionesSinLeer),
-                          _botonNav(Icons.person_outline, 'Perfil', 3),
+                          Expanded(
+                            child: _botonNav(Icons.notifications_outlined, 'Avisos', 2,
+                                mostrarPunto: hayNotificacionesSinLeer),
+                          ),
+                          Expanded(child: _botonNav(Icons.person_outline, 'Perfil', 3)),
                         ],
                       ),
                     ),
                   ],
                 )
               : Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _botonNav(Icons.home_outlined, 'Inicio', 0),
-                    _botonNav(Icons.list_alt_outlined, 'Actividad', 1),
-                    _botonNav(Icons.notifications_outlined, 'Avisos', 2, mostrarPunto: hayNotificacionesSinLeer),
-                    _botonNav(Icons.person_outline, 'Perfil', 3),
+                    Expanded(child: _botonNav(Icons.home_outlined, 'Inicio', 0)),
+                    Expanded(child: _botonNav(Icons.list_alt_outlined, 'Actividad', 1)),
+                    Expanded(
+                      child: _botonNav(Icons.notifications_outlined, 'Avisos', 2,
+                          mostrarPunto: hayNotificacionesSinLeer),
+                    ),
+                    Expanded(child: _botonNav(Icons.person_outline, 'Perfil', 3)),
                   ],
                 ),
         ),
@@ -134,7 +137,12 @@ class _MainNavScreenState extends State<MainNavScreen> {
                   ),
               ],
             ),
-            Text(texto, style: TextStyle(color: color, fontSize: 11)),
+            Text(
+              texto,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: color, fontSize: 11),
+            ),
           ],
         ),
       ),

@@ -18,11 +18,11 @@ class ActividadScreen extends StatelessWidget {
     final lista = esEmpleador ? provider.misPublicaciones : provider.misIntereses;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF7F0),
+      backgroundColor: const Color(0xFFF9F9FB),
       appBar: AppBar(
         title: Text(esEmpleador ? 'Mis publicaciones' : 'Mis intereses'),
-        backgroundColor: const Color(0xFFFAF7F0),
-        foregroundColor: const Color(0xFF26312D),
+        backgroundColor: const Color(0xFFF9F9FB),
+        foregroundColor: const Color(0xFF1A1A1A),
         elevation: 0,
       ),
       body: lista.isEmpty
@@ -41,7 +41,7 @@ class ActividadScreen extends StatelessWidget {
                     Text(
                       esEmpleador ? 'Aún no has publicado nada' : 'Aún no marcaste interés en ninguna',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey.shade700),
+                      style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF666666)),
                     ),
                     const SizedBox(height: 6),
                     Text(
@@ -173,8 +173,8 @@ class _ItemEmpleador extends StatelessWidget {
                   ),
               OutlinedButton.icon(
                 onPressed: () => _confirmarArchivar(context),
-                icon: Icon(Icons.archive_outlined, size: 16, color: Colors.grey.shade700),
-                label: Text('Archivar', style: TextStyle(color: Colors.grey.shade700)),
+                icon: Icon(Icons.archive_outlined, size: 16, color: Color(0xFF666666)),
+                label: Text('Archivar', style: TextStyle(color: Color(0xFF666666))),
               ),
             ],
           ),

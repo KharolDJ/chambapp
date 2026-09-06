@@ -14,11 +14,11 @@ class MisCalificacionesScreen extends StatelessWidget {
         : provider.calificaciones.where((c) => c.paraUsuarioId == usuario.id).toList().reversed.toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF7F0),
+      backgroundColor: const Color(0xFFF9F9FB),
       appBar: AppBar(
         title: const Text('Mis calificaciones'),
-        backgroundColor: const Color(0xFFFAF7F0),
-        foregroundColor: const Color(0xFF26312D),
+        backgroundColor: const Color(0xFFF9F9FB),
+        foregroundColor: const Color(0xFF1A1A1A),
         elevation: 0,
       ),
       body: Column(
@@ -33,22 +33,22 @@ class MisCalificacionesScreen extends StatelessWidget {
                       const SizedBox(width: 6),
                       Text(
                         '${usuario.calificacionPromedio.toStringAsFixed(1)} promedio · ${usuario.numeroCalificaciones} calificaciones',
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF26312D)),
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A)),
                       ),
                     ],
                   )
                 : Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration:
-                        BoxDecoration(color: const Color(0xFFFAEEDA), borderRadius: BorderRadius.circular(20)),
+                        BoxDecoration(color: const Color(0xFFE3F2EC), borderRadius: BorderRadius.circular(20)),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.auto_awesome, size: 16, color: Color(0xFFAD7A16)),
+                        Icon(Icons.auto_awesome, size: 16, color: Color(0xFF0F6E56)),
                         SizedBox(width: 6),
                         Text(
                           'Nuevo en la plataforma',
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFFAD7A16)),
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0F6E56)),
                         ),
                       ],
                     ),
@@ -64,7 +64,7 @@ class MisCalificacionesScreen extends StatelessWidget {
                         const SizedBox(height: 16),
                         Text(
                           'Todavía nadie te ha calificado',
-                          style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey.shade700),
+                          style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF666666)),
                         ),
                       ],
                     ),

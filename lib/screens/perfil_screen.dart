@@ -20,11 +20,11 @@ class PerfilScreen extends StatelessWidget {
     final usuario = provider.usuarioActual;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF7F0),
+      backgroundColor: const Color(0xFFF9F9FB),
       appBar: AppBar(
         title: const Text('Mi perfil'),
-        backgroundColor: const Color(0xFFFAF7F0),
-        foregroundColor: const Color(0xFF26312D),
+        backgroundColor: const Color(0xFFF9F9FB),
+        foregroundColor: const Color(0xFF1A1A1A),
         elevation: 0,
       ),
       body: Padding(
@@ -47,7 +47,7 @@ class PerfilScreen extends StatelessWidget {
             ),
             Text(
               provider.rolActual == RolUsuario.empleador ? 'Empleador' : 'Trabajador',
-              style: TextStyle(color: Colors.grey.shade600),
+              style: TextStyle(color: Color(0xFF666666)),
             ),
             if (usuario != null) ...[
               const SizedBox(height: 6),
@@ -59,22 +59,22 @@ class PerfilScreen extends StatelessWidget {
                     const SizedBox(width: 4),
                     Text(
                       '${usuario.calificacionPromedio.toStringAsFixed(1)} (${usuario.numeroCalificaciones} calificaciones)',
-                      style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                      style: TextStyle(fontSize: 13, color: Color(0xFF666666)),
                     ),
                   ],
                 )
               else
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: const Color(0xFFFAEEDA), borderRadius: BorderRadius.circular(20)),
+                  decoration: BoxDecoration(color: const Color(0xFFE3F2EC), borderRadius: BorderRadius.circular(20)),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.auto_awesome, size: 14, color: Color(0xFFAD7A16)),
+                      Icon(Icons.auto_awesome, size: 14, color: Color(0xFF0F6E56)),
                       SizedBox(width: 4),
                       Text(
                         'Nuevo en la plataforma',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFAD7A16)),
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0F6E56)),
                       ),
                     ],
                   ),
@@ -85,9 +85,9 @@ class PerfilScreen extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.badge_outlined, size: 13, color: Colors.grey.shade600),
+                      Icon(Icons.badge_outlined, size: 13, color: Color(0xFF666666)),
                       const SizedBox(width: 4),
-                      Text('Documento registrado', style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+                      Text('Documento registrado', style: TextStyle(fontSize: 11, color: Color(0xFF666666))),
                     ],
                   ),
                 ),
@@ -96,7 +96,7 @@ class PerfilScreen extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
                     'Oficios: ${usuario.oficios.join(', ')}',
-                    style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                    style: TextStyle(fontSize: 13, color: Color(0xFF666666)),
                   ),
                 ),
             ] else ...[
@@ -212,7 +212,9 @@ class _AvisoCorreoSinVerificarState extends State<_AvisoCorreoSinVerificar> {
             ],
           ),
           const SizedBox(height: 10),
-          Row(
+          Wrap(
+            spacing: 4,
+            runSpacing: 4,
             children: [
               TextButton(
                 onPressed: _reenviando
@@ -228,7 +230,6 @@ class _AvisoCorreoSinVerificarState extends State<_AvisoCorreoSinVerificar> {
                       },
                 child: Text(_reenviando ? 'Enviando...' : 'Reenviar correo'),
               ),
-              const SizedBox(width: 4),
               TextButton(
                 onPressed: _verificando
                     ? null

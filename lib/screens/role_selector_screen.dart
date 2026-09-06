@@ -20,9 +20,9 @@ class RoleSelectorScreen extends StatelessWidget {
     final yaTieneCuenta = provider.usuarioActual != null;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF7F0),
+      backgroundColor: const Color(0xFFF9F9FB),
       appBar: yaTieneCuenta
-          ? AppBar(backgroundColor: const Color(0xFFFAF7F0), elevation: 0, foregroundColor: const Color(0xFF26312D))
+          ? AppBar(backgroundColor: const Color(0xFFF9F9FB), elevation: 0, foregroundColor: const Color(0xFF1A1A1A))
           : null,
       body: SafeArea(
         child: Padding(
@@ -51,9 +51,9 @@ class RoleSelectorScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text('Chambapp', textAlign: TextAlign.center, style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF26312D))),
+              const Text('Chambapp', textAlign: TextAlign.center, style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A))),
               const SizedBox(height: 6),
-              Text('Servicios de tu barrio, gente de confianza', textAlign: TextAlign.center, style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
+              Text('Servicios de tu barrio, gente de confianza', textAlign: TextAlign.center, style: TextStyle(fontSize: 14, color: Color(0xFF666666))),
               const SizedBox(height: 48),
               if (yaTieneCuenta) ...[
                 Text(
@@ -63,7 +63,7 @@ class RoleSelectorScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
               ],
-              Text('¿Qué necesitas hoy?', textAlign: TextAlign.center, style: TextStyle(fontSize: 15, color: Colors.grey.shade700)),
+              Text('¿Qué necesitas hoy?', textAlign: TextAlign.center, style: TextStyle(fontSize: 15, color: Color(0xFF666666))),
               const SizedBox(height: 16),
               _RolCard(
                 icono: Icons.build_outlined,
@@ -131,7 +131,7 @@ class _RolCard extends StatelessWidget {
                 children: [
                   Text(titulo, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: color)),
                   const SizedBox(height: 2),
-                  Text(subtitulo, style: TextStyle(fontSize: 13, color: Colors.grey.shade700)),
+                  Text(subtitulo, style: TextStyle(fontSize: 13, color: Color(0xFF666666))),
                 ],
               ),
             ),

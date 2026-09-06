@@ -51,11 +51,11 @@ class _CalificarScreenState extends State<CalificarScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF7F0),
+      backgroundColor: const Color(0xFFF9F9FB),
       appBar: AppBar(
         title: const Text('Calificar'),
-        backgroundColor: const Color(0xFFFAF7F0),
-        foregroundColor: const Color(0xFF26312D),
+        backgroundColor: const Color(0xFFF9F9FB),
+        foregroundColor: const Color(0xFF1A1A1A),
         elevation: 0,
       ),
       body: Padding(
@@ -76,7 +76,7 @@ class _CalificarScreenState extends State<CalificarScreen> {
                   Text(
                     'Calificando a ${widget.paraNombre}',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF26312D)),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A)),
                   ),
                 ],
               ),

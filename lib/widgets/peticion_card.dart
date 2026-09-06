@@ -45,21 +45,21 @@ class PeticionCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 14),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: peticion.premiumAprobada ? const Color(0xFFFAEEDA) : Colors.white,
+          color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: peticion.premiumAprobada ? const Color(0xFFD9A441) : Colors.grey.shade200,
-            width: peticion.premiumAprobada ? 1.8 : 1,
+            color: peticion.premiumAprobada ? const Color(0xFF0F6E56) : Colors.grey.shade200,
+            width: peticion.premiumAprobada ? 1.4 : 1,
           ),
-          boxShadow: peticion.premiumAprobada
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFFD9A441).withValues(alpha: 0.32),
-                    blurRadius: 16,
-                    offset: const Offset(0, 5),
-                  ),
-                ]
-              : null,
+          boxShadow: [
+            BoxShadow(
+              color: peticion.premiumAprobada
+                  ? const Color(0xFF0F6E56).withValues(alpha: 0.16)
+                  : Colors.black.withValues(alpha: 0.04),
+              blurRadius: peticion.premiumAprobada ? 16 : 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,7 +70,7 @@ class PeticionCard extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(colors: [Color(0xFFD9A441), Color(0xFFAD7A16)]),
+                    color: const Color(0xFF0F6E56),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Row(
@@ -90,10 +90,10 @@ class PeticionCard extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 16,
-                  backgroundColor: const Color(0xFFFAEEDA),
+                  backgroundColor: const Color(0xFFE3F2EC),
                   child: Text(
                     peticion.autorNombre[0],
-                    style: const TextStyle(color: Color(0xFFAD7A16), fontWeight: FontWeight.bold, fontSize: 12),
+                    style: const TextStyle(color: Color(0xFF0F6E56), fontWeight: FontWeight.bold, fontSize: 12),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -108,7 +108,7 @@ class PeticionCard extends StatelessWidget {
                           ?distanciaTexto,
                           _tiempoTranscurrido(),
                         ].join(' · '),
-                        style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                        style: TextStyle(fontSize: 11, color: Color(0xFF666666)),
                       ),
                     ],
                   ),
@@ -141,22 +141,39 @@ class PeticionCard extends StatelessWidget {
               children: [
                 if (peticion.urgente) _Etiqueta(texto: 'Urgente', color: const Color(0xFFB54834)),
                 if (peticion.urgente) const SizedBox(width: 6),
-                _Etiqueta(texto: peticion.categoria, color: const Color(0xFF0F6E56)),
+                Flexible(child: _Etiqueta(texto: peticion.categoria, color: const Color(0xFF0F6E56))),
                 const Spacer(),
-                if (esTrabajador)
-                  if (yaMeInteresa)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.check_circle, size: 16, color: Colors.teal.shade700),
-                        const SizedBox(width: 4),
-                        Text('Aplicaste', style: TextStyle(fontSize: 12, color: Colors.teal.shade700)),
-                      ],
-                    )
-                  else
-                    Text('Toca para ver más', style: TextStyle(fontSize: 12, color: Colors.grey.shade500))
-                else
-                  Text('${peticion.interesados.length} interesados', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                Flexible(
+                  child: esTrabajador
+                      ? (yaMeInteresa
+                          ? Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.check_circle, size: 16, color: Colors.teal.shade700),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    'Aplicaste',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(fontSize: 12, color: Colors.teal.shade700),
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Text(
+                              'Toca para ver más',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                            ))
+                      : Text(
+                          '${peticion.interesados.length} interesados',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontSize: 12, color: Color(0xFF666666)),
+                        ),
+                ),
               ],
             ),
           ],

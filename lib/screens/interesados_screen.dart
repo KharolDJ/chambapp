@@ -47,11 +47,11 @@ class _InteresadosScreenState extends State<InteresadosScreen> {
         provider.peticiones.firstWhere((p) => p.id == widget.peticion.id, orElse: () => widget.peticion);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF7F0),
+      backgroundColor: const Color(0xFFF9F9FB),
       appBar: AppBar(
         title: const Text('Interesados'),
-        backgroundColor: const Color(0xFFFAF7F0),
-        foregroundColor: const Color(0xFF26312D),
+        backgroundColor: const Color(0xFFF9F9FB),
+        foregroundColor: const Color(0xFF1A1A1A),
         elevation: 0,
       ),
       body: actualizada.interesados.isEmpty
@@ -63,7 +63,7 @@ class _InteresadosScreenState extends State<InteresadosScreen> {
                   const SizedBox(height: 16),
                   Text(
                     'Nadie ha marcado interés todavía',
-                    style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey.shade700),
+                    style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF666666)),
                   ),
                   const SizedBox(height: 6),
                   Text(
@@ -110,7 +110,7 @@ class _InteresadosScreenState extends State<InteresadosScreen> {
                         ],
                       ),
                       if (usuario.oficios.isNotEmpty)
-                        Text(usuario.oficios.join(', '), style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                        Text(usuario.oficios.join(', '), style: TextStyle(fontSize: 12, color: Color(0xFF666666))),
                       const SizedBox(height: 6),
                       if (usuario.numeroCalificaciones > 0)
                         Row(
@@ -119,7 +119,7 @@ class _InteresadosScreenState extends State<InteresadosScreen> {
                             const SizedBox(width: 4),
                             Text(
                               '${usuario.calificacionPromedio.toStringAsFixed(1)} (${usuario.numeroCalificaciones})',
-                              style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                              style: TextStyle(fontSize: 12, color: Color(0xFF666666)),
                             ),
                           ],
                         )
@@ -127,15 +127,15 @@ class _InteresadosScreenState extends State<InteresadosScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration:
-                              BoxDecoration(color: const Color(0xFFFAEEDA), borderRadius: BorderRadius.circular(20)),
+                              BoxDecoration(color: const Color(0xFFE3F2EC), borderRadius: BorderRadius.circular(20)),
                           child: const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.auto_awesome, size: 12, color: Color(0xFFAD7A16)),
+                              Icon(Icons.auto_awesome, size: 12, color: Color(0xFF0F6E56)),
                               SizedBox(width: 4),
                               Text(
                                 'Nuevo en la plataforma',
-                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFFAD7A16)),
+                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0F6E56)),
                               ),
                             ],
                           ),

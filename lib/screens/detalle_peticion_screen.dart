@@ -56,7 +56,7 @@ class DetallePeticionScreen extends StatelessWidget {
               ? 'Quitaste tu interés en esta petición'
               : 'Marcaste interés — si el empleador te selecciona, te va a escribir por WhatsApp',
         ),
-        backgroundColor: yaEstaba ? Colors.grey.shade700 : const Color(0xFF0F6E56),
+        backgroundColor: yaEstaba ? Color(0xFF666666) : const Color(0xFF0F6E56),
       ),
     );
   }
@@ -88,11 +88,11 @@ class DetallePeticionScreen extends StatelessWidget {
     final distanciaTexto = _textoDistancia();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF7F0),
+      backgroundColor: const Color(0xFFF9F9FB),
       appBar: AppBar(
         title: const Text('Detalle de la petición'),
-        backgroundColor: const Color(0xFFFAF7F0),
-        foregroundColor: const Color(0xFF26312D),
+        backgroundColor: const Color(0xFFF9F9FB),
+        foregroundColor: const Color(0xFF1A1A1A),
         elevation: 0,
         actions: [
           if (provider.usuarioActual != null)
@@ -121,10 +121,10 @@ class DetallePeticionScreen extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         radius: 22,
-                        backgroundColor: const Color(0xFFFAEEDA),
+                        backgroundColor: const Color(0xFFE3F2EC),
                         child: Text(
                           peticion.autorNombre[0],
-                          style: const TextStyle(color: Color(0xFFAD7A16), fontWeight: FontWeight.bold, fontSize: 16),
+                          style: const TextStyle(color: Color(0xFF0F6E56), fontWeight: FontWeight.bold, fontSize: 16),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -134,9 +134,13 @@ class DetallePeticionScreen extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                Text(
-                                  peticion.autorNombre,
-                                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                                Flexible(
+                                  child: Text(
+                                    peticion.autorNombre,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                                  ),
                                 ),
                                 const SizedBox(width: 4),
                                 Icon(Icons.chevron_right, size: 16, color: Colors.grey.shade500),
@@ -144,7 +148,7 @@ class DetallePeticionScreen extends StatelessWidget {
                             ),
                             Text(
                               [peticion.barrio, ?distanciaTexto, _tiempoTranscurrido()].join(' · '),
-                              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                              style: TextStyle(fontSize: 12, color: Color(0xFF666666)),
                             ),
                           ],
                         ),
@@ -180,7 +184,7 @@ class DetallePeticionScreen extends StatelessWidget {
                 ),
               Text(
                 peticion.descripcion,
-                style: const TextStyle(fontSize: 15, height: 1.4, color: Color(0xFF26312D)),
+                style: const TextStyle(fontSize: 15, height: 1.4, color: Color(0xFF1A1A1A)),
               ),
               const SizedBox(height: 32),
               if (esTrabajador)
@@ -202,7 +206,7 @@ class DetallePeticionScreen extends StatelessWidget {
                       backgroundColor: fuiSeleccionado
                           ? const Color(0xFF0F6E56)
                           : (yaAplico ? Colors.grey.shade300 : const Color(0xFF0F6E56)),
-                      foregroundColor: yaAplico && !fuiSeleccionado ? const Color(0xFF26312D) : Colors.white,
+                      foregroundColor: yaAplico && !fuiSeleccionado ? const Color(0xFF1A1A1A) : Colors.white,
                       disabledBackgroundColor: const Color(0xFF0F6E56),
                       disabledForegroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),

@@ -8,6 +8,16 @@ import 'package:provider/provider.dart';
 import '../models/peticion.dart';
 import '../providers/app_provider.dart';
 
+const _petroleo = Color(0xFF0F6E56);
+const _papel = Color(0xFFF9F9FB);
+const _grafito = Color(0xFF1A1A1A);
+const _calidoClaro = Color(0xFFF5F5F7);
+const _calidoTexto = Color(0xFF666666);
+
+List<BoxShadow> _sombraSuave({double blur = 24, double y = 10, double alpha = 0.06}) => [
+      BoxShadow(color: Colors.black.withValues(alpha: alpha), blurRadius: blur, offset: Offset(0, y)),
+    ];
+
 class PublicarScreen extends StatefulWidget {
   const PublicarScreen({super.key});
 
@@ -138,167 +148,222 @@ class _PublicarScreenState extends State<PublicarScreen> {
     Navigator.pop(context);
   }
 
+  InputDecoration _decoracionCampo({required String label, String? helper, String? counter}) {
+    return InputDecoration(
+      labelText: label,
+      helperText: helper,
+      counterText: counter,
+      filled: true,
+      fillColor: _calidoClaro,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF7F0),
+      backgroundColor: _papel,
       appBar: AppBar(
         title: const Text('Publicar petición'),
-        backgroundColor: const Color(0xFFFAF7F0),
-        foregroundColor: const Color(0xFF26312D),
+        backgroundColor: _papel,
+        foregroundColor: _grafito,
         elevation: 0,
       ),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 36),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              GestureDetector(
-                onTap: _elegirFoto,
-                child: Container(
-                  height: 110,
-                  width: double.infinity,
-                  clipBehavior: Clip.antiAlias,
-                  decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(12)),
-                  child: _fotoPath == null
-                      ? Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.add_a_photo_outlined, color: Colors.grey.shade500),
-                            const SizedBox(height: 6),
-                            Text('Agregar foto (opcional)', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
-                          ],
-                        )
-                      : Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            Image.file(File(_fotoPath!), fit: BoxFit.cover),
-                            Positioned(
-                              top: 6,
-                              right: 6,
-                              child: GestureDetector(
-                                onTap: () => setState(() => _fotoPath = null),
-                                child: Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
-                                  child: const Icon(Icons.close, size: 16, color: Colors.white),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                ),
-              ),
-              const SizedBox(height: 18),
-              TextFormField(
-                controller: _descripcionController,
-                maxLines: 4,
-                onChanged: (_) => setState(() {}),
-                decoration: InputDecoration(
-                  labelText: '¿Qué necesitas?',
-                  helperText: 'Entre más detalles, más rápido te contactan',
-                  counterText: '${_descripcionController.text.trim().length}/$_descripcionMinima mínimo',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                ),
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) return 'Escribe qué necesitas';
-                  if (v.trim().length < _descripcionMinima) {
-                    return 'Agrega más detalles (mínimo $_descripcionMinima caracteres)';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 14),
-              TextFormField(
-                controller: _barrioController,
-                decoration: InputDecoration(
-                  labelText: 'Barrio',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                ),
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Escribe tu barrio' : null,
-              ),
-              const SizedBox(height: 18),
-              Text('Categoría', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey.shade700)),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _iconosCategoria.entries.map((entry) {
-                  final activo = entry.key == _categoria;
-                  return InkWell(
-                    onTap: () => setState(() => _categoria = entry.key),
-                    borderRadius: BorderRadius.circular(20),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-                      decoration: BoxDecoration(
-                        color: activo ? const Color(0xFF0F6E56) : Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: activo ? const Color(0xFF0F6E56) : Colors.grey.shade300),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(entry.value, size: 16, color: activo ? Colors.white : Colors.grey.shade700),
-                          const SizedBox(width: 6),
-                          Text(
-                            entry.key,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: activo ? Colors.white : const Color(0xFF26312D),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 8),
-              SwitchListTile(
-                value: _urgente,
-                onChanged: (v) => setState(() => _urgente = v),
-                title: const Text('Marcar como urgente'),
-                activeThumbColor: const Color(0xFFB54834),
-                contentPadding: EdgeInsets.zero,
-              ),
-              const SizedBox(height: 8),
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    _obteniendoUbicacion
-                        ? Icons.location_searching
-                        : (_lat != null ? Icons.location_on : Icons.location_off),
-                    size: 14,
-                    color: Colors.grey.shade500,
+                  Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(color: _petroleo.withValues(alpha: 0.12), shape: BoxShape.circle),
+                    child: const Icon(Icons.post_add_rounded, color: _petroleo, size: 22),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 14),
                   Expanded(
-                    child: Text(
-                      _obteniendoUbicacion
-                          ? 'Obteniendo tu ubicación...'
-                          : (_lat != null
-                              ? 'Ubicación detectada — se usará para ordenar tu publicación por cercanía'
-                              : 'Sin ubicación disponible — activa el GPS para que te encuentren más rápido'),
-                      style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Cuéntanos qué necesitas',
+                          style: (Theme.of(context).textTheme.titleLarge ?? const TextStyle())
+                              .copyWith(fontSize: 19, fontWeight: FontWeight.bold, color: _grafito),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Entre más claro seas, más rápido te van a contactar',
+                          style: TextStyle(fontSize: 13, color: _calidoTexto),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 22),
+              Container(
+                padding: const EdgeInsets.all(22),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: _sombraSuave(),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    GestureDetector(
+                      onTap: _elegirFoto,
+                      child: Container(
+                        height: 116,
+                        width: double.infinity,
+                        clipBehavior: Clip.antiAlias,
+                        decoration: BoxDecoration(color: _calidoClaro, borderRadius: BorderRadius.circular(18)),
+                        child: _fotoPath == null
+                            ? Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.add_a_photo_outlined, color: _calidoTexto),
+                                  const SizedBox(height: 8),
+                                  Text('Agregar foto (opcional)', style: TextStyle(fontSize: 12, color: _calidoTexto)),
+                                ],
+                              )
+                            : Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  Image.file(File(_fotoPath!), fit: BoxFit.cover),
+                                  Positioned(
+                                    top: 8,
+                                    right: 8,
+                                    child: GestureDetector(
+                                      onTap: () => setState(() => _fotoPath = null),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(5),
+                                        decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                                        child: const Icon(Icons.close, size: 16, color: Colors.white),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 22),
+                    TextFormField(
+                      controller: _descripcionController,
+                      maxLines: 4,
+                      onChanged: (_) => setState(() {}),
+                      decoration: _decoracionCampo(
+                        label: '¿Qué necesitas?',
+                        helper: 'Entre más detalles, más rápido te contactan',
+                        counter: '${_descripcionController.text.trim().length}/$_descripcionMinima mínimo',
+                      ),
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return 'Escribe qué necesitas';
+                        if (v.trim().length < _descripcionMinima) {
+                          return 'Agrega más detalles (mínimo $_descripcionMinima caracteres)';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 18),
+                    TextFormField(
+                      controller: _barrioController,
+                      decoration: _decoracionCampo(label: 'Barrio'),
+                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Escribe tu barrio' : null,
+                    ),
+                    const SizedBox(height: 22),
+                    Text('Categoría', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: _grafito)),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _iconosCategoria.entries.map((entry) {
+                        final activo = entry.key == _categoria;
+                        return InkWell(
+                          onTap: () => setState(() => _categoria = entry.key),
+                          borderRadius: BorderRadius.circular(22),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: activo ? _petroleo : _calidoClaro,
+                              borderRadius: BorderRadius.circular(22),
+                              boxShadow: activo
+                                  ? [BoxShadow(color: _petroleo.withValues(alpha: 0.28), blurRadius: 12, offset: const Offset(0, 4))]
+                                  : null,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(entry.value, size: 16, color: activo ? Colors.white : _calidoTexto),
+                                const SizedBox(width: 6),
+                                Text(
+                                  entry.key,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: activo ? Colors.white : _grafito,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      decoration: BoxDecoration(color: _calidoClaro, borderRadius: BorderRadius.circular(16)),
+                      child: SwitchListTile(
+                        value: _urgente,
+                        onChanged: (v) => setState(() => _urgente = v),
+                        title: const Text('Marcar como urgente'),
+                        activeThumbColor: const Color(0xFFB54834),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Row(
+                      children: [
+                        Icon(
+                          _obteniendoUbicacion
+                              ? Icons.location_searching
+                              : (_lat != null ? Icons.location_on : Icons.location_off),
+                          size: 14,
+                          color: _calidoTexto,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            _obteniendoUbicacion
+                                ? 'Obteniendo tu ubicación...'
+                                : (_lat != null
+                                    ? 'Ubicación detectada — se usará para ordenar tu publicación por cercanía'
+                                    : 'Sin ubicación disponible — activa el GPS para que te encuentren más rápido'),
+                            style: TextStyle(fontSize: 11, color: _calidoTexto),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 28),
               ElevatedButton(
                 onPressed: _publicando ? null : _publicar,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0F6E56),
+                  backgroundColor: _petroleo,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  elevation: 4,
+                  shadowColor: _petroleo.withValues(alpha: 0.4),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                 ),
                 child: _publicando
                     ? const SizedBox(
@@ -306,7 +371,7 @@ class _PublicarScreenState extends State<PublicarScreen> {
                         height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
-                    : const Text('Publicar', style: TextStyle(fontWeight: FontWeight.bold)),
+                    : const Text('Publicar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
             ],
           ),

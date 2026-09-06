@@ -62,11 +62,11 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
     final lista = provider.misNotificaciones;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF7F0),
+      backgroundColor: const Color(0xFFF9F9FB),
       appBar: AppBar(
         title: const Text('Notificaciones'),
-        backgroundColor: const Color(0xFFFAF7F0),
-        foregroundColor: const Color(0xFF26312D),
+        backgroundColor: const Color(0xFFF9F9FB),
+        foregroundColor: const Color(0xFF1A1A1A),
         elevation: 0,
       ),
       body: lista.isEmpty
@@ -76,7 +76,7 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
                 children: [
                   Icon(Icons.notifications_none, size: 56, color: Colors.grey.shade300),
                   const SizedBox(height: 16),
-                  Text('No tienes notificaciones todavía', style: TextStyle(color: Colors.grey.shade600)),
+                  Text('No tienes notificaciones todavía', style: TextStyle(color: Color(0xFF666666))),
                 ],
               ),
             )
@@ -130,7 +130,7 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(n.mensaje, style: const TextStyle(fontSize: 14, color: Color(0xFF26312D))),
+                              Text(n.mensaje, style: const TextStyle(fontSize: 14, color: Color(0xFF1A1A1A))),
                               const SizedBox(height: 4),
                               Text(
                                 _tiempoTranscurrido(n.fecha),

@@ -29,11 +29,11 @@ class _PremiumScreenState extends State<PremiumScreen> {
     );
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF7F0),
+      backgroundColor: const Color(0xFFF9F9FB),
       appBar: AppBar(
         title: const Text('Visibilidad Premium'),
-        backgroundColor: const Color(0xFFFAF7F0),
-        foregroundColor: const Color(0xFF26312D),
+        backgroundColor: const Color(0xFFF9F9FB),
+        foregroundColor: const Color(0xFF1A1A1A),
         elevation: 0,
       ),
       body: ListView(
@@ -67,7 +67,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
             Text(
               'Comprobante: ${actualizada.comprobantePago}',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              style: TextStyle(fontSize: 12, color: Color(0xFF666666)),
             ),
             const SizedBox(height: 20),
             Center(
@@ -150,7 +150,7 @@ class _Encabezado extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [Color(0xFFD9A441), Color(0xFFAD7A16)]),
+                  color: Colors.white.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Row(
@@ -210,18 +210,21 @@ class _FilaBeneficios extends StatelessWidget {
                 margin: const EdgeInsets.symmetric(horizontal: 4),
                 padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFAEEDA),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFD9A441).withValues(alpha: 0.4)),
+                  border: Border.all(color: Colors.grey.shade200),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 3)),
+                  ],
                 ),
                 child: Column(
                   children: [
-                    Icon(b.icono, color: const Color(0xFFAD7A16), size: 22),
+                    Icon(b.icono, color: const Color(0xFF0F6E56), size: 22),
                     const SizedBox(height: 8),
                     Text(
                       b.texto,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF26312D), height: 1.25),
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A), height: 1.25),
                     ),
                   ],
                 ),
@@ -260,12 +263,16 @@ class _VistaPrevia extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: destacada ? const Color(0xFFFAEEDA) : Colors.white,
+            color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: destacada ? const Color(0xFFD9A441) : Colors.grey.shade200, width: destacada ? 1.6 : 1),
-            boxShadow: destacada
-                ? [BoxShadow(color: const Color(0xFFD9A441).withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 3))]
-                : null,
+            border: Border.all(color: destacada ? const Color(0xFF0F6E56) : Colors.grey.shade200, width: destacada ? 1.4 : 1),
+            boxShadow: [
+              BoxShadow(
+                color: destacada ? const Color(0xFF0F6E56).withValues(alpha: 0.16) : Colors.black.withValues(alpha: 0.03),
+                blurRadius: destacada ? 10 : 6,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -275,14 +282,14 @@ class _VistaPrevia extends StatelessWidget {
                   margin: const EdgeInsets.only(bottom: 6),
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(colors: [Color(0xFFD9A441), Color(0xFFAD7A16)]),
+                    color: const Color(0xFF0F6E56),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: const Text('DESTACADO', style: TextStyle(fontSize: 7, fontWeight: FontWeight.bold, color: Colors.white)),
                 ),
               Row(
                 children: [
-                  CircleAvatar(radius: 10, backgroundColor: const Color(0xFFFAEEDA), child: Text('T', style: TextStyle(fontSize: 9, color: Colors.grey.shade600))),
+                  CircleAvatar(radius: 10, backgroundColor: const Color(0xFFE3F2EC), child: Text('T', style: TextStyle(fontSize: 9, color: Color(0xFF666666)))),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Container(height: 6, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(3))),

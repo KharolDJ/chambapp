@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 const _petroleo = Color(0xFF0F6E56);
-const _papel = Color(0xFFFAF7F0);
-const _grafito = Color(0xFF26312D);
+const _papel = Color(0xFFF9F9FB);
+const _grafito = Color(0xFF1A1A1A);
 
 class PrivacidadScreen extends StatelessWidget {
   const PrivacidadScreen({super.key});

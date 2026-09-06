@@ -18,62 +18,64 @@ class PremiumTrabajadorScreen extends StatelessWidget {
           top: 20,
           bottom: MediaQuery.of(context).viewInsets.bottom + 20,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Visibilidad Premium — $oficio',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Destaca tu perfil en el Podio de Recomendados de $oficio por 30 días — \$10.000',
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-            ),
-            const SizedBox(height: 16),
-            const _Paso(numero: '1', texto: 'Transfiere \$10.000 a la cuenta indicada por el equipo Chambapp.'),
-            const _Paso(numero: '2', texto: 'Ingresa abajo la referencia de tu comprobante de pago.'),
-            const _Paso(numero: '3', texto: 'El equipo revisa y aprueba — apareces en el Podio de tu oficio.'),
-            const SizedBox(height: 12),
-            TextField(
-              controller: controller,
-              decoration: InputDecoration(
-                hintText: 'Referencia del comprobante de pago',
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Visibilidad Premium — $oficio',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () async {
-                if (controller.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Ingresa la referencia del comprobante')),
-                  );
-                  return;
-                }
-                final navigator = Navigator.of(context);
-                final mensajero = ScaffoldMessenger.of(context);
-                final error = await context.read<AppProvider>().solicitarPremiumTrabajador(
-                      oficio: oficio,
-                      comprobante: controller.text.trim(),
+              const SizedBox(height: 6),
+              Text(
+                'Destaca tu perfil en el Podio de Recomendados de $oficio por 30 días — \$10.000',
+                style: TextStyle(fontSize: 13, color: Color(0xFF666666)),
+              ),
+              const SizedBox(height: 16),
+              const _Paso(numero: '1', texto: 'Transfiere \$10.000 a la cuenta indicada por el equipo Chambapp.'),
+              const _Paso(numero: '2', texto: 'Ingresa abajo la referencia de tu comprobante de pago.'),
+              const _Paso(numero: '3', texto: 'El equipo revisa y aprueba — apareces en el Podio de tu oficio.'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                decoration: InputDecoration(
+                  hintText: 'Referencia del comprobante de pago',
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () async {
+                  if (controller.text.trim().isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Ingresa la referencia del comprobante')),
                     );
-                navigator.pop();
-                if (error != null) {
-                  mensajero.showSnackBar(SnackBar(content: Text(error)));
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0F6E56),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    return;
+                  }
+                  final navigator = Navigator.of(context);
+                  final mensajero = ScaffoldMessenger.of(context);
+                  final error = await context.read<AppProvider>().solicitarPremiumTrabajador(
+                        oficio: oficio,
+                        comprobante: controller.text.trim(),
+                      );
+                  navigator.pop();
+                  if (error != null) {
+                    mensajero.showSnackBar(SnackBar(content: Text(error)));
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0F6E56),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('Solicitar Visibilidad Premium', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
-              child: const Text('Solicitar Visibilidad Premium', style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -85,11 +87,11 @@ class PremiumTrabajadorScreen extends StatelessWidget {
     final usuario = provider.usuarioActual;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF7F0),
+      backgroundColor: const Color(0xFFF9F9FB),
       appBar: AppBar(
         title: const Text('Visibilidad Premium'),
-        backgroundColor: const Color(0xFFFAF7F0),
-        foregroundColor: const Color(0xFF26312D),
+        backgroundColor: const Color(0xFFF9F9FB),
+        foregroundColor: const Color(0xFF1A1A1A),
         elevation: 0,
       ),
       body: (usuario == null || usuario.oficios.isEmpty)
@@ -97,7 +99,7 @@ class PremiumTrabajadorScreen extends StatelessWidget {
               child: Text(
                 'Agrega al menos un oficio en tu perfil para poder destacarte.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey.shade600),
+                style: TextStyle(color: Color(0xFF666666)),
               ),
             )
           : ListView(
@@ -128,12 +130,21 @@ class PremiumTrabajadorScreen extends StatelessWidget {
                     margin: const EdgeInsets.only(bottom: 14),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: (vigente != null && vigente.activo) ? const Color(0xFFFAEEDA) : Colors.white,
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: (vigente != null && vigente.activo) ? const Color(0xFFD9A441) : Colors.grey.shade200,
-                        width: (vigente != null && vigente.activo) ? 1.6 : 1,
+                        color: (vigente != null && vigente.activo) ? const Color(0xFF0F6E56) : Colors.grey.shade200,
+                        width: (vigente != null && vigente.activo) ? 1.4 : 1,
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: (vigente != null && vigente.activo)
+                              ? const Color(0xFF0F6E56).withValues(alpha: 0.16)
+                              : Colors.black.withValues(alpha: 0.03),
+                          blurRadius: (vigente != null && vigente.activo) ? 14 : 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -145,9 +156,13 @@ class PremiumTrabajadorScreen extends StatelessWidget {
                             children: [
                               const Icon(Icons.check_circle, color: Color(0xFF0F6E56), size: 18),
                               const SizedBox(width: 6),
-                              Text(
-                                'Activa hasta ${_formatearFecha(vigente.expiraEn!)}',
-                                style: const TextStyle(fontSize: 13, color: Color(0xFF0F6E56)),
+                              Expanded(
+                                child: Text(
+                                  'Activa hasta ${_formatearFecha(vigente.expiraEn!)}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 13, color: Color(0xFF0F6E56)),
+                                ),
                               ),
                             ],
                           ),
@@ -184,7 +199,7 @@ class PremiumTrabajadorScreen extends StatelessWidget {
                               Expanded(
                                 child: Text(
                                   'Los 3 cupos de "$oficio" están ocupados. Vuelve a intentar cuando se libere uno.',
-                                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                                  style: TextStyle(fontSize: 13, color: Color(0xFF666666)),
                                 ),
                               ),
                             ],
@@ -232,7 +247,7 @@ class _Encabezado extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0xFFD9A441), Color(0xFFAD7A16)]),
+              color: Colors.white.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(20),
             ),
             child: const Row(
@@ -290,18 +305,21 @@ class _FilaBeneficios extends StatelessWidget {
                 margin: const EdgeInsets.symmetric(horizontal: 4),
                 padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFAEEDA),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFD9A441).withValues(alpha: 0.4)),
+                  border: Border.all(color: Colors.grey.shade200),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 3)),
+                  ],
                 ),
                 child: Column(
                   children: [
-                    Icon(b.icono, color: const Color(0xFFAD7A16), size: 22),
+                    Icon(b.icono, color: const Color(0xFF0F6E56), size: 22),
                     const SizedBox(height: 8),
                     Text(
                       b.texto,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF26312D), height: 1.25),
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A), height: 1.25),
                     ),
                   ],
                 ),

@@ -4,8 +4,8 @@ import '../models/reporte.dart';
 import '../providers/app_provider.dart';
 
 const _ladrillo = Color(0xFFB54834);
-const _papel = Color(0xFFFAF7F0);
-const _grafito = Color(0xFF26312D);
+const _papel = Color(0xFFF9F9FB);
+const _grafito = Color(0xFF1A1A1A);
 
 class AdministracionScreen extends StatefulWidget {
   const AdministracionScreen({super.key});
@@ -38,7 +38,7 @@ class _AdministracionScreenState extends State<AdministracionScreen> {
         final texto = snapshot.connectionState == ConnectionState.waiting
             ? 'Cargando...'
             : (snapshot.data ?? 'Usuario eliminado');
-        return Text('$prefijo$texto', style: TextStyle(fontSize: 13, color: Colors.grey.shade700));
+        return Text('$prefijo$texto', style: TextStyle(fontSize: 13, color: Color(0xFF666666)));
       },
     );
   }
@@ -52,7 +52,7 @@ class _AdministracionScreenState extends State<AdministracionScreen> {
     } catch (_) {
       descripcion = 'Publicación eliminada';
     }
-    return Text('Contra: $descripcion', style: TextStyle(fontSize: 13, color: Colors.grey.shade700));
+    return Text('Contra: $descripcion', style: TextStyle(fontSize: 13, color: Color(0xFF666666)));
   }
 
   @override
@@ -80,7 +80,7 @@ class _AdministracionScreenState extends State<AdministracionScreen> {
                     Text(
                       'No hay reportes registrados todavía',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey.shade700),
+                      style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF666666)),
                     ),
                   ],
                 ),

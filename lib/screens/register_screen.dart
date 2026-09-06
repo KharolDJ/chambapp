@@ -8,8 +8,8 @@ import 'login_screen.dart';
 
 const _petroleo = Color(0xFF0F6E56);
 const _mostazaTexto = Color(0xFFAD7A16);
-const _papel = Color(0xFFFAF7F0);
-const _grafito = Color(0xFF26312D);
+const _papel = Color(0xFFF9F9FB);
+const _grafito = Color(0xFF1A1A1A);
 
 enum _TipoPaso { nombre, correo, oficios, datosFinales }
 
@@ -232,7 +232,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const SizedBox(height: 6),
               Text(
                 'Paso ${_paso + 1} de ${pasos.length}',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                style: TextStyle(fontSize: 12, color: Color(0xFF666666)),
               ),
               const SizedBox(height: 24),
               Expanded(
@@ -301,7 +301,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _grafito),
             ),
             const SizedBox(height: 8),
-            Text('Cuéntanos tu nombre completo para tu perfil.', style: TextStyle(color: Colors.grey.shade600)),
+            Text('Cuéntanos tu nombre completo para tu perfil.', style: TextStyle(color: Color(0xFF666666))),
             const SizedBox(height: 20),
             TextField(
               controller: _nombreController,
@@ -323,7 +323,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _grafito),
             ),
             const SizedBox(height: 8),
-            Text('Lo usaremos para verificar tu cuenta.', style: TextStyle(color: Colors.grey.shade600)),
+            Text('Lo usaremos para verificar tu cuenta.', style: TextStyle(color: Color(0xFF666666))),
             const SizedBox(height: 20),
             TextField(
               controller: _correoController,
@@ -360,7 +360,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _grafito),
             ),
             const SizedBox(height: 8),
-            Text('Elige uno o varios oficios que sepas hacer.', style: TextStyle(color: Colors.grey.shade600)),
+            Text('Elige uno o varios oficios que sepas hacer.', style: TextStyle(color: Color(0xFF666666))),
             const SizedBox(height: 20),
             Wrap(
               spacing: 8,
@@ -408,7 +408,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _grafito),
             ),
             const SizedBox(height: 8),
-            Text('Tu celular y una foto de perfil (opcional).', style: TextStyle(color: Colors.grey.shade600)),
+            Text('Tu celular y una foto de perfil (opcional).', style: TextStyle(color: Color(0xFF666666))),
             const SizedBox(height: 20),
             Center(
               child: GestureDetector(

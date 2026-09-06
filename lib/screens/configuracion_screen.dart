@@ -5,8 +5,8 @@ import 'privacidad_screen.dart';
 
 const _petroleo = Color(0xFF0F6E56);
 const _ladrillo = Color(0xFFB54834);
-const _papel = Color(0xFFFAF7F0);
-const _grafito = Color(0xFF26312D);
+const _papel = Color(0xFFF9F9FB);
+const _grafito = Color(0xFF1A1A1A);
 
 class ConfiguracionScreen extends StatelessWidget {
   const ConfiguracionScreen({super.key});
@@ -71,7 +71,7 @@ class ConfiguracionScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Text(
               'El radio de búsqueda ahora se ajusta directo desde el feed ("Cerca de ti").',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              style: TextStyle(fontSize: 12, color: Color(0xFF666666)),
             ),
           ),
           const SizedBox(height: 24),
@@ -182,7 +182,7 @@ class _FilaSwitch extends StatelessWidget {
               children: [
                 Text(titulo, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _grafito)),
                 const SizedBox(height: 2),
-                Text(subtitulo, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                Text(subtitulo, style: TextStyle(fontSize: 12, color: Color(0xFF666666))),
               ],
             ),
           ),

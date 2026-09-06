@@ -5,8 +5,8 @@ import 'register_screen.dart';
 
 const _petroleo = Color(0xFF0F6E56);
 const _mostazaTexto = Color(0xFFAD7A16);
-const _papel = Color(0xFFFAF7F0);
-const _grafito = Color(0xFF26312D);
+const _papel = Color(0xFFF9F9FB);
+const _grafito = Color(0xFF1A1A1A);
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -104,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Text(
                   'Ingresa con el correo que usaste antes',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
+                  style: TextStyle(fontSize: 14, color: Color(0xFF666666)),
                 ),
                 const SizedBox(height: 24),
                 TextFormField(

@@ -60,11 +60,11 @@ class _PerfilPublicoScreenState extends State<PerfilPublicoScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF7F0),
+      backgroundColor: const Color(0xFFF9F9FB),
       appBar: AppBar(
         title: Text(usuario?.nombre ?? 'Perfil'),
-        backgroundColor: const Color(0xFFFAF7F0),
-        foregroundColor: const Color(0xFF26312D),
+        backgroundColor: const Color(0xFFF9F9FB),
+        foregroundColor: const Color(0xFF1A1A1A),
         elevation: 0,
       ),
       body: usuario == null
@@ -72,7 +72,7 @@ class _PerfilPublicoScreenState extends State<PerfilPublicoScreen> {
               child: _noEncontrado
                   ? Text(
                       'Este usuario ya no está disponible',
-                      style: TextStyle(color: Colors.grey.shade600),
+                      style: TextStyle(color: Color(0xFF666666)),
                     )
                   : const CircularProgressIndicator(color: Color(0xFF0F6E56)),
             )
@@ -126,22 +126,22 @@ class _CuerpoPerfil extends StatelessWidget {
                   const SizedBox(width: 4),
                   Text(
                     '${usuario.calificacionPromedio.toStringAsFixed(1)} (${usuario.numeroCalificaciones} calificaciones)',
-                    style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                    style: TextStyle(fontSize: 13, color: Color(0xFF666666)),
                   ),
                 ],
               )
             else
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: const Color(0xFFFAEEDA), borderRadius: BorderRadius.circular(20)),
+                decoration: BoxDecoration(color: const Color(0xFFE3F2EC), borderRadius: BorderRadius.circular(20)),
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.auto_awesome, size: 14, color: Color(0xFFAD7A16)),
+                    Icon(Icons.auto_awesome, size: 14, color: Color(0xFF0F6E56)),
                     SizedBox(width: 4),
                     Text(
                       'Nuevo en la plataforma',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFAD7A16)),
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0F6E56)),
                     ),
                   ],
                 ),
@@ -151,7 +151,7 @@ class _CuerpoPerfil extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
                   'Oficios: ${usuario.oficios.join(', ')}',
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                  style: TextStyle(fontSize: 13, color: Color(0xFF666666)),
                 ),
               ),
           ],
@@ -197,7 +197,7 @@ class _CuerpoPerfil extends StatelessWidget {
         if (calificaciones.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Text('Todavía nadie ha calificado a esta persona', style: TextStyle(color: Colors.grey.shade600)),
+            child: Text('Todavía nadie ha calificado a esta persona', style: TextStyle(color: Color(0xFF666666))),
           )
         else
           ...calificaciones.map((c) {

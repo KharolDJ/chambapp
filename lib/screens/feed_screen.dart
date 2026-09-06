@@ -85,8 +85,8 @@ class _FeedScreenState extends State<FeedScreen> {
     showModalBottomSheet(
       context: context,
       builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: ListView(
+          shrinkWrap: true,
           children: [
             ListTile(
               title: const Text('Todas las categorías'),
@@ -120,8 +120,8 @@ class _FeedScreenState extends State<FeedScreen> {
     showModalBottomSheet(
       context: context,
       builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: ListView(
+          shrinkWrap: true,
           children: opciones.map((km) {
             final activo = provider.radioBusquedaKm == km;
             return ListTile(
@@ -161,7 +161,7 @@ class _FeedScreenState extends State<FeedScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (icono != null) ...[
-                Icon(icono, size: 15, color: activo ? Colors.white : Colors.grey.shade700),
+                Icon(icono, size: 15, color: activo ? Colors.white : Color(0xFF666666)),
                 const SizedBox(width: 4),
               ],
               Text(
@@ -169,7 +169,7 @@ class _FeedScreenState extends State<FeedScreen> {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: activo ? Colors.white : const Color(0xFF26312D),
+                  color: activo ? Colors.white : const Color(0xFF1A1A1A),
                 ),
               ),
             ],
@@ -247,11 +247,11 @@ class _FeedScreenState extends State<FeedScreen> {
     final cargandoUbicacion = _posicionActual == null && _avisoUbicacion == null;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF7F0),
+      backgroundColor: const Color(0xFFF9F9FB),
       appBar: AppBar(
         title: const Text('Cerca de ti'),
-        backgroundColor: const Color(0xFFFAF7F0),
-        foregroundColor: const Color(0xFF26312D),
+        backgroundColor: const Color(0xFFF9F9FB),
+        foregroundColor: const Color(0xFF1A1A1A),
         elevation: 0,
         actions: [
           if (provider.usuarioActual == null)
@@ -282,7 +282,7 @@ class _FeedScreenState extends State<FeedScreen> {
             ),
           Container(
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-            color: const Color(0xFFFAF7F0),
+            color: const Color(0xFFF9F9FB),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -363,7 +363,7 @@ class _FeedScreenState extends State<FeedScreen> {
                                       ? 'No hay publicaciones que coincidan con tu búsqueda'
                                       : 'No hay publicaciones dentro de tu radio de búsqueda (${provider.radioBusquedaKm.toStringAsFixed(0)} km)',
                                   textAlign: TextAlign.center,
-                                  style: TextStyle(color: Colors.grey.shade600),
+                                  style: TextStyle(color: Color(0xFF666666)),
                                 ),
                                 const SizedBox(height: 12),
                                 TextButton(
@@ -377,7 +377,7 @@ class _FeedScreenState extends State<FeedScreen> {
                             _soloUrgentes
                                 ? 'No hay publicaciones urgentes con estos filtros'
                                 : 'No hay publicaciones con estos filtros',
-                            style: TextStyle(color: Colors.grey.shade600),
+                            style: TextStyle(color: Color(0xFF666666)),
                           ),
                   )
                 : ListView.builder(
@@ -413,7 +413,7 @@ class _FranjaPersonas extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFFAF7F0),
+      color: const Color(0xFFF9F9FB),
       padding: const EdgeInsets.only(bottom: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -458,7 +458,7 @@ class _FranjaPersonas extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(fontSize: 11, color: Color(0xFF26312D)),
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF1A1A1A)),
                           ),
                         ],
                       ),
@@ -497,13 +497,12 @@ class _FranjaPodio extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [const Color(0xFFFAEEDA), const Color(0xFFD9A441).withValues(alpha: 0.18)],
-        ),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFD9A441), width: 1.2),
+        border: Border.all(color: const Color(0xFF0F6E56), width: 1.2),
+        boxShadow: [
+          BoxShadow(color: const Color(0xFF0F6E56).withValues(alpha: 0.12), blurRadius: 14, offset: const Offset(0, 4)),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -548,13 +547,13 @@ class _FranjaPodio extends StatelessWidget {
                                 padding: const EdgeInsets.all(2),
                                 decoration: const BoxDecoration(
                                   shape: BoxShape.circle,
-                                  gradient: LinearGradient(colors: [Color(0xFFD9A441), Color(0xFFAD7A16)]),
+                                  color: Color(0xFF0F6E56),
                                 ),
                                 child: CircleAvatar(
                                   radius: 24,
-                                  backgroundColor: const Color(0xFFFAEEDA),
+                                  backgroundColor: const Color(0xFFE3F2EC),
                                   backgroundImage: foto,
-                                  child: foto == null ? const Icon(Icons.person, color: Color(0xFFAD7A16)) : null,
+                                  child: foto == null ? const Icon(Icons.person, color: Color(0xFF0F6E56)) : null,
                                 ),
                               ),
                               Positioned(
@@ -574,7 +573,7 @@ class _FranjaPodio extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(fontSize: 11, color: Color(0xFF26312D)),
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF1A1A1A)),
                           ),
                         ],
                       ),
