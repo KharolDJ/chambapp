@@ -28,17 +28,17 @@ class PublicarScreen extends StatefulWidget {
 class _PublicarScreenState extends State<PublicarScreen> {
   static const _descripcionMinima = 20;
 
-  static const Map<String, IconData> _iconosCategoria = {
-    'Plomería': Icons.plumbing,
-    'Electricidad': Icons.electrical_services,
-    'Cocina': Icons.kitchen,
-    'Carpintería': Icons.carpenter,
-    'Jardinería': Icons.grass,
-    'Limpieza del hogar': Icons.cleaning_services,
-    'Pintura': Icons.format_paint,
-    'Albañilería': Icons.construction,
-    'Cerrajería': Icons.key,
-    'Acarreos': Icons.local_shipping,
+  static const Map<String, String> _iconosCategoria = {
+    'Plomería': 'assets/icon/plomeria.png',
+    'Electricidad': 'assets/icon/electricidad.png',
+    'Cocina': 'assets/icon/cocina.png',
+    'Carpintería': 'assets/icon/carpinteria.png',
+    'Jardinería': 'assets/icon/jardineria.png',
+    'Limpieza del hogar': 'assets/icon/limpieza.png',
+    'Pintura': 'assets/icon/pintura.png',
+    'Albañilería': 'assets/icon/albanileria.png',
+    'Cerrajería': 'assets/icon/cerrajeria.png',
+    'Acarreos': 'assets/icon/acarreos.png',
   };
 
   final _formKey = GlobalKey<FormState>();
@@ -228,7 +228,11 @@ class _PublicarScreenState extends State<PublicarScreen> {
                             ? Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Icon(Icons.add_a_photo_outlined, color: _calidoTexto),
+                                  SizedBox(
+                                    width: 26,
+                                    height: 26,
+                                    child: Image.asset('assets/icon/camara.png', fit: BoxFit.contain),
+                                  ),
                                   const SizedBox(height: 8),
                                   Text('Agregar foto (opcional)', style: TextStyle(fontSize: 12, color: _calidoTexto)),
                                 ],
@@ -300,7 +304,11 @@ class _PublicarScreenState extends State<PublicarScreen> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(entry.value, size: 16, color: activo ? Colors.white : _calidoTexto),
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: Image.asset(entry.value, fit: BoxFit.contain),
+                                ),
                                 const SizedBox(width: 6),
                                 Text(
                                   entry.key,
