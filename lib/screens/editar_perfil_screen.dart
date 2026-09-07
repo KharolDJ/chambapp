@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
 
 const _petroleo = Color(0xFF0F6E56);
-const _mostazaTexto = Color(0xFFAD7A16);
 const _papel = Color(0xFFF9F9FB);
 const _grafito = Color(0xFF1A1A1A);
 
@@ -161,7 +160,7 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
                 const SizedBox(height: 24),
                 TextFormField(
                   controller: _nombreController,
-                  decoration: _decoracion('Nombre completo', Icons.badge_outlined),
+                  decoration: _decoracion('Nombre completo', 'assets/icon/nav_perfil.png'),
                   validator: (value) => (value == null || value.trim().isEmpty) ? 'Ingresa tu nombre' : null,
                 ),
                 const SizedBox(height: 16),
@@ -170,7 +169,7 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
                   enabled: false,
                   decoration: _decoracion(
                     'Correo electrónico',
-                    Icons.email_outlined,
+                    'assets/icon/correo.png',
                     helper: 'Por ahora no se puede cambiar aquí',
                   ),
                 ),
@@ -180,7 +179,7 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
                   keyboardType: TextInputType.phone,
                   decoration: _decoracion(
                     'Número de celular',
-                    Icons.phone_outlined,
+                    'assets/icon/telefono.png',
                     helper: 'Solo se usa para contactarte por WhatsApp',
                   ),
                   validator: (value) {
@@ -197,7 +196,7 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
                   keyboardType: TextInputType.number,
                   decoration: _decoracion(
                     'Documento de identidad (opcional)',
-                    Icons.badge_outlined,
+                    'assets/icon/documento_identidad.png',
                     helper: 'Ayuda a generar más confianza en tu perfil',
                   ),
                 ),
@@ -265,11 +264,14 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
     );
   }
 
-  InputDecoration _decoracion(String label, IconData icono, {String? helper}) {
+  InputDecoration _decoracion(String label, String iconoAsset, {String? helper}) {
     return InputDecoration(
       labelText: label,
       helperText: helper,
-      prefixIcon: Icon(icono, color: _mostazaTexto),
+      prefixIcon: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Image.asset(iconoAsset, fit: BoxFit.contain),
+      ),
       filled: true,
       fillColor: Colors.white,
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
