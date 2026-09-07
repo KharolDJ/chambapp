@@ -352,54 +352,69 @@ class _FeedScreenState extends State<FeedScreen> {
               ],
             ),
           ),
-          if (personasEncontradas.isNotEmpty) _FranjaPersonas(personas: personasEncontradas),
-          if (podioCategoria.isNotEmpty)
-            _FranjaPodio(categoria: _categoriaFiltro!, podio: podioCategoria)
-          else if (_categoriaFiltro == null && esEmpleador && categoriasConPodio.isNotEmpty)
-            _CarruselPodios(
-              categorias: categoriasConPodio,
-              provider: provider,
-              onSeleccionar: (categoria) => setState(() => _categoriaFiltro = categoria),
-            ),
           Expanded(
-            child: lista.isEmpty
-                ? Center(
-                    child: lista.length != listaSinFiltroDeRadio.length
-                        ? Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 32),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  provider.radioBusquedaKm.isInfinite
-                                      ? 'No hay publicaciones que coincidan con tu búsqueda'
-                                      : 'No hay publicaciones dentro de tu radio de búsqueda (${provider.radioBusquedaKm.toStringAsFixed(0)} km)',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(color: Color(0xFF666666)),
-                                ),
-                                const SizedBox(height: 12),
-                                TextButton(
-                                  onPressed: () => _mostrarRadio(context),
-                                  child: const Text('Ampliar radio de búsqueda'),
-                                ),
-                              ],
-                            ),
-                          )
-                        : Text(
-                            _soloUrgentes
-                                ? 'No hay publicaciones urgentes con estos filtros'
-                                : 'No hay publicaciones con estos filtros',
-                            style: TextStyle(color: Color(0xFF666666)),
-                          ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: lista.length,
-                    itemBuilder: (context, i) => PeticionCard(
-                      peticion: lista[i],
-                      distanciaKm: _distanciaKm(lista[i]),
+            child: CustomScrollView(
+              slivers: [
+                if (personasEncontradas.isNotEmpty)
+                  SliverToBoxAdapter(child: _FranjaPersonas(personas: personasEncontradas)),
+                if (podioCategoria.isNotEmpty)
+                  SliverToBoxAdapter(child: _FranjaPodio(categoria: _categoriaFiltro!, podio: podioCategoria))
+                else if (_categoriaFiltro == null && esEmpleador && categoriasConPodio.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: _CarruselPodios(
+                      categorias: categoriasConPodio,
+                      provider: provider,
+                      onSeleccionar: (categoria) => setState(() => _categoriaFiltro = categoria),
                     ),
                   ),
+                if (lista.isEmpty)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
+                      child: lista.length != listaSinFiltroDeRadio.length
+                          ? Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 32),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    provider.radioBusquedaKm.isInfinite
+                                        ? 'No hay publicaciones que coincidan con tu búsqueda'
+                                        : 'No hay publicaciones dentro de tu radio de búsqueda (${provider.radioBusquedaKm.toStringAsFixed(0)} km)',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(color: Color(0xFF666666)),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  TextButton(
+                                    onPressed: () => _mostrarRadio(context),
+                                    child: const Text('Ampliar radio de búsqueda'),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : Text(
+                              _soloUrgentes
+                                  ? 'No hay publicaciones urgentes con estos filtros'
+                                  : 'No hay publicaciones con estos filtros',
+                              style: TextStyle(color: Color(0xFF666666)),
+                            ),
+                    ),
+                  )
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.all(16),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, i) => PeticionCard(
+                          peticion: lista[i],
+                          distanciaKm: _distanciaKm(lista[i]),
+                        ),
+                        childCount: lista.length,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ],
       ),
