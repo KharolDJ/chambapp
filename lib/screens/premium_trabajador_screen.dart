@@ -6,10 +6,10 @@ import '../providers/app_provider.dart';
 class PremiumTrabajadorScreen extends StatelessWidget {
   const PremiumTrabajadorScreen({super.key});
 
-  void _abrirSolicitud(BuildContext context, String oficio) {
+  void _abrirSolicitud(BuildContext contextPantalla, String oficio) {
     final controller = TextEditingController();
     showModalBottomSheet(
-      context: context,
+      context: contextPantalla,
       isScrollControlled: true,
       builder: (context) => Padding(
         padding: EdgeInsets.only(
@@ -64,7 +64,21 @@ class PremiumTrabajadorScreen extends StatelessWidget {
                   navigator.pop();
                   if (error != null) {
                     mensajero.showSnackBar(SnackBar(content: Text(error)));
+                    return;
                   }
+                  if (!contextPantalla.mounted) return;
+                  _mostrarExito(
+                    contextPantalla,
+                    icono: Icons.hourglass_top,
+                    titulo: 'Solicitud enviada',
+                    mensaje:
+                        'La revisaremos y en cuanto se apruebe, ocuparás un cupo en el Podio de "$oficio" por 30 días.',
+                    textoBoton: 'Ver el Podio de $oficio',
+                    onVerPodio: () {
+                      contextPantalla.read<AppProvider>().irAlPodioDe(oficio);
+                      Navigator.of(contextPantalla).popUntil((route) => route.isFirst);
+                    },
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0F6E56),
@@ -175,7 +189,7 @@ class PremiumTrabajadorScreen extends StatelessWidget {
                                 Navigator.of(context).popUntil((route) => route.isFirst);
                               },
                               icon: const Icon(Icons.visibility_outlined, size: 16),
-                              label: const Text('Ver mi podio'),
+                              label: Text('Ver mi puesto en $oficio'),
                             ),
                           ),
                         ] else if (vigente != null && vigente.solicitada && !vigente.aprobada) ...[
@@ -188,7 +202,22 @@ class PremiumTrabajadorScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           OutlinedButton(
-                            onPressed: () => context.read<AppProvider>().aprobarPremiumTrabajadorDemo(vigente!.id),
+                            onPressed: () async {
+                              await context.read<AppProvider>().aprobarPremiumTrabajadorDemo(vigente!.id);
+                              if (!context.mounted) return;
+                              _mostrarExito(
+                                context,
+                                icono: Icons.emoji_events,
+                                titulo: '¡Ya estás en el Podio!',
+                                mensaje:
+                                    'Tu perfil ya aparece entre los destacados de "$oficio" por los próximos 30 días.',
+                                textoBoton: 'Ver mi puesto en $oficio',
+                                onVerPodio: () {
+                                  context.read<AppProvider>().irAlPodioDe(oficio);
+                                  Navigator.of(context).popUntil((route) => route.isFirst);
+                                },
+                              );
+                            },
                             child: const Text('Simular aprobación (demo)'),
                           ),
                         ] else if (provider.podioLleno(oficio)) ...[
@@ -224,6 +253,71 @@ class PremiumTrabajadorScreen extends StatelessWidget {
   }
 
   String _formatearFecha(DateTime fecha) => '${fecha.day.toString().padLeft(2, '0')}/${fecha.month.toString().padLeft(2, '0')}/${fecha.year}';
+
+  void _mostrarExito(
+    BuildContext context, {
+    required IconData icono,
+    required String titulo,
+    required String mensaje,
+    required String textoBoton,
+    required VoidCallback onVerPodio,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: const BoxDecoration(color: Color(0xFFE3F2EC), shape: BoxShape.circle),
+                child: Icon(icono, color: const Color(0xFF0F6E56), size: 30),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                titulo,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A)),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                mensaje,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 13, color: Color(0xFF666666), height: 1.4),
+              ),
+              const SizedBox(height: 22),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    onVerPodio();
+                  },
+                  icon: const Icon(Icons.visibility_outlined, size: 18),
+                  label: Text(textoBoton),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0F6E56),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Entendido'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _Encabezado extends StatelessWidget {

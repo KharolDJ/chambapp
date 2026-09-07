@@ -243,6 +243,9 @@ class _FeedScreenState extends State<FeedScreen> {
 
     final personasEncontradas = provider.buscarUsuariosPorNombre(_busqueda);
     final podioCategoria = _categoriaFiltro == null ? const <PremiumTrabajador>[] : provider.podioPara(_categoriaFiltro!);
+    final esEmpleador = provider.rolActual == RolUsuario.empleador;
+    final categoriasConPodio =
+        provider.premiumTrabajadores.where((p) => p.activo).map((p) => p.oficio).toSet().toList();
 
     final cargandoUbicacion = _posicionActual == null && _avisoUbicacion == null;
 
@@ -348,7 +351,14 @@ class _FeedScreenState extends State<FeedScreen> {
             ),
           ),
           if (personasEncontradas.isNotEmpty) _FranjaPersonas(personas: personasEncontradas),
-          if (podioCategoria.isNotEmpty) _FranjaPodio(categoria: _categoriaFiltro!, podio: podioCategoria),
+          if (podioCategoria.isNotEmpty)
+            _FranjaPodio(categoria: _categoriaFiltro!, podio: podioCategoria)
+          else if (_categoriaFiltro == null && esEmpleador && categoriasConPodio.isNotEmpty)
+            _CarruselPodios(
+              categorias: categoriasConPodio,
+              provider: provider,
+              onSeleccionar: (categoria) => setState(() => _categoriaFiltro = categoria),
+            ),
           Expanded(
             child: lista.isEmpty
                 ? Center(
@@ -459,6 +469,125 @@ class _FranjaPersonas extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             textAlign: TextAlign.center,
                             style: const TextStyle(fontSize: 11, color: Color(0xFF1A1A1A)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Carrusel de categorías con Podio activo, visible en el feed general (sin
+/// filtro de categoría) para el empleador — vitrina de "quién está
+/// destacado ahora" sin obligar a filtrar manualmente primero. Tocar una
+/// tarjeta aplica el filtro de esa categoría, igual que si se hubiera
+/// elegido desde el chip "Categoría".
+class _CarruselPodios extends StatelessWidget {
+  final List<String> categorias;
+  final AppProvider provider;
+  final ValueChanged<String> onSeleccionar;
+  const _CarruselPodios({required this.categorias, required this.provider, required this.onSeleccionar});
+
+  ImageProvider? _fotoSiExiste(String? ruta) {
+    if (ruta == null) return null;
+    final archivo = File(ruta);
+    if (!archivo.existsSync()) return null;
+    return FileImage(archivo);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(left: 16, bottom: 8),
+            child: Row(
+              children: [
+                Icon(Icons.emoji_events, size: 15, color: Color(0xFF0F6E56)),
+                SizedBox(width: 6),
+                Text(
+                  'DESTACADOS POR CATEGORÍA',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5, color: Color(0xFF0F6E56)),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(
+            height: 118,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: categorias.length,
+              itemBuilder: (context, i) {
+                final categoria = categorias[i];
+                final podio = provider.podioPara(categoria);
+                return Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () => onSeleccionar(categoria),
+                    child: Container(
+                      width: 168,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFF0F6E56), width: 1.2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF0F6E56).withValues(alpha: 0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            categoria,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A)),
+                          ),
+                          const Spacer(),
+                          SizedBox(
+                            height: 32,
+                            child: Stack(
+                              children: [
+                                for (var j = 0; j < podio.length; j++)
+                                  Positioned(
+                                    left: j * 20.0,
+                                    child: CircleAvatar(
+                                      radius: 16,
+                                      backgroundColor: Colors.white,
+                                      child: CircleAvatar(
+                                        radius: 14,
+                                        backgroundColor: const Color(0xFFE3F2EC),
+                                        backgroundImage: _fotoSiExiste(podio[j].usuarioFotoPath),
+                                        child: _fotoSiExiste(podio[j].usuarioFotoPath) == null
+                                            ? const Icon(Icons.person, size: 14, color: Color(0xFF0F6E56))
+                                            : null,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            '${podio.length}/3 destacados',
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF666666)),
                           ),
                         ],
                       ),
