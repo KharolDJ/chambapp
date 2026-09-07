@@ -33,6 +33,32 @@ class PeticionCard extends StatelessWidget {
     final esTrabajador = provider.rolActual == RolUsuario.trabajador;
     final distanciaTexto = _textoDistancia();
 
+    Widget? estado;
+    if (!esTrabajador) {
+      estado = Text(
+        '${peticion.interesados.length} interesados',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontSize: 12, color: Color(0xFF666666)),
+      );
+    } else if (yaMeInteresa) {
+      estado = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.check_circle, size: 16, color: Colors.teal.shade700),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              'Aplicaste',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 12, color: Colors.teal.shade700),
+            ),
+          ),
+        ],
+      );
+    }
+
     return InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: () => Navigator.push(
@@ -142,38 +168,8 @@ class PeticionCard extends StatelessWidget {
                 if (peticion.urgente) _Etiqueta(texto: 'Urgente', color: const Color(0xFFB54834)),
                 if (peticion.urgente) const SizedBox(width: 6),
                 Flexible(child: _Etiqueta(texto: peticion.categoria, color: const Color(0xFF0F6E56))),
-                const Spacer(),
-                Flexible(
-                  child: esTrabajador
-                      ? (yaMeInteresa
-                          ? Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.check_circle, size: 16, color: Colors.teal.shade700),
-                                const SizedBox(width: 4),
-                                Flexible(
-                                  child: Text(
-                                    'Aplicaste',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(fontSize: 12, color: Colors.teal.shade700),
-                                  ),
-                                ),
-                              ],
-                            )
-                          : Text(
-                              'Toca para ver más',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-                            ))
-                      : Text(
-                          '${peticion.interesados.length} interesados',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 12, color: Color(0xFF666666)),
-                        ),
-                ),
+                if (estado != null) const Spacer(),
+                if (estado != null) Flexible(child: estado),
               ],
             ),
           ],
