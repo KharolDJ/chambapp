@@ -58,7 +58,7 @@ class ConfiguracionScreen extends StatelessWidget {
           _TarjetaSeccion(
             children: [
               _FilaSwitch(
-                icono: Icons.notifications_active_outlined,
+                iconoAsset: 'assets/icon/nav_avisos.png',
                 titulo: 'Notificaciones de actividad',
                 subtitulo: 'Avisa cuando cambia la etapa de una de tus aplicaciones',
                 valor: provider.notificacionesActivas,
@@ -79,26 +79,20 @@ class ConfiguracionScreen extends StatelessWidget {
           _TarjetaSeccion(
             children: [
               _FilaAccion(
-                icono: Icons.privacy_tip_outlined,
-                iconoColor: _petroleo,
-                fondoIcono: const Color(0xFFE1F5EE),
+                iconoAsset: 'assets/icon/proteger.png',
                 titulo: 'Política de privacidad',
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacidadScreen())),
               ),
               _divisor(),
               _FilaAccion(
-                icono: Icons.logout,
-                iconoColor: _petroleo,
-                fondoIcono: const Color(0xFFE1F5EE),
+                iconoAsset: 'assets/icon/cerrar_sesion.png',
                 titulo: 'Cerrar sesión',
                 habilitado: provider.usuarioActual != null,
                 onTap: () => _cerrarSesion(context),
               ),
               _divisor(),
               _FilaAccion(
-                icono: Icons.delete_outline,
-                iconoColor: _ladrillo,
-                fondoIcono: const Color(0xFFF7E3DD),
+                iconoAsset: 'assets/icon/borrar.png',
                 titulo: 'Eliminar cuenta',
                 tituloColor: _ladrillo,
                 habilitado: provider.usuarioActual != null,
@@ -152,14 +146,14 @@ class _TarjetaSeccion extends StatelessWidget {
 }
 
 class _FilaSwitch extends StatelessWidget {
-  final IconData icono;
+  final String iconoAsset;
   final String titulo;
   final String subtitulo;
   final bool valor;
   final ValueChanged<bool> onChanged;
 
   const _FilaSwitch({
-    required this.icono,
+    required this.iconoAsset,
     required this.titulo,
     required this.subtitulo,
     required this.valor,
@@ -175,8 +169,9 @@ class _FilaSwitch extends StatelessWidget {
           Container(
             width: 36,
             height: 36,
-            decoration: const BoxDecoration(color: Color(0xFFE1F5EE), shape: BoxShape.circle),
-            child: Icon(icono, size: 18, color: _petroleo),
+            padding: const EdgeInsets.all(9),
+            decoration: const BoxDecoration(color: Color(0xFFF3F4F6), shape: BoxShape.circle),
+            child: Image.asset(iconoAsset, fit: BoxFit.contain),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -197,18 +192,14 @@ class _FilaSwitch extends StatelessWidget {
 }
 
 class _FilaAccion extends StatelessWidget {
-  final IconData icono;
-  final Color iconoColor;
-  final Color fondoIcono;
+  final String iconoAsset;
   final String titulo;
   final Color? tituloColor;
   final bool habilitado;
   final VoidCallback onTap;
 
   const _FilaAccion({
-    required this.icono,
-    required this.iconoColor,
-    required this.fondoIcono,
+    required this.iconoAsset,
     required this.titulo,
     this.tituloColor,
     this.habilitado = true,
@@ -228,8 +219,9 @@ class _FilaAccion extends StatelessWidget {
               Container(
                 width: 36,
                 height: 36,
-                decoration: BoxDecoration(color: fondoIcono, shape: BoxShape.circle),
-                child: Icon(icono, size: 18, color: iconoColor),
+                padding: const EdgeInsets.all(8),
+                decoration: const BoxDecoration(color: Color(0xFFF3F4F6), shape: BoxShape.circle),
+                child: Image.asset(iconoAsset, fit: BoxFit.contain),
               ),
               const SizedBox(width: 12),
               Expanded(
