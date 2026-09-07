@@ -89,6 +89,15 @@ class _InteresadosScreenState extends State<InteresadosScreen> {
                       color: seleccionado ? const Color(0xFF0F6E56) : Colors.grey.shade200,
                       width: seleccionado ? 1.5 : 1,
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: seleccionado
+                            ? const Color(0xFF0F6E56).withValues(alpha: 0.14)
+                            : Colors.black.withValues(alpha: 0.04),
+                        blurRadius: seleccionado ? 12 : 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
