@@ -11,6 +11,12 @@ import 'mis_calificaciones_screen.dart';
 import 'premium_trabajador_screen.dart';
 import 'role_selector_screen.dart';
 
+Widget _iconoMenu(String nombre) => SizedBox(
+      width: 24,
+      height: 24,
+      child: Image.asset('assets/icon/$nombre.png', fit: BoxFit.contain),
+    );
+
 class PerfilScreen extends StatelessWidget {
   const PerfilScreen({super.key});
 
@@ -116,7 +122,7 @@ class PerfilScreen extends StatelessWidget {
             const SizedBox(height: 24),
             const Divider(),
             ListTile(
-              leading: const Icon(Icons.star_outline),
+              leading: _iconoMenu('estrella'),
               title: const Text('Mis calificaciones'),
               enabled: usuario != null,
               onTap: usuario == null
@@ -124,7 +130,7 @@ class PerfilScreen extends StatelessWidget {
                   : () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MisCalificacionesScreen())),
             ),
             ListTile(
-              leading: const Icon(Icons.edit_outlined),
+              leading: _iconoMenu('lapiz'),
               title: const Text('Editar perfil'),
               enabled: usuario != null,
               onTap: usuario == null
@@ -138,12 +144,12 @@ class PerfilScreen extends StatelessWidget {
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PremiumTrabajadorScreen())),
               ),
             ListTile(
-              leading: const Icon(Icons.swap_horiz),
+              leading: _iconoMenu('intercambiar'),
               title: const Text('Cambiar de modo (Empleador/Trabajador)'),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RoleSelectorScreen())),
             ),
             ListTile(
-              leading: const Icon(Icons.settings_outlined),
+              leading: _iconoMenu('configuracion'),
               title: const Text('Configuración'),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ConfiguracionScreen())),
             ),
