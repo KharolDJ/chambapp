@@ -34,21 +34,24 @@ class ChambappApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final baseTextTheme = Theme.of(context).textTheme;
-    final workSansTheme = GoogleFonts.workSansTextTheme(baseTextTheme);
-    final textTheme = workSansTheme
+    // Plus Jakarta Sans para cuerpo/botones/tarjetas, Outfit (geométrica) para
+    // títulos destacados — reemplaza el par Work Sans/Sora anterior por una
+    // pareja más sobria y corporativa.
+    final cuerpoTheme = GoogleFonts.plusJakartaSansTextTheme(baseTextTheme);
+    final textTheme = cuerpoTheme
         .copyWith(
-          headlineLarge: GoogleFonts.sora(textStyle: workSansTheme.headlineLarge),
-          headlineMedium: GoogleFonts.sora(textStyle: workSansTheme.headlineMedium),
-          headlineSmall: GoogleFonts.sora(textStyle: workSansTheme.headlineSmall),
-          titleLarge: GoogleFonts.sora(textStyle: workSansTheme.titleLarge),
-          titleMedium: GoogleFonts.sora(textStyle: workSansTheme.titleMedium),
+          headlineLarge: GoogleFonts.outfit(textStyle: cuerpoTheme.headlineLarge),
+          headlineMedium: GoogleFonts.outfit(textStyle: cuerpoTheme.headlineMedium),
+          headlineSmall: GoogleFonts.outfit(textStyle: cuerpoTheme.headlineSmall),
+          titleLarge: GoogleFonts.outfit(textStyle: cuerpoTheme.titleLarge),
+          titleMedium: GoogleFonts.outfit(textStyle: cuerpoTheme.titleMedium),
         )
         .apply(bodyColor: _tituloOscuro, displayColor: _tituloOscuro)
         .copyWith(
-          bodyMedium: workSansTheme.bodyMedium?.copyWith(color: _subtituloGris),
-          bodySmall: workSansTheme.bodySmall?.copyWith(color: _subtituloGris),
-          labelMedium: workSansTheme.labelMedium?.copyWith(color: _subtituloGris),
-          labelSmall: workSansTheme.labelSmall?.copyWith(color: _subtituloGris),
+          bodyMedium: cuerpoTheme.bodyMedium?.copyWith(color: _subtituloGris),
+          bodySmall: cuerpoTheme.bodySmall?.copyWith(color: _subtituloGris),
+          labelMedium: cuerpoTheme.labelMedium?.copyWith(color: _subtituloGris),
+          labelSmall: cuerpoTheme.labelSmall?.copyWith(color: _subtituloGris),
         );
 
     final colorScheme = ColorScheme.fromSeed(
