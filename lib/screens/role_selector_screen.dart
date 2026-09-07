@@ -90,7 +90,7 @@ class RoleSelectorScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 28),
                     _HeroRolCard(
-                      icono: Icons.engineering_rounded,
+                      iconoAsset: 'assets/icon/taladro_de_mano.png',
                       titulo: 'Ofrezco un servicio',
                       subtitulo: 'Explora peticiones cerca de ti',
                       color: _petroleo,
@@ -99,7 +99,7 @@ class RoleSelectorScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     _HeroRolCard(
-                      icono: Icons.search_rounded,
+                      iconoAsset: 'assets/icon/bloc_de_dibujo.png',
                       titulo: 'Busco un servicio',
                       subtitulo: 'Publica lo que necesitas',
                       color: _dorado,
@@ -117,8 +117,8 @@ class RoleSelectorScreen extends StatelessWidget {
   }
 }
 
-class _HeroRolCard extends StatelessWidget {
-  final IconData icono;
+class _HeroRolCard extends StatefulWidget {
+  final String iconoAsset;
   final String titulo;
   final String subtitulo;
   final Color color;
@@ -126,7 +126,7 @@ class _HeroRolCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const _HeroRolCard({
-    required this.icono,
+    required this.iconoAsset,
     required this.titulo,
     required this.subtitulo,
     required this.color,
@@ -135,45 +135,78 @@ class _HeroRolCard extends StatelessWidget {
   });
 
   @override
+  State<_HeroRolCard> createState() => _HeroRolCardState();
+}
+
+class _HeroRolCardState extends State<_HeroRolCard> {
+  bool _hover = false;
+  bool _presionado = false;
+
+  bool get _activo => _hover || _presionado;
+
+  void _actualizarHover(bool valor) {
+    if (_hover != valor) setState(() => _hover = valor);
+  }
+
+  void _actualizarPresionado(bool valor) {
+    if (_presionado != valor) setState(() => _presionado = valor);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: onTap,
+      onTap: widget.onTap,
+      onHover: _actualizarHover,
+      onTapDown: (_) => _actualizarPresionado(true),
+      onTapCancel: () => _actualizarPresionado(false),
+      onTapUp: (_) => _actualizarPresionado(false),
       borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withValues(alpha: 0.35)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                color: colorClaro,
-                borderRadius: BorderRadius.circular(12),
+      child: AnimatedScale(
+        scale: _activo ? 1.03 : 1.0,
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOut,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: _activo ? widget.colorClaro : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: widget.color.withValues(alpha: _activo ? 0.6 : 0.35)),
+            boxShadow: _activo
+                ? [BoxShadow(color: widget.color.withValues(alpha: 0.18), blurRadius: 16, offset: const Offset(0, 6))]
+                : null,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                padding: const EdgeInsets.all(9),
+                decoration: BoxDecoration(
+                  color: widget.colorClaro,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Image.asset(widget.iconoAsset, fit: BoxFit.contain),
               ),
-              child: Icon(icono, size: 24, color: color),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    titulo,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: _tituloOscuro),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(subtitulo, style: const TextStyle(fontSize: 13, color: _subtitulo)),
-                ],
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.titulo,
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: _tituloOscuro),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(widget.subtitulo, style: const TextStyle(fontSize: 13, color: _subtitulo)),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 6),
-            Icon(Icons.arrow_forward_rounded, size: 20, color: color),
-          ],
+              const SizedBox(width: 6),
+              Icon(Icons.arrow_forward_rounded, size: 20, color: widget.color),
+            ],
+          ),
         ),
       ),
     );
