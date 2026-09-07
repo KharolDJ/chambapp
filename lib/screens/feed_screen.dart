@@ -145,7 +145,7 @@ class _FeedScreenState extends State<FeedScreen> {
     required bool activo,
     required Color colorActivo,
     required VoidCallback onTap,
-    IconData? icono,
+    Widget? icono,
   }) {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
@@ -163,7 +163,7 @@ class _FeedScreenState extends State<FeedScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (icono != null) ...[
-                Icon(icono, size: 15, color: activo ? Colors.white : Color(0xFF666666)),
+                icono,
                 const SizedBox(width: 4),
               ],
               Text(
@@ -325,14 +325,24 @@ class _FeedScreenState extends State<FeedScreen> {
                       ),
                       _chip(
                         label: 'Urgente',
-                        icono: Icons.bolt,
+                        icono: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: Image.asset('assets/icon/urgente.png', fit: BoxFit.contain),
+                        ),
                         activo: _soloUrgentes,
                         colorActivo: const Color(0xFFB54834),
                         onTap: () => setState(() => _soloUrgentes = !_soloUrgentes),
                       ),
                       _chip(
                         label: _ordenPor == OrdenFeed.cercania ? 'Cercanía' : 'Recientes',
-                        icono: _ordenPor == OrdenFeed.cercania ? Icons.near_me : Icons.access_time,
+                        icono: _ordenPor == OrdenFeed.cercania
+                            ? SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: Image.asset('assets/icon/cercania.png', fit: BoxFit.contain),
+                              )
+                            : const Icon(Icons.access_time, size: 15, color: Color(0xFF666666)),
                         activo: false,
                         colorActivo: const Color(0xFF0F6E56),
                         onTap: _alternarOrden,
@@ -341,7 +351,11 @@ class _FeedScreenState extends State<FeedScreen> {
                         label: provider.radioBusquedaKm.isInfinite
                             ? 'Toda la ciudad ▾'
                             : '${provider.radioBusquedaKm.toStringAsFixed(0)} km ▾',
-                        icono: Icons.location_on_outlined,
+                        icono: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: Image.asset('assets/icon/toda_la_ciudad.png', fit: BoxFit.contain),
+                        ),
                         activo: false,
                         colorActivo: const Color(0xFF0F6E56),
                         onTap: () => _mostrarRadio(context),
