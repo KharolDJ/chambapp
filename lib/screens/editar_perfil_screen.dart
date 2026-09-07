@@ -270,7 +270,11 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
       helperText: helper,
       prefixIcon: Padding(
         padding: const EdgeInsets.all(12),
-        child: Image.asset(iconoAsset, fit: BoxFit.contain),
+        child: SizedBox(
+          width: 22,
+          height: 22,
+          child: Image.asset(iconoAsset, fit: BoxFit.contain),
+        ),
       ),
       filled: true,
       fillColor: Colors.white,
