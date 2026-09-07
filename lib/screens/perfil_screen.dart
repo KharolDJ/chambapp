@@ -27,7 +27,7 @@ class PerfilScreen extends StatelessWidget {
         foregroundColor: const Color(0xFF1A1A1A),
         elevation: 0,
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
