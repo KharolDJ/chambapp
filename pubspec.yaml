@@ -43,6 +43,7 @@ dependencies:
   firebase_core: ^4.14.0
   firebase_auth: ^6.6.0
   cloud_firestore: ^6.9.0
+  lottie: ^3.5.1
 
 dev_dependencies:
   flutter_test:
@@ -94,6 +95,7 @@ flutter:
 
   assets:
     - assets/icon/
+    - assets/lottie/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

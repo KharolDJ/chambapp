@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
 import 'main_nav_screen.dart';
@@ -41,27 +42,13 @@ class RoleSelectorScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(height: yaTieneCuenta ? 12 : 32),
-              Center(
-                child: Container(
-                  width: 84,
-                  height: 84,
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [_petroleo, Color(0xFF0B5344)],
-                    ),
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(color: _petroleo.withValues(alpha: 0.32), blurRadius: 20, offset: const Offset(0, 10)),
-                    ],
-                  ),
-                  child: Image.asset('assets/icon/icon_foreground.png'),
-                ),
+              SizedBox(height: yaTieneCuenta ? 12 : 24),
+              Lottie.asset(
+                'assets/lottie/loader_cat.json',
+                height: 150,
+                fit: BoxFit.contain,
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 8),
               Text(
                 'Chambapp',
                 textAlign: TextAlign.center,
@@ -72,13 +59,7 @@ class RoleSelectorScreen extends StatelessWidget {
                   letterSpacing: -0.5,
                 ),
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'Servicios de tu barrio, gente de confianza',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: _subtitulo),
-              ),
-              const Spacer(flex: 3),
+              const Spacer(flex: 4),
               if (yaTieneCuenta) ...[
                 Center(
                   child: Container(
@@ -112,7 +93,7 @@ class RoleSelectorScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               _HeroRolCard(
-                icono: Icons.build_outlined,
+                icono: Icons.engineering_rounded,
                 titulo: 'Ofrezco un servicio',
                 subtitulo: 'Explora peticiones cerca de ti',
                 color: _petroleo,
@@ -121,14 +102,14 @@ class RoleSelectorScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               _HeroRolCard(
-                icono: Icons.search_outlined,
+                icono: Icons.search_rounded,
                 titulo: 'Busco un servicio',
                 subtitulo: 'Publica lo que necesitas',
                 color: _dorado,
                 colorClaro: const Color(0xFFFAEEDA),
                 onTap: () => _seleccionarRol(context, RolUsuario.empleador),
               ),
-              const Spacer(flex: 4),
+              const Spacer(flex: 3),
             ],
           ),
         ),
