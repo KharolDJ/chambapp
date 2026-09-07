@@ -116,7 +116,7 @@ class RoleSelectorScreen extends StatelessWidget {
                 titulo: 'Ofrezco un servicio',
                 subtitulo: 'Explora peticiones cerca de ti',
                 color: _petroleo,
-                colorFondo: const Color(0xFFE3F2EC),
+                colorClaro: const Color(0xFFE3F2EC),
                 onTap: () => _seleccionarRol(context, RolUsuario.trabajador),
               ),
               const SizedBox(height: 16),
@@ -125,7 +125,7 @@ class RoleSelectorScreen extends StatelessWidget {
                 titulo: 'Busco un servicio',
                 subtitulo: 'Publica lo que necesitas',
                 color: _dorado,
-                colorFondo: const Color(0xFFFAEEDA),
+                colorClaro: const Color(0xFFFAEEDA),
                 onTap: () => _seleccionarRol(context, RolUsuario.empleador),
               ),
               const Spacer(flex: 4),
@@ -142,7 +142,7 @@ class _HeroRolCard extends StatelessWidget {
   final String titulo;
   final String subtitulo;
   final Color color;
-  final Color colorFondo;
+  final Color colorClaro;
   final VoidCallback onTap;
 
   const _HeroRolCard({
@@ -150,7 +150,7 @@ class _HeroRolCard extends StatelessWidget {
     required this.titulo,
     required this.subtitulo,
     required this.color,
-    required this.colorFondo,
+    required this.colorClaro,
     required this.onTap,
   });
 
@@ -158,47 +158,41 @@ class _HeroRolCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: colorFondo,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: color.withValues(alpha: 0.16)),
-          boxShadow: [
-            BoxShadow(color: color.withValues(alpha: 0.18), blurRadius: 22, offset: const Offset(0, 10)),
-          ],
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withValues(alpha: 0.35)),
         ),
         child: Row(
           children: [
             Container(
-              width: 58,
-              height: 58,
+              width: 46,
+              height: 46,
               decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(color: color.withValues(alpha: 0.22), blurRadius: 10, offset: const Offset(0, 3)),
-                ],
+                color: colorClaro,
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icono, size: 28, color: color),
+              child: Icon(icono, size: 24, color: color),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     titulo,
-                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: color),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: _tituloOscuro),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(subtitulo, style: const TextStyle(fontSize: 13, color: _subtitulo)),
                 ],
               ),
             ),
             const SizedBox(width: 6),
-            Icon(Icons.arrow_forward_rounded, size: 22, color: color.withValues(alpha: 0.55)),
+            Icon(Icons.arrow_forward_rounded, size: 20, color: color),
           ],
         ),
       ),
