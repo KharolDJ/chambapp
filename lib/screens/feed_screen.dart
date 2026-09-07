@@ -58,7 +58,9 @@ class _FeedScreenState extends State<FeedScreen> {
         return;
       }
 
-      final posicion = await Geolocator.getCurrentPosition();
+      final posicion = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(timeLimit: Duration(seconds: 8)),
+      );
       if (!mounted) return;
       setState(() {
         _posicionActual = posicion;
