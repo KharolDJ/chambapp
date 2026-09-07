@@ -37,81 +37,80 @@ class RoleSelectorScreen extends StatelessWidget {
             )
           : null,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 26),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SizedBox(height: yaTieneCuenta ? 12 : 24),
-              Lottie.asset(
-                'assets/lottie/loader_cat.json',
-                height: 150,
-                fit: BoxFit.contain,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Chambapp',
-                textAlign: TextAlign.center,
-                style: (Theme.of(context).textTheme.headlineSmall ?? const TextStyle()).copyWith(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: _tituloOscuro,
-                  letterSpacing: -0.5,
-                ),
-              ),
-              const Spacer(flex: 4),
-              if (yaTieneCuenta) ...[
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: _petroleo.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 16),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight - 32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Lottie.asset(
+                      'assets/lottie/loader_cat.json',
+                      height: 230,
+                      fit: BoxFit.contain,
                     ),
-                    child: Text(
-                      'Modo actual: ${provider.rolActual == RolUsuario.empleador ? 'Empleador' : 'Trabajador'}',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _petroleo),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Chambapp',
+                      textAlign: TextAlign.center,
+                      style: (Theme.of(context).textTheme.headlineSmall ?? const TextStyle()).copyWith(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: _tituloOscuro,
+                        letterSpacing: -0.5,
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 32),
+                    if (yaTieneCuenta) ...[
+                      Center(
+                        child: Text(
+                          'Modo actual: ${provider.rolActual == RolUsuario.empleador ? 'Empleador' : 'Trabajador'}',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _petroleo),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                    Text(
+                      '¿Qué necesitas hoy?',
+                      textAlign: TextAlign.center,
+                      style: (Theme.of(context).textTheme.titleLarge ?? const TextStyle()).copyWith(
+                        fontSize: 21,
+                        fontWeight: FontWeight.bold,
+                        color: _tituloOscuro,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Elige tu perfil para empezar',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 13, color: _subtitulo),
+                    ),
+                    const SizedBox(height: 28),
+                    _HeroRolCard(
+                      icono: Icons.engineering_rounded,
+                      titulo: 'Ofrezco un servicio',
+                      subtitulo: 'Explora peticiones cerca de ti',
+                      color: _petroleo,
+                      colorClaro: const Color(0xFFE3F2EC),
+                      onTap: () => _seleccionarRol(context, RolUsuario.trabajador),
+                    ),
+                    const SizedBox(height: 16),
+                    _HeroRolCard(
+                      icono: Icons.search_rounded,
+                      titulo: 'Busco un servicio',
+                      subtitulo: 'Publica lo que necesitas',
+                      color: _dorado,
+                      colorClaro: const Color(0xFFFAEEDA),
+                      onTap: () => _seleccionarRol(context, RolUsuario.empleador),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 20),
-              ],
-              Text(
-                '¿Qué necesitas hoy?',
-                textAlign: TextAlign.center,
-                style: (Theme.of(context).textTheme.titleLarge ?? const TextStyle()).copyWith(
-                  fontSize: 21,
-                  fontWeight: FontWeight.bold,
-                  color: _tituloOscuro,
-                ),
               ),
-              const SizedBox(height: 4),
-              const Text(
-                'Elige tu perfil para empezar',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: _subtitulo),
-              ),
-              const SizedBox(height: 24),
-              _HeroRolCard(
-                icono: Icons.engineering_rounded,
-                titulo: 'Ofrezco un servicio',
-                subtitulo: 'Explora peticiones cerca de ti',
-                color: _petroleo,
-                colorClaro: const Color(0xFFE3F2EC),
-                onTap: () => _seleccionarRol(context, RolUsuario.trabajador),
-              ),
-              const SizedBox(height: 16),
-              _HeroRolCard(
-                icono: Icons.search_rounded,
-                titulo: 'Busco un servicio',
-                subtitulo: 'Publica lo que necesitas',
-                color: _dorado,
-                colorClaro: const Color(0xFFFAEEDA),
-                onTap: () => _seleccionarRol(context, RolUsuario.empleador),
-              ),
-              const Spacer(flex: 3),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
