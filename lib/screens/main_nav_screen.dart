@@ -76,8 +76,8 @@ class _MainNavScreenState extends State<MainNavScreen> {
                     Expanded(
                       child: Row(
                         children: [
-                          Expanded(child: _botonNav(Icons.home_outlined, 'Inicio', 0)),
-                          Expanded(child: _botonNav(Icons.list_alt_outlined, 'Actividad', 1)),
+                          Expanded(child: _botonNav('assets/icon/nav_inicio.png', 'Inicio', 0)),
+                          Expanded(child: _botonNav('assets/icon/nav_actividad.png', 'Actividad', 1)),
                         ],
                       ),
                     ),
@@ -86,10 +86,10 @@ class _MainNavScreenState extends State<MainNavScreen> {
                       child: Row(
                         children: [
                           Expanded(
-                            child: _botonNav(Icons.notifications_outlined, 'Avisos', 2,
+                            child: _botonNav('assets/icon/nav_avisos.png', 'Avisos', 2,
                                 mostrarPunto: hayNotificacionesSinLeer),
                           ),
-                          Expanded(child: _botonNav(Icons.person_outline, 'Perfil', 3)),
+                          Expanded(child: _botonNav('assets/icon/nav_perfil.png', 'Perfil', 3)),
                         ],
                       ),
                     ),
@@ -97,13 +97,13 @@ class _MainNavScreenState extends State<MainNavScreen> {
                 )
               : Row(
                   children: [
-                    Expanded(child: _botonNav(Icons.home_outlined, 'Inicio', 0)),
-                    Expanded(child: _botonNav(Icons.list_alt_outlined, 'Actividad', 1)),
+                    Expanded(child: _botonNav('assets/icon/nav_inicio.png', 'Inicio', 0)),
+                    Expanded(child: _botonNav('assets/icon/nav_actividad.png', 'Actividad', 1)),
                     Expanded(
-                      child: _botonNav(Icons.notifications_outlined, 'Avisos', 2,
+                      child: _botonNav('assets/icon/nav_avisos.png', 'Avisos', 2,
                           mostrarPunto: hayNotificacionesSinLeer),
                     ),
-                    Expanded(child: _botonNav(Icons.person_outline, 'Perfil', 3)),
+                    Expanded(child: _botonNav('assets/icon/nav_perfil.png', 'Perfil', 3)),
                   ],
                 ),
         ),
@@ -111,7 +111,7 @@ class _MainNavScreenState extends State<MainNavScreen> {
     );
   }
 
-  Widget _botonNav(IconData icono, String texto, int indice, {bool mostrarPunto = false}) {
+  Widget _botonNav(String iconoAsset, String texto, int indice, {bool mostrarPunto = false}) {
     final activo = _indice == indice;
     final color = activo ? const Color(0xFF0F6E56) : Colors.grey;
     return InkWell(
@@ -124,7 +124,11 @@ class _MainNavScreenState extends State<MainNavScreen> {
             Stack(
               clipBehavior: Clip.none,
               children: [
-                Icon(icono, color: color, size: 24),
+                AnimatedOpacity(
+                  opacity: activo ? 1 : 0.45,
+                  duration: const Duration(milliseconds: 150),
+                  child: Image.asset(iconoAsset, width: 24, height: 24),
+                ),
                 if (mostrarPunto)
                   Positioned(
                     right: -2,
