@@ -6,11 +6,24 @@ import '../models/peticion.dart';
 import '../providers/app_provider.dart';
 import '../screens/detalle_peticion_screen.dart';
 
+/// Una acción del panel inferior de [PeticionCard]. Con [onTap] nulo se
+/// muestra como una insignia de estado (ej. "Ya calificaste") en vez de un
+/// botón — evita depender de un widget externo (como el Chip que usaba
+/// antes actividad_screen.dart) para ese caso.
+class AccionPeticion {
+  final IconData icono;
+  final String texto;
+  final VoidCallback? onTap;
+  final Color? color;
+  const AccionPeticion({required this.icono, required this.texto, this.onTap, this.color});
+}
+
 class PeticionCard extends StatelessWidget {
   final Peticion peticion;
   final double? distanciaKm;
+  final List<AccionPeticion>? acciones;
 
-  const PeticionCard({super.key, required this.peticion, this.distanciaKm});
+  const PeticionCard({super.key, required this.peticion, this.distanciaKm, this.acciones});
 
   String _tiempoTranscurrido() {
     final diff = DateTime.now().difference(peticion.creadaEn);
@@ -69,7 +82,6 @@ class PeticionCard extends StatelessWidget {
       ),
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
-        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -87,91 +99,150 @@ class PeticionCard extends StatelessWidget {
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
           children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(16, peticion.premiumAprobada ? 30 : 16, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 18,
+                        backgroundColor: const Color(0xFFE3F2EC),
+                        child: Text(
+                          peticion.autorNombre[0],
+                          style: const TextStyle(color: Color(0xFF0F6E56), fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              peticion.autorNombre,
+                              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFF1A1A1A)),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              [
+                                peticion.barrio,
+                                ?distanciaTexto,
+                                _tiempoTranscurrido(),
+                              ].join(' · '),
+                              style: const TextStyle(fontSize: 12, color: Color(0xFF666666)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (peticion.fotoUrl != null)
+                    Container(
+                      height: 100,
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 10),
+                      clipBehavior: Clip.antiAlias,
+                      decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
+                      child: Image.file(
+                        File(peticion.fotoUrl!),
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 32),
+                      ),
+                    ),
+                  Text(
+                    peticion.descripcion,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 14, height: 1.35, color: Color(0xFF1A1A1A)),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      if (peticion.urgente) _Etiqueta(texto: 'Urgente', color: const Color(0xFFB54834)),
+                      if (peticion.urgente) const SizedBox(width: 6),
+                      Flexible(child: _Etiqueta(texto: peticion.categoria, color: const Color(0xFF0F6E56))),
+                      if (estado != null) const Spacer(),
+                      if (estado != null) Flexible(child: estado),
+                    ],
+                  ),
+                  if (acciones != null && acciones!.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Divider(height: 1, color: Colors.grey.shade200),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: acciones!.map(_botonAccion).toList(),
+                    ),
+                  ],
+                ],
+              ),
+            ),
             if (peticion.premiumAprobada)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10),
+              Positioned(
+                top: 10,
+                left: 16,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: const Color(0xFF0F6E56),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(6),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.star, size: 12, color: Colors.white),
-                      SizedBox(width: 4),
+                      Icon(Icons.star, size: 10, color: Colors.white),
+                      SizedBox(width: 3),
                       Text(
                         'DESTACADO',
-                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.4),
+                        style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.3),
                       ),
                     ],
                   ),
                 ),
               ),
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 16,
-                  backgroundColor: const Color(0xFFE3F2EC),
-                  child: Text(
-                    peticion.autorNombre[0],
-                    style: const TextStyle(color: Color(0xFF0F6E56), fontWeight: FontWeight.bold, fontSize: 12),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(peticion.autorNombre, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                      Text(
-                        [
-                          peticion.barrio,
-                          ?distanciaTexto,
-                          _tiempoTranscurrido(),
-                        ].join(' · '),
-                        style: TextStyle(fontSize: 11, color: Color(0xFF666666)),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            if (peticion.fotoUrl != null)
-              Container(
-                height: 100,
-                width: double.infinity,
-                margin: const EdgeInsets.only(bottom: 8),
-                clipBehavior: Clip.antiAlias,
-                decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
-                child: Image.file(
-                  File(peticion.fotoUrl!),
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) =>
-                      Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 32),
-                ),
-              ),
-            Text(
-              peticion.descripcion,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 14),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                if (peticion.urgente) _Etiqueta(texto: 'Urgente', color: const Color(0xFFB54834)),
-                if (peticion.urgente) const SizedBox(width: 6),
-                Flexible(child: _Etiqueta(texto: peticion.categoria, color: const Color(0xFF0F6E56))),
-                if (estado != null) const Spacer(),
-                if (estado != null) Flexible(child: estado),
-              ],
-            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _botonAccion(AccionPeticion accion) {
+    final color = accion.color ?? const Color(0xFF1A1A1A);
+    if (accion.onTap == null) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(accion.icono, size: 14, color: color),
+            const SizedBox(width: 5),
+            Text(accion.texto, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: color)),
+          ],
+        ),
+      );
+    }
+    return InkWell(
+      onTap: accion.onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        decoration: BoxDecoration(
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(accion.icono, size: 14, color: color),
+            const SizedBox(width: 5),
+            Text(accion.texto, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: color)),
           ],
         ),
       ),

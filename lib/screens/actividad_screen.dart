@@ -127,57 +127,49 @@ class _ItemEmpleador extends StatelessWidget {
     final miId = provider.usuarioActual?.id;
     final yaCalifique = miId != null && provider.yaCalifique(deUsuarioId: miId, peticionId: peticion.id);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        PeticionCard(peticion: peticion),
-        Padding(
-          padding: const EdgeInsets.only(bottom: 14, top: 0),
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 4,
-            children: [
-              OutlinedButton.icon(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => InteresadosScreen(peticion: peticion)),
-                ),
-                icon: const Icon(Icons.people_outline, size: 16),
-                label: Text('Ver interesados (${peticion.interesados.length})'),
-              ),
-              OutlinedButton.icon(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => PremiumScreen(peticion: peticion)),
-                ),
-                icon: const Icon(Icons.star_outline, size: 16),
-                label: const Text('Visibilidad Premium'),
-              ),
-              if (peticion.trabajadorSeleccionadoId != null && !peticion.cerrada)
-                OutlinedButton.icon(
-                  onPressed: () => context.read<AppProvider>().cerrarPeticion(peticion.id),
-                  icon: const Icon(Icons.check_circle_outline, size: 16),
-                  label: const Text('Marcar como finalizado'),
-                ),
-              if (peticion.cerrada && peticion.trabajadorSeleccionadoId != null)
-                if (yaCalifique)
-                  const Chip(
-                    avatar: Icon(Icons.check, size: 16, color: Color(0xFF0F6E56)),
-                    label: Text('Ya calificaste'),
-                  )
-                else
-                  OutlinedButton.icon(
-                    onPressed: () => _abrirCalificar(context),
-                    icon: const Icon(Icons.star_outline, size: 16),
-                    label: const Text('Calificar al trabajador'),
-                  ),
-              OutlinedButton.icon(
-                onPressed: () => _confirmarArchivar(context),
-                icon: Icon(Icons.archive_outlined, size: 16, color: Color(0xFF666666)),
-                label: Text('Archivar', style: TextStyle(color: Color(0xFF666666))),
-              ),
-            ],
+    return PeticionCard(
+      peticion: peticion,
+      acciones: [
+        AccionPeticion(
+          icono: Icons.people_outline,
+          texto: 'Interesados (${peticion.interesados.length})',
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => InteresadosScreen(peticion: peticion)),
           ),
+        ),
+        AccionPeticion(
+          icono: Icons.star_outline,
+          texto: 'Premium',
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => PremiumScreen(peticion: peticion)),
+          ),
+        ),
+        if (peticion.trabajadorSeleccionadoId != null && !peticion.cerrada)
+          AccionPeticion(
+            icono: Icons.check_circle_outline,
+            texto: 'Finalizar',
+            onTap: () => context.read<AppProvider>().cerrarPeticion(peticion.id),
+          ),
+        if (peticion.cerrada && peticion.trabajadorSeleccionadoId != null)
+          if (yaCalifique)
+            const AccionPeticion(
+              icono: Icons.check_circle,
+              texto: 'Ya calificaste',
+              color: Color(0xFF0F6E56),
+            )
+          else
+            AccionPeticion(
+              icono: Icons.star_outline,
+              texto: 'Calificar',
+              onTap: () => _abrirCalificar(context),
+            ),
+        AccionPeticion(
+          icono: Icons.archive_outlined,
+          texto: 'Archivar',
+          color: const Color(0xFF666666),
+          onTap: () => _confirmarArchivar(context),
         ),
       ],
     );
