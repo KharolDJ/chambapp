@@ -102,7 +102,7 @@ class PeticionCard extends StatelessWidget {
         child: Stack(
           children: [
             Padding(
-              padding: EdgeInsets.fromLTRB(16, peticion.premiumAprobada ? 30 : 16, 16, 16),
+              padding: EdgeInsets.fromLTRB(16, peticion.premiumAprobada ? 38 : 16, 16, 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -188,19 +188,23 @@ class PeticionCard extends StatelessWidget {
                 top: 10,
                 left: 16,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                   decoration: BoxDecoration(
                     color: const Color(0xFF0F6E56),
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.star, size: 10, color: Colors.white),
-                      SizedBox(width: 3),
-                      Text(
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: Image.asset('assets/icon/estrella.png', fit: BoxFit.contain),
+                      ),
+                      const SizedBox(width: 5),
+                      const Text(
                         'DESTACADO',
-                        style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.3),
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.3),
                       ),
                     ],
                   ),
