@@ -131,7 +131,7 @@ class _ItemEmpleador extends StatelessWidget {
       peticion: peticion,
       acciones: [
         AccionPeticion(
-          icono: Icons.people_outline,
+          iconoAsset: 'assets/icon/interesados.png',
           texto: 'Interesados (${peticion.interesados.length})',
           onTap: () => Navigator.push(
             context,
@@ -139,7 +139,7 @@ class _ItemEmpleador extends StatelessWidget {
           ),
         ),
         AccionPeticion(
-          icono: Icons.star_outline,
+          iconoAsset: 'assets/icon/estrella.png',
           texto: 'Premium',
           onTap: () => Navigator.push(
             context,

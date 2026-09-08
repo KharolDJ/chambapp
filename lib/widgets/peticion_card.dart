@@ -11,11 +11,13 @@ import '../screens/detalle_peticion_screen.dart';
 /// botón — evita depender de un widget externo (como el Chip que usaba
 /// antes actividad_screen.dart) para ese caso.
 class AccionPeticion {
-  final IconData icono;
+  final IconData? icono;
+  final String? iconoAsset;
   final String texto;
   final VoidCallback? onTap;
   final Color? color;
-  const AccionPeticion({required this.icono, required this.texto, this.onTap, this.color});
+  const AccionPeticion({this.icono, this.iconoAsset, required this.texto, this.onTap, this.color})
+      : assert(icono != null || iconoAsset != null, 'Debe proveer icono o iconoAsset');
 }
 
 class PeticionCard extends StatelessWidget {
@@ -216,18 +218,25 @@ class PeticionCard extends StatelessWidget {
     );
   }
 
+  Widget _iconoDeAccion(AccionPeticion accion, Color color) {
+    if (accion.iconoAsset != null) {
+      return SizedBox(width: 20, height: 20, child: Image.asset(accion.iconoAsset!, fit: BoxFit.contain));
+    }
+    return Icon(accion.icono, size: 20, color: color);
+  }
+
   Widget _botonAccion(AccionPeticion accion) {
     final color = accion.color ?? const Color(0xFF1A1A1A);
     if (accion.onTap == null) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
         decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(accion.icono, size: 14, color: color),
-            const SizedBox(width: 5),
-            Text(accion.texto, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: color)),
+            _iconoDeAccion(accion, color),
+            const SizedBox(width: 6),
+            Text(accion.texto, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
           ],
         ),
       );
@@ -236,7 +245,7 @@ class PeticionCard extends StatelessWidget {
       onTap: accion.onTap,
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
         decoration: BoxDecoration(
           border: Border.all(color: color.withValues(alpha: 0.3)),
           borderRadius: BorderRadius.circular(8),
@@ -244,9 +253,9 @@ class PeticionCard extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(accion.icono, size: 14, color: color),
-            const SizedBox(width: 5),
-            Text(accion.texto, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: color)),
+            _iconoDeAccion(accion, color),
+            const SizedBox(width: 6),
+            Text(accion.texto, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
           ],
         ),
       ),
