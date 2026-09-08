@@ -166,7 +166,7 @@ class _ItemEmpleador extends StatelessWidget {
               onTap: () => _abrirCalificar(context),
             ),
         AccionPeticion(
-          icono: Icons.archive_outlined,
+          iconoAsset: 'assets/icon/archivar.png',
           texto: 'Archivar',
           color: const Color(0xFF666666),
           onTap: () => _confirmarArchivar(context),
