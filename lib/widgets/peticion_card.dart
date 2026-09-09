@@ -201,32 +201,20 @@ class PeticionCard extends StatelessWidget {
               Positioned(
                 top: 10,
                 left: 16,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF2A2A2A), Color(0xFF161616)],
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: Image.asset('assets/icon/estrella.png', fit: BoxFit.contain),
                     ),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: const Color(0xFFD4AF37), width: 0.8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: Image.asset('assets/icon/estrella.png', fit: BoxFit.contain),
-                      ),
-                      const SizedBox(width: 5),
-                      const Text(
-                        'DESTACADO',
-                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFF5E9C8), letterSpacing: 0.3),
-                      ),
-                    ],
-                  ),
+                    const SizedBox(width: 5),
+                    const Text(
+                      'DESTACADO',
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFAD7A16), letterSpacing: 0.4),
+                    ),
+                  ],
                 ),
               ),
           ],
