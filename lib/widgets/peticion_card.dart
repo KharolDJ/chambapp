@@ -61,14 +61,14 @@ class PeticionCard extends StatelessWidget {
       estado = Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.check_circle, size: 16, color: Colors.teal.shade700),
+          const Icon(Icons.check_circle, size: 16, color: Color(0xFFAD7A16)),
           const SizedBox(width: 4),
-          Flexible(
+          const Flexible(
             child: Text(
               'Aplicaste',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 12, color: Colors.teal.shade700),
+              style: TextStyle(fontSize: 12, color: Color(0xFFAD7A16)),
             ),
           ),
         ],
