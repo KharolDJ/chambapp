@@ -55,20 +55,20 @@ class PeticionCard extends StatelessWidget {
         '${peticion.interesados.length} interesados',
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(fontSize: 12, color: Color(0xFF666666)),
+        style: const TextStyle(fontSize: 12, color: Color(0xFF757575)),
       );
     } else if (yaMeInteresa) {
       estado = Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.check_circle, size: 16, color: Colors.teal.shade700),
+          const Icon(Icons.check_circle, size: 16, color: Color(0xFF1E88E5)),
           const SizedBox(width: 4),
-          Flexible(
+          const Flexible(
             child: Text(
               'Aplicaste',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 12, color: Colors.teal.shade700),
+              style: TextStyle(fontSize: 12, color: Color(0xFF1E88E5)),
             ),
           ),
         ],
@@ -85,17 +85,17 @@ class PeticionCard extends StatelessWidget {
       ),
       child: Container(
         decoration: BoxDecoration(
-          color: peticion.premiumAprobada ? null : Colors.white,
+          color: peticion.premiumAprobada ? null : const Color(0xFFFFF8E1),
           gradient: peticion.premiumAprobada
               ? LinearGradient(
                   begin: const Alignment(-1, -0.3),
                   end: const Alignment(1, 0.3),
                   colors: const [
-                    Color(0xFFFFFDF6),
-                    Color(0xFFFFFDF6),
+                    Color(0xFFFFF8E1),
+                    Color(0xFFFFF8E1),
                     Color(0xFFFFF0C4),
-                    Color(0xFFFFFDF6),
-                    Color(0xFFFFFDF6),
+                    Color(0xFFFFF8E1),
+                    Color(0xFFFFF8E1),
                   ],
                   stops: const [0.0, 0.35, 0.5, 0.65, 1.0],
                   transform: _DesplazamientoDeslizante(porcentaje: -1.5 + 3.0 * (t ?? 0)),
@@ -106,7 +106,7 @@ class PeticionCard extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               color: peticion.premiumAprobada
-                  ? const Color(0xFFAD7A16).withValues(alpha: 0.22)
+                  ? const Color(0xFFD4AF37).withValues(alpha: 0.22)
                   : Colors.black.withValues(alpha: 0.04),
               blurRadius: peticion.premiumAprobada ? 18 : 10,
               offset: const Offset(0, 4),
@@ -137,7 +137,7 @@ class PeticionCard extends StatelessWidget {
                           children: [
                             Text(
                               peticion.autorNombre,
-                              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFF1A1A1A)),
+                              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFF212121)),
                             ),
                             const SizedBox(height: 2),
                             Text(
@@ -146,7 +146,7 @@ class PeticionCard extends StatelessWidget {
                                 ?distanciaTexto,
                                 _tiempoTranscurrido(),
                               ].join(' · '),
-                              style: const TextStyle(fontSize: 12, color: Color(0xFF666666)),
+                              style: const TextStyle(fontSize: 12, color: Color(0xFF757575)),
                             ),
                           ],
                         ),
@@ -172,14 +172,14 @@ class PeticionCard extends StatelessWidget {
                     peticion.descripcion,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 14, height: 1.35, color: Color(0xFF1A1A1A)),
+                    style: const TextStyle(fontSize: 14, height: 1.35, color: Color(0xFF212121)),
                   ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      if (peticion.urgente) _Etiqueta(texto: 'Urgente', color: const Color(0xFFB54834)),
+                      if (peticion.urgente) _Etiqueta(texto: 'Urgente', color: const Color(0xFFFF7F7F)),
                       if (peticion.urgente) const SizedBox(width: 6),
-                      Flexible(child: _Etiqueta(texto: peticion.categoria, color: const Color(0xFF0F6E56))),
+                      Flexible(child: _Etiqueta(texto: peticion.categoria, color: const Color(0xFFB8860B))),
                       if (estado != null) const Spacer(),
                       if (estado != null) Flexible(child: estado),
                     ],
@@ -204,7 +204,7 @@ class PeticionCard extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F6E56),
+                    color: const Color(0xFF424242),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Row(
@@ -365,6 +365,11 @@ class _BrilloDoradoAnimadoState extends State<_BrilloDoradoAnimado> with SingleT
   }
 }
 
+/// Etiqueta de categoría/urgencia dentro de la ficha. [color] es el color
+/// del BORDE (Oro Antiguo para categorías de servicio, Coral para
+/// "Urgente") — el fondo y el texto son fijos (Pizarra Oscura y crema)
+/// para que ambas etiquetas compartan la misma base sobria y solo el
+/// borde distinga su significado.
 class _Etiqueta extends StatelessWidget {
   final String texto;
   final Color color;
@@ -374,8 +379,15 @@ class _Etiqueta extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
-      child: Text(texto, style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w600)),
+      decoration: BoxDecoration(
+        color: const Color(0xFF424242),
+        border: Border.all(color: color),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        texto,
+        style: const TextStyle(fontSize: 10, color: Color(0xFFFFF8E1), fontWeight: FontWeight.w600),
+      ),
     );
   }
 }
