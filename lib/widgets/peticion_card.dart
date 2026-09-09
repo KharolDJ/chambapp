@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -75,7 +74,7 @@ class PeticionCard extends StatelessWidget {
       );
     }
 
-    Widget construirTarjeta(double? angulo) => InkWell(
+    Widget construirTarjeta(double? slide) => InkWell(
       borderRadius: BorderRadius.circular(peticion.premiumAprobada ? 14 : 16),
       onTap: () => Navigator.push(
         context,
@@ -87,16 +86,18 @@ class PeticionCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: peticion.premiumAprobada ? null : Colors.white,
           gradient: peticion.premiumAprobada
-              ? SweepGradient(
-                  transform: GradientRotation(angulo ?? 0),
+              ? LinearGradient(
+                  begin: const Alignment(-1, -0.3),
+                  end: const Alignment(1, 0.3),
                   colors: const [
                     Color(0xFFFFFDF6),
-                    Color(0xFFFFF3D6),
                     Color(0xFFFFFDF6),
-                    Color(0xFFFFEFC2),
+                    Color(0xFFFFF0C4),
+                    Color(0xFFFFFDF6),
                     Color(0xFFFFFDF6),
                   ],
-                  stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
+                  stops: const [0.0, 0.35, 0.5, 0.65, 1.0],
+                  transform: _DesplazamientoDeslizante(porcentaje: slide ?? -1.5),
                 )
               : null,
           borderRadius: BorderRadius.circular(peticion.premiumAprobada ? 14 : 16),
@@ -232,7 +233,7 @@ class PeticionCard extends StatelessWidget {
       child: peticion.premiumAprobada
           ? _BrilloDoradoAnimado(
               borderRadius: BorderRadius.circular(16),
-              builder: (context, angulo) => construirTarjeta(angulo),
+              builder: (context, slide) => construirTarjeta(slide),
             )
           : construirTarjeta(null),
     );
@@ -283,14 +284,32 @@ class PeticionCard extends StatelessWidget {
   }
 }
 
-/// Anillo de degradado dorado que rota lentamente alrededor de [child] —
-/// el "brillo metálico en movimiento" de las peticiones con Premium
-/// aprobado. Se implementa envolviendo el contenido en un Container cuyo
-/// fondo es un SweepGradient (los "bordes" de BoxDecoration solo admiten
+/// Traduce (desliza) el gradiente horizontalmente en vez de rotarlo — a
+/// diferencia de GradientRotation, esto no deja ningún punto de pivote
+/// visible: el degradado completo se mueve de lado a lado como una franja
+/// de luz, no como una hélice girando sobre un centro.
+class _DesplazamientoDeslizante extends GradientTransform {
+  final double porcentaje;
+  const _DesplazamientoDeslizante({required this.porcentaje});
+
+  @override
+  Matrix4? transform(Rect bounds, {TextDirection? textDirection}) {
+    return Matrix4.translationValues(bounds.width * porcentaje, 0, 0);
+  }
+}
+
+/// Franja de brillo dorado que se desliza de lado a lado alrededor de
+/// [child] — el "movimiento" de las peticiones con Premium aprobado. Se
+/// implementa envolviendo el contenido en un Container cuyo fondo es un
+/// LinearGradient desplazado (los "bordes" de BoxDecoration solo admiten
 /// color plano, no degradados), dejando un margen de 1.8px visible como
-/// anillo alrededor de la tarjeta blanca interior.
+/// anillo alrededor de la tarjeta interior. El recorrido va de -1.5 a 1.5
+/// del ancho del widget para que, en el punto donde el controlador
+/// reinicia (1.0 -> 0.0), el brillo ya esté completamente fuera del área
+/// visible en ambos extremos — así solo se percibe el movimiento, nunca
+/// un salto ni un punto de origen fijo.
 class _BrilloDoradoAnimado extends StatefulWidget {
-  final Widget Function(BuildContext context, double angulo) builder;
+  final Widget Function(BuildContext context, double slide) builder;
   final BorderRadius borderRadius;
   const _BrilloDoradoAnimado({required this.builder, required this.borderRadius});
 
@@ -302,18 +321,18 @@ class _BrilloDoradoAnimadoState extends State<_BrilloDoradoAnimado> with SingleT
   late final AnimationController _controller;
 
   static const _colores = [
-    Color(0xFFFFF6D8),
-    Color(0xFFE0A93B),
-    Color(0xFFFFF6D8),
     Color(0xFFAD7A16),
-    Color(0xFFFFF6D8),
+    Color(0xFFAD7A16),
+    Color(0xFFFFE8A3),
+    Color(0xFFAD7A16),
+    Color(0xFFAD7A16),
   ];
-  static const _paradas = [0.0, 0.25, 0.5, 0.75, 1.0];
+  static const _paradas = [0.0, 0.35, 0.5, 0.65, 1.0];
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 4))..repeat();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 2200))..repeat();
   }
 
   @override
@@ -327,18 +346,20 @@ class _BrilloDoradoAnimadoState extends State<_BrilloDoradoAnimado> with SingleT
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {
-        final angulo = _controller.value * 2 * math.pi;
+        final slide = -1.5 + 3.0 * _controller.value;
         return Container(
           padding: const EdgeInsets.all(1.8),
           decoration: BoxDecoration(
             borderRadius: widget.borderRadius,
-            gradient: SweepGradient(
-              transform: GradientRotation(angulo),
+            gradient: LinearGradient(
+              begin: const Alignment(-1, -0.3),
+              end: const Alignment(1, 0.3),
               colors: _colores,
               stops: _paradas,
+              transform: _DesplazamientoDeslizante(porcentaje: slide),
             ),
           ),
-          child: widget.builder(context, angulo),
+          child: widget.builder(context, slide),
         );
       },
     );
