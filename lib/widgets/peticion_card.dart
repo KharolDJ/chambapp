@@ -75,7 +75,7 @@ class PeticionCard extends StatelessWidget {
       );
     }
 
-    final tarjeta = InkWell(
+    Widget construirTarjeta(double? angulo) => InkWell(
       borderRadius: BorderRadius.circular(peticion.premiumAprobada ? 14 : 16),
       onTap: () => Navigator.push(
         context,
@@ -85,7 +85,20 @@ class PeticionCard extends StatelessWidget {
       ),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: peticion.premiumAprobada ? null : Colors.white,
+          gradient: peticion.premiumAprobada
+              ? SweepGradient(
+                  transform: GradientRotation(angulo ?? 0),
+                  colors: const [
+                    Color(0xFFFFFDF6),
+                    Color(0xFFFFF3D6),
+                    Color(0xFFFFFDF6),
+                    Color(0xFFFFEFC2),
+                    Color(0xFFFFFDF6),
+                  ],
+                  stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
+                )
+              : null,
           borderRadius: BorderRadius.circular(peticion.premiumAprobada ? 14 : 16),
           border: peticion.premiumAprobada ? null : Border.all(color: Colors.grey.shade200),
           boxShadow: [
@@ -217,8 +230,11 @@ class PeticionCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       child: peticion.premiumAprobada
-          ? _BrilloDoradoAnimado(borderRadius: BorderRadius.circular(16), child: tarjeta)
-          : tarjeta,
+          ? _BrilloDoradoAnimado(
+              borderRadius: BorderRadius.circular(16),
+              builder: (context, angulo) => construirTarjeta(angulo),
+            )
+          : construirTarjeta(null),
     );
   }
 
@@ -274,9 +290,9 @@ class PeticionCard extends StatelessWidget {
 /// color plano, no degradados), dejando un margen de 1.8px visible como
 /// anillo alrededor de la tarjeta blanca interior.
 class _BrilloDoradoAnimado extends StatefulWidget {
-  final Widget child;
+  final Widget Function(BuildContext context, double angulo) builder;
   final BorderRadius borderRadius;
-  const _BrilloDoradoAnimado({required this.child, required this.borderRadius});
+  const _BrilloDoradoAnimado({required this.builder, required this.borderRadius});
 
   @override
   State<_BrilloDoradoAnimado> createState() => _BrilloDoradoAnimadoState();
@@ -310,19 +326,19 @@ class _BrilloDoradoAnimadoState extends State<_BrilloDoradoAnimado> with SingleT
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _controller,
-      child: widget.child,
-      builder: (context, child) {
+      builder: (context, _) {
+        final angulo = _controller.value * 2 * math.pi;
         return Container(
           padding: const EdgeInsets.all(1.8),
           decoration: BoxDecoration(
             borderRadius: widget.borderRadius,
             gradient: SweepGradient(
-              transform: GradientRotation(_controller.value * 2 * math.pi),
+              transform: GradientRotation(angulo),
               colors: _colores,
               stops: _paradas,
             ),
           ),
-          child: child,
+          child: widget.builder(context, angulo),
         );
       },
     );
