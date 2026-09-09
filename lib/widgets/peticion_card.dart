@@ -177,11 +177,16 @@ class PeticionCard extends StatelessWidget {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      if (peticion.urgente) _Etiqueta(texto: 'Urgente', color: const Color(0xFFB54834)),
-                      if (peticion.urgente) const SizedBox(width: 6),
-                      Flexible(child: _Etiqueta(texto: peticion.categoria, color: const Color(0xFF0F6E56))),
-                      if (estado != null) const Spacer(),
-                      if (estado != null) Flexible(child: estado),
+                      Expanded(
+                        child: Row(
+                          children: [
+                            if (peticion.urgente) _Etiqueta(texto: 'Urgente', color: const Color(0xFFB54834)),
+                            if (peticion.urgente) const SizedBox(width: 6),
+                            Flexible(child: _Etiqueta(texto: peticion.categoria, color: const Color(0xFF0F6E56))),
+                          ],
+                        ),
+                      ),
+                      ?estado,
                     ],
                   ),
                   if (acciones != null && acciones!.isNotEmpty) ...[
