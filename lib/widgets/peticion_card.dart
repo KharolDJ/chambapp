@@ -365,13 +365,6 @@ class _Etiqueta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        border: Border.all(color: color.withValues(alpha: 0.45), width: 1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(texto, style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w600)),
-    );
+    return Text(texto, style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w600));
   }
 }
