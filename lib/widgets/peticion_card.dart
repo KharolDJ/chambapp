@@ -204,8 +204,13 @@ class PeticionCard extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F6E56),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF2A2A2A), Color(0xFF161616)],
+                    ),
                     borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: const Color(0xFFD4AF37), width: 0.8),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -218,7 +223,7 @@ class PeticionCard extends StatelessWidget {
                       const SizedBox(width: 5),
                       const Text(
                         'DESTACADO',
-                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.3),
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFF5E9C8), letterSpacing: 0.3),
                       ),
                     ],
                   ),
