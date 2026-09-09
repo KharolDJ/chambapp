@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -74,8 +75,8 @@ class PeticionCard extends StatelessWidget {
       );
     }
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
+    final tarjeta = InkWell(
+      borderRadius: BorderRadius.circular(peticion.premiumAprobada ? 14 : 16),
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(
@@ -83,20 +84,16 @@ class PeticionCard extends StatelessWidget {
         ),
       ),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 14),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: peticion.premiumAprobada ? const Color(0xFF0F6E56) : Colors.grey.shade200,
-            width: peticion.premiumAprobada ? 1.4 : 1,
-          ),
+          borderRadius: BorderRadius.circular(peticion.premiumAprobada ? 14 : 16),
+          border: peticion.premiumAprobada ? null : Border.all(color: Colors.grey.shade200),
           boxShadow: [
             BoxShadow(
               color: peticion.premiumAprobada
-                  ? const Color(0xFF0F6E56).withValues(alpha: 0.16)
+                  ? const Color(0xFFAD7A16).withValues(alpha: 0.22)
                   : Colors.black.withValues(alpha: 0.04),
-              blurRadius: peticion.premiumAprobada ? 16 : 10,
+              blurRadius: peticion.premiumAprobada ? 18 : 10,
               offset: const Offset(0, 4),
             ),
           ],
@@ -216,6 +213,13 @@ class PeticionCard extends StatelessWidget {
         ),
       ),
     );
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      child: peticion.premiumAprobada
+          ? _BrilloDoradoAnimado(borderRadius: BorderRadius.circular(16), child: tarjeta)
+          : tarjeta,
+    );
   }
 
   Widget _iconoDeAccion(AccionPeticion accion, Color color) {
@@ -259,6 +263,68 @@ class PeticionCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Anillo de degradado dorado que rota lentamente alrededor de [child] —
+/// el "brillo metálico en movimiento" de las peticiones con Premium
+/// aprobado. Se implementa envolviendo el contenido en un Container cuyo
+/// fondo es un SweepGradient (los "bordes" de BoxDecoration solo admiten
+/// color plano, no degradados), dejando un margen de 1.8px visible como
+/// anillo alrededor de la tarjeta blanca interior.
+class _BrilloDoradoAnimado extends StatefulWidget {
+  final Widget child;
+  final BorderRadius borderRadius;
+  const _BrilloDoradoAnimado({required this.child, required this.borderRadius});
+
+  @override
+  State<_BrilloDoradoAnimado> createState() => _BrilloDoradoAnimadoState();
+}
+
+class _BrilloDoradoAnimadoState extends State<_BrilloDoradoAnimado> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  static const _colores = [
+    Color(0xFFFFF6D8),
+    Color(0xFFE0A93B),
+    Color(0xFFFFF6D8),
+    Color(0xFFAD7A16),
+    Color(0xFFFFF6D8),
+  ];
+  static const _paradas = [0.0, 0.25, 0.5, 0.75, 1.0];
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 4))..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      child: widget.child,
+      builder: (context, child) {
+        return Container(
+          padding: const EdgeInsets.all(1.8),
+          decoration: BoxDecoration(
+            borderRadius: widget.borderRadius,
+            gradient: SweepGradient(
+              transform: GradientRotation(_controller.value * 2 * math.pi),
+              colors: _colores,
+              stops: _paradas,
+            ),
+          ),
+          child: child,
+        );
+      },
     );
   }
 }
