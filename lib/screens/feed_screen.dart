@@ -28,6 +28,8 @@ class _FeedScreenState extends State<FeedScreen> {
   String? _avisoUbicacion;
   String _busqueda = '';
   final _busquedaController = TextEditingController();
+  final _scrollController = ScrollController();
+  final _listaKey = GlobalKey();
 
   @override
   void initState() {
@@ -38,6 +40,7 @@ class _FeedScreenState extends State<FeedScreen> {
   @override
   void dispose() {
     _busquedaController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -368,6 +371,8 @@ class _FeedScreenState extends State<FeedScreen> {
           ),
           Expanded(
             child: CustomScrollView(
+              key: _listaKey,
+              controller: _scrollController,
               slivers: [
                 if (personasEncontradas.isNotEmpty)
                   SliverToBoxAdapter(child: _FranjaPersonas(personas: personasEncontradas)),
@@ -419,9 +424,13 @@ class _FeedScreenState extends State<FeedScreen> {
                     padding: const EdgeInsets.all(16),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
-                        (context, i) => PeticionCard(
-                          peticion: lista[i],
-                          distanciaKm: _distanciaKm(lista[i]),
+                        (context, i) => _TarjetaEscalable(
+                          controlador: _scrollController,
+                          viewportKey: _listaKey,
+                          child: PeticionCard(
+                            peticion: lista[i],
+                            distanciaKm: _distanciaKm(lista[i]),
+                          ),
                         ),
                         childCount: lista.length,
                       ),
@@ -432,6 +441,56 @@ class _FeedScreenState extends State<FeedScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Envuelve una tarjeta del feed para que reaccione al scroll: la que está
+/// más cerca del centro del viewport se ve a tamaño casi completo, y las
+/// que se alejan hacia arriba/abajo se van achicando — efecto tipo
+/// carrusel/lista dinámica. Se mide con RenderBox en cada tick de scroll
+/// (AnimatedBuilder escuchando el mismo ScrollController de la lista) en
+/// vez de un paquete externo; el costo es despreciable porque Sliver solo
+/// construye las tarjetas cercanas al viewport.
+class _TarjetaEscalable extends StatelessWidget {
+  static const _escalaMinima = 0.94;
+  static const _escalaMaxima = 1.0;
+
+  final ScrollController controlador;
+  final GlobalKey viewportKey;
+  final Widget child;
+
+  const _TarjetaEscalable({required this.controlador, required this.viewportKey, required this.child});
+
+  double _calcularEscala(BuildContext context) {
+    final cajaViewport = viewportKey.currentContext?.findRenderObject() as RenderBox?;
+    final cajaItem = context.findRenderObject() as RenderBox?;
+    if (cajaViewport == null || cajaItem == null || !cajaItem.attached) return _escalaMaxima;
+
+    final posicionItem = cajaItem.localToGlobal(Offset.zero, ancestor: cajaViewport);
+    final centroItem = posicionItem.dy + cajaItem.size.height / 2;
+    final centroViewport = cajaViewport.size.height / 2;
+    final distancia = (centroItem - centroViewport).abs();
+    final distanciaMaxima = centroViewport + cajaItem.size.height / 2;
+    if (distanciaMaxima <= 0) return _escalaMaxima;
+
+    final factor = (distancia / distanciaMaxima).clamp(0.0, 1.0);
+    return _escalaMaxima - factor * (_escalaMaxima - _escalaMinima);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: controlador,
+      builder: (_, hijo) {
+        return Transform.scale(
+          scale: _calcularEscala(context),
+          alignment: Alignment.center,
+          filterQuality: FilterQuality.low,
+          child: hijo,
+        );
+      },
+      child: child,
     );
   }
 }
