@@ -58,17 +58,18 @@ class PeticionCard extends StatelessWidget {
         style: const TextStyle(fontSize: 12, color: Color(0xFF666666)),
       );
     } else if (yaMeInteresa) {
+      final colorAplicaste = peticion.premiumAprobada ? const Color(0xFFAD7A16) : const Color(0xFF0F6E56);
       estado = Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.check_circle, size: 16, color: Color(0xFFAD7A16)),
+          Icon(Icons.check_circle, size: 16, color: colorAplicaste),
           const SizedBox(width: 4),
-          const Flexible(
+          Flexible(
             child: Text(
               'Aplicaste',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 12, color: Color(0xFFAD7A16)),
+              style: TextStyle(fontSize: 12, color: colorAplicaste),
             ),
           ),
         ],
@@ -177,13 +178,30 @@ class PeticionCard extends StatelessWidget {
                   ),
                   if (acciones != null && acciones!.isNotEmpty) ...[
                     const SizedBox(height: 12),
-                    Divider(height: 1, color: Colors.grey.shade200),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: acciones!.map(_botonAccion).toList(),
-                    ),
+                    if (peticion.premiumAprobada)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF6D8).withValues(alpha: 0.55),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFE0A93B).withValues(alpha: 0.35)),
+                        ),
+                        child: Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: acciones!.map(_botonAccion).toList(),
+                        ),
+                      )
+                    else ...[
+                      Divider(height: 1, color: Colors.grey.shade200),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: acciones!.map(_botonAccion).toList(),
+                      ),
+                    ],
                   ],
                 ],
               ),

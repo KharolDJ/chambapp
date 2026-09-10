@@ -141,6 +141,7 @@ class _ItemEmpleador extends StatelessWidget {
         AccionPeticion(
           iconoAsset: 'assets/icon/estrella.png',
           texto: 'Premium',
+          color: const Color(0xFFAD7A16),
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => PremiumScreen(peticion: peticion)),

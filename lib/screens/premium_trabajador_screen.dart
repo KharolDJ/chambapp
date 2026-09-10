@@ -82,7 +82,7 @@ class PremiumTrabajadorScreen extends StatelessWidget {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0F6E56),
+                  backgroundColor: const Color(0xFFAD7A16),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -188,6 +188,10 @@ class PremiumTrabajadorScreen extends StatelessWidget {
                                 context.read<AppProvider>().irAlPodioDe(oficio);
                                 Navigator.of(context).popUntil((route) => route.isFirst);
                               },
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFFAD7A16),
+                                side: const BorderSide(color: Color(0xFFAD7A16)),
+                              ),
                               icon: const Icon(Icons.visibility_outlined, size: 16),
                               label: Text('Ver mi puesto en $oficio'),
                             ),
@@ -238,6 +242,10 @@ class PremiumTrabajadorScreen extends StatelessWidget {
                             width: double.infinity,
                             child: OutlinedButton.icon(
                               onPressed: () => _abrirSolicitud(context, oficio),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFFAD7A16),
+                                side: const BorderSide(color: Color(0xFFAD7A16)),
+                              ),
                               icon: const Icon(Icons.star_outline, size: 16),
                               label: const Text('Solicitar Visibilidad Premium (\$10.000)'),
                             ),
@@ -284,8 +292,8 @@ class PremiumTrabajadorScreen extends StatelessWidget {
               Container(
                 width: 64,
                 height: 64,
-                decoration: const BoxDecoration(color: Color(0xFFE3F2EC), shape: BoxShape.circle),
-                child: Icon(icono, color: const Color(0xFF0F6E56), size: 30),
+                decoration: const BoxDecoration(color: Color(0xFFFFF6D8), shape: BoxShape.circle),
+                child: Icon(icono, color: const Color(0xFFAD7A16), size: 30),
               ),
               const SizedBox(height: 16),
               Text(
@@ -310,7 +318,7 @@ class PremiumTrabajadorScreen extends StatelessWidget {
                   icon: const Icon(Icons.visibility_outlined, size: 18),
                   label: Text(textoBoton),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0F6E56),
+                    backgroundColor: const Color(0xFFAD7A16),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -435,7 +443,7 @@ class _FilaBeneficios extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    Icon(b.icono, color: const Color(0xFF0F6E56), size: 22),
+                    Icon(b.icono, color: const Color(0xFFAD7A16), size: 22),
                     const SizedBox(height: 8),
                     Text(
                       b.texto,

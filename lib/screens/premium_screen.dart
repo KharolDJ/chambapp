@@ -54,7 +54,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
           if (actualizada.premiumAprobada)
             const _EstadoSimple(
               icono: Icons.check_circle,
-              color: Color(0xFF0F6E56),
+              color: Color(0xFFAD7A16),
               texto: '¡Tu publicación ya tiene Visibilidad Premium activa!',
             )
           else if (actualizada.premiumSolicitada) ...[
@@ -112,7 +112,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                 context.read<AppProvider>().solicitarPremium(actualizada.id, _comprobanteController.text.trim());
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0F6E56),
+                backgroundColor: const Color(0xFFAD7A16),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -236,7 +236,7 @@ class _FilaBeneficios extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    Icon(b.icono, color: const Color(0xFF0F6E56), size: 22),
+                    Icon(b.icono, color: const Color(0xFFAD7A16), size: 22),
                     const SizedBox(height: 8),
                     Text(
                       b.texto,
@@ -280,13 +280,13 @@ class _VistaPrevia extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: destacada ? const Color(0xFFFFFDF6) : Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: destacada ? const Color(0xFF0F6E56) : Colors.grey.shade200, width: destacada ? 1.4 : 1),
+            border: destacada ? null : Border.all(color: Colors.grey.shade200),
             boxShadow: [
               BoxShadow(
-                color: destacada ? const Color(0xFF0F6E56).withValues(alpha: 0.16) : Colors.black.withValues(alpha: 0.03),
-                blurRadius: destacada ? 10 : 6,
+                color: destacada ? const Color(0xFFAD7A16).withValues(alpha: 0.22) : Colors.black.withValues(alpha: 0.03),
+                blurRadius: destacada ? 12 : 6,
                 offset: const Offset(0, 3),
               ),
             ],
@@ -295,14 +295,19 @@ class _VistaPrevia extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (destacada)
-                Container(
-                  margin: const EdgeInsets.only(bottom: 6),
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0F6E56),
-                    borderRadius: BorderRadius.circular(6),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.star, size: 9, color: const Color(0xFFAD7A16)),
+                      const SizedBox(width: 3),
+                      const Text(
+                        'DESTACADO',
+                        style: TextStyle(fontSize: 7, fontWeight: FontWeight.bold, color: Color(0xFFAD7A16), letterSpacing: 0.3),
+                      ),
+                    ],
                   ),
-                  child: const Text('DESTACADO', style: TextStyle(fontSize: 7, fontWeight: FontWeight.bold, color: Colors.white)),
                 ),
               Row(
                 children: [
