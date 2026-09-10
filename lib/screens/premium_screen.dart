@@ -149,7 +149,7 @@ class _Encabezado extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.bottomLeft,
                   end: Alignment.topRight,
-                  colors: [Color(0xB80B5344), Color(0x730F6E56)],
+                  colors: [Color(0xB8402B06), Color(0x73AD7A16)],
                 ),
               ),
             ),

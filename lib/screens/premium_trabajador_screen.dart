@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/premium_trabajador.dart';
 import '../providers/app_provider.dart';
+import '../widgets/brillo_dorado.dart';
 
 class PremiumTrabajadorScreen extends StatelessWidget {
   const PremiumTrabajadorScreen({super.key});
@@ -140,42 +141,41 @@ class PremiumTrabajadorScreen extends StatelessWidget {
                     }
                   }
 
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 14),
+                  final activo = vigente != null && vigente.activo;
+
+                  Widget construirTarjeta(double? t) => Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: activo ? null : Colors.white,
+                      gradient: activo ? fondoDoradoDeslizante(t) : null,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: (vigente != null && vigente.activo) ? const Color(0xFF0F6E56) : Colors.grey.shade200,
-                        width: (vigente != null && vigente.activo) ? 1.4 : 1,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: (vigente != null && vigente.activo)
-                              ? const Color(0xFF0F6E56).withValues(alpha: 0.16)
-                              : Colors.black.withValues(alpha: 0.03),
-                          blurRadius: (vigente != null && vigente.activo) ? 14 : 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                      border: activo ? null : Border.all(color: Colors.grey.shade200),
+                      boxShadow: activo
+                          ? sombraDorada()
+                          : [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.03),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(oficio, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
                         const SizedBox(height: 10),
-                        if (vigente != null && vigente.activo) ...[
+                        if (activo) ...[
                           Row(
                             children: [
-                              const Icon(Icons.check_circle, color: Color(0xFF0F6E56), size: 18),
+                              const Icon(Icons.check_circle, color: Color(0xFFAD7A16), size: 18),
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
-                                  'Activa hasta ${_formatearFecha(vigente.expiraEn!)}',
+                                  'Activa hasta ${_formatearFecha(vigente!.expiraEn!)}',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontSize: 13, color: Color(0xFF0F6E56)),
+                                  style: const TextStyle(fontSize: 13, color: Color(0xFFAD7A16)),
                                 ),
                               ),
                             ],
@@ -245,6 +245,16 @@ class PremiumTrabajadorScreen extends StatelessWidget {
                         ],
                       ],
                     ),
+                  );
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 14),
+                    child: activo
+                        ? BrilloDoradoAnimado(
+                            borderRadius: BorderRadius.circular(14),
+                            builder: (context, t) => construirTarjeta(t),
+                          )
+                        : construirTarjeta(null),
                   );
                 }),
               ],
@@ -342,7 +352,7 @@ class _Encabezado extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.bottomLeft,
                   end: Alignment.topRight,
-                  colors: [Color(0xB80B5344), Color(0x730F6E56)],
+                  colors: [Color(0xB8402B06), Color(0x73AD7A16)],
                 ),
               ),
             ),

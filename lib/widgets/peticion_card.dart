@@ -1,11 +1,11 @@
 import 'dart:io';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/peticion.dart';
 import '../providers/app_provider.dart';
 import '../screens/detalle_peticion_screen.dart';
+import 'brillo_dorado.dart';
 
 /// Una acción del panel inferior de [PeticionCard]. Con [onTap] nulo se
 /// muestra como una insignia de estado (ej. "Ya calificaste") en vez de un
@@ -86,32 +86,18 @@ class PeticionCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: peticion.premiumAprobada ? null : Colors.white,
-          gradient: peticion.premiumAprobada
-              ? LinearGradient(
-                  begin: const Alignment(-1, -0.3),
-                  end: const Alignment(1, 0.3),
-                  colors: const [
-                    Color(0xFFFFFDF6),
-                    Color(0xFFFFFDF6),
-                    Color(0xFFFFF0C4),
-                    Color(0xFFFFFDF6),
-                    Color(0xFFFFFDF6),
-                  ],
-                  stops: const [0.0, 0.35, 0.5, 0.65, 1.0],
-                  transform: _DesplazamientoDeslizante(porcentaje: -1.5 + 3.0 * (t ?? 0)),
-                )
-              : null,
+          gradient: peticion.premiumAprobada ? fondoDoradoDeslizante(t) : null,
           borderRadius: BorderRadius.circular(peticion.premiumAprobada ? 14 : 16),
           border: peticion.premiumAprobada ? null : Border.all(color: Colors.grey.shade200),
-          boxShadow: [
-            BoxShadow(
-              color: peticion.premiumAprobada
-                  ? const Color(0xFFAD7A16).withValues(alpha: 0.22)
-                  : Colors.black.withValues(alpha: 0.04),
-              blurRadius: peticion.premiumAprobada ? 18 : 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          boxShadow: peticion.premiumAprobada
+              ? sombraDorada()
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
         ),
         child: Stack(
           children: [
@@ -230,7 +216,7 @@ class PeticionCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       child: peticion.premiumAprobada
-          ? _BrilloDoradoAnimado(
+          ? BrilloDoradoAnimado(
               borderRadius: BorderRadius.circular(16),
               builder: (context, t) => construirTarjeta(t),
             )
@@ -279,86 +265,6 @@ class PeticionCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-/// Traduce (desliza) el gradiente horizontalmente en vez de rotarlo — a
-/// diferencia de GradientRotation, esto no deja ningún punto de pivote
-/// visible: el degradado completo se mueve de lado a lado como una franja
-/// de luz, no como una hélice girando sobre un centro.
-class _DesplazamientoDeslizante extends GradientTransform {
-  final double porcentaje;
-  const _DesplazamientoDeslizante({required this.porcentaje});
-
-  @override
-  Matrix4? transform(Rect bounds, {TextDirection? textDirection}) {
-    return Matrix4.translationValues(bounds.width * porcentaje, 0, 0);
-  }
-}
-
-/// Anillo de degradado dorado que rota lentamente alrededor de [child] —
-/// el "brillo metálico en movimiento" de las peticiones con Premium
-/// aprobado. Se implementa envolviendo el contenido en un Container cuyo
-/// fondo es un SweepGradient (los "bordes" de BoxDecoration solo admiten
-/// color plano, no degradados), dejando un margen de 1.8px visible como
-/// anillo alrededor de la tarjeta interior. Como el centro de la rotación
-/// queda tapado por la tarjeta blanca/interior, no se ve ningún "punto de
-/// pivote" — solo la luz recorriendo el anillo. (El fondo interior, en
-/// cambio, usa la técnica de deslizamiento en [PeticionCard], porque ahí
-/// el centro del giro sí quedaría expuesto sobre el contenido.)
-class _BrilloDoradoAnimado extends StatefulWidget {
-  final Widget Function(BuildContext context, double t) builder;
-  final BorderRadius borderRadius;
-  const _BrilloDoradoAnimado({required this.builder, required this.borderRadius});
-
-  @override
-  State<_BrilloDoradoAnimado> createState() => _BrilloDoradoAnimadoState();
-}
-
-class _BrilloDoradoAnimadoState extends State<_BrilloDoradoAnimado> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  static const _colores = [
-    Color(0xFFFFF6D8),
-    Color(0xFFE0A93B),
-    Color(0xFFFFF6D8),
-    Color(0xFFAD7A16),
-    Color(0xFFFFF6D8),
-  ];
-  static const _paradas = [0.0, 0.25, 0.5, 0.75, 1.0];
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 4))..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, _) {
-        final t = _controller.value;
-        return Container(
-          padding: const EdgeInsets.all(1.8),
-          decoration: BoxDecoration(
-            borderRadius: widget.borderRadius,
-            gradient: SweepGradient(
-              transform: GradientRotation(t * 2 * math.pi),
-              colors: _colores,
-              stops: _paradas,
-            ),
-          ),
-          child: widget.builder(context, t),
-        );
-      },
     );
   }
 }
