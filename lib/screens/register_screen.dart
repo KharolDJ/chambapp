@@ -254,24 +254,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _enviando ? null : _siguiente,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _petroleo,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: _enviando
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : Text(
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _enviando ? null : _atras,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: _petroleo,
+                        side: const BorderSide(color: _petroleo),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      icon: const Icon(Icons.arrow_back, size: 18),
+                      label: const Text('Atrás', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton.icon(
+                      onPressed: _enviando ? null : _siguiente,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _petroleo,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      icon: _enviando
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : Icon(esUltimoPaso ? Icons.check : Icons.arrow_forward, size: 18),
+                      label: Text(
                         esUltimoPaso ? 'Registrarme' : 'Continuar',
                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
+                    ),
+                  ),
+                ],
               ),
               if (_paso == 0) ...[
                 const SizedBox(height: 8),
