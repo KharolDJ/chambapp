@@ -4,7 +4,6 @@ import '../providers/app_provider.dart';
 import 'register_screen.dart';
 
 const _petroleo = Color(0xFF0F6E56);
-const _mostazaTexto = Color(0xFFAD7A16);
 const _papel = Color(0xFFF9F9FB);
 const _grafito = Color(0xFF1A1A1A);
 
@@ -52,6 +51,13 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     setState(() => _errorCorreo = error);
+  }
+
+  Widget _iconoCampo(String asset) {
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: SizedBox(width: 22, height: 22, child: Image.asset(asset, fit: BoxFit.contain)),
+    );
   }
 
   Future<void> _irARegistro() async {
@@ -116,7 +122,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   decoration: InputDecoration(
                     labelText: 'Correo electrónico',
                     errorText: _errorCorreo,
-                    prefixIcon: const Icon(Icons.email_outlined, color: _mostazaTexto),
+                    prefixIcon: _iconoCampo('assets/icon/correo.png'),
                     filled: true,
                     fillColor: Colors.white,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
@@ -134,7 +140,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   obscureText: true,
                   decoration: InputDecoration(
                     labelText: 'Contraseña',
-                    prefixIcon: const Icon(Icons.lock_outline, color: _mostazaTexto),
+                    prefixIcon: _iconoCampo('assets/icon/contrasena.png'),
                     filled: true,
                     fillColor: Colors.white,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),

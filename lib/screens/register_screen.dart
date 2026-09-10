@@ -55,6 +55,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
     'Acarreos',
   ];
 
+  static const Map<String, String> _iconosCategoria = {
+    'Plomería': 'assets/icon/plomeria.png',
+    'Electricidad': 'assets/icon/electricidad.png',
+    'Cocina': 'assets/icon/cocina.png',
+    'Carpintería': 'assets/icon/carpinteria.png',
+    'Jardinería': 'assets/icon/jardineria.png',
+    'Limpieza del hogar': 'assets/icon/limpieza.png',
+    'Pintura': 'assets/icon/pintura.png',
+    'Albañilería': 'assets/icon/albanileria.png',
+    'Cerrajería': 'assets/icon/cerrajeria.png',
+    'Acarreos': 'assets/icon/acarreos.png',
+  };
+
   List<_TipoPaso> get _pasos => _esTrabajador
       ? [_TipoPaso.nombre, _TipoPaso.correo, _TipoPaso.oficios, _TipoPaso.datosFinales]
       : [_TipoPaso.nombre, _TipoPaso.correo, _TipoPaso.datosFinales];
@@ -328,7 +341,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             TextField(
               controller: _nombreController,
               autofocus: true,
-              decoration: _decoracion('Nombre completo', Icons.badge_outlined, error: _errorNombre),
+              decoration: _decoracion('Nombre completo', 'assets/icon/nav_perfil.png', error: _errorNombre),
               onChanged: (_) {
                 if (_errorNombre != null) setState(() => _errorNombre = null);
               },
@@ -351,7 +364,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               controller: _correoController,
               autofocus: true,
               keyboardType: TextInputType.emailAddress,
-              decoration: _decoracion('Correo electrónico', Icons.email_outlined, error: _errorCorreo),
+              decoration: _decoracion('Correo electrónico', 'assets/icon/correo.png', error: _errorCorreo),
               onChanged: (_) {
                 if (_errorCorreo != null) setState(() => _errorCorreo = null);
               },
@@ -362,7 +375,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               obscureText: true,
               decoration: _decoracion(
                 'Contraseña',
-                Icons.lock_outline,
+                'assets/icon/contrasena.png',
                 helper: 'Mínimo 6 caracteres',
                 error: _errorPassword,
               ),
@@ -390,6 +403,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
               children: _servicios.map((servicio) {
                 final seleccionado = _oficiosSeleccionados.contains(servicio);
                 return FilterChip(
+                  avatar: SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: Image.asset(_iconosCategoria[servicio]!, fit: BoxFit.contain),
+                  ),
                   label: Text(servicio),
                   selected: seleccionado,
                   onSelected: (value) {
@@ -466,7 +484,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               keyboardType: TextInputType.phone,
               decoration: _decoracion(
                 'Número de celular',
-                Icons.phone_outlined,
+                'assets/icon/telefono.png',
                 helper: 'Solo se usa para contactarte por WhatsApp, nunca se muestra públicamente',
                 error: _errorCelular,
               ),
@@ -480,7 +498,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               keyboardType: TextInputType.number,
               decoration: _decoracion(
                 'Documento de identidad (opcional)',
-                Icons.badge_outlined,
+                'assets/icon/documento_identidad.png',
                 helper: 'Ayuda a generar más confianza en tu perfil',
               ),
             ),
@@ -489,12 +507,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  InputDecoration _decoracion(String label, IconData icono, {String? helper, String? error}) {
+  InputDecoration _decoracion(String label, String iconoAsset, {String? helper, String? error}) {
     return InputDecoration(
       labelText: label,
       helperText: error == null ? helper : null,
       errorText: error,
-      prefixIcon: Icon(icono, color: _mostazaTexto),
+      prefixIcon: Padding(
+        padding: const EdgeInsets.all(12),
+        child: SizedBox(width: 22, height: 22, child: Image.asset(iconoAsset, fit: BoxFit.contain)),
+      ),
       filled: true,
       fillColor: Colors.white,
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
