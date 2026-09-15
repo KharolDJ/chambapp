@@ -19,26 +19,41 @@ class DesplazamientoDeslizante extends GradientTransform {
 /// Fondo dorado deslizante para tarjetas Premium (peticiones y oficios) —
 /// usa [DesplazamientoDeslizante] con [t] (0.0-1.0, provisto por
 /// [BrilloDoradoAnimado]) para que la franja de brillo recorra el fondo.
-LinearGradient fondoDoradoDeslizante(double? t) {
+/// [esOscuro] cambia la base de crema/pergamino pálido (tema claro) a un
+/// bronce casi negro (tema oscuro) — en modo oscuro, un fondo crema clarito
+/// se vería como un parche blanco fuera de lugar sobre el resto de la app en
+/// negro, así que la base tiene que ser oscura también, solo con el mismo
+/// reflejo dorado recorriéndola.
+LinearGradient fondoDoradoDeslizante(double? t, {bool esOscuro = false}) {
   return LinearGradient(
     begin: const Alignment(-1, -0.3),
     end: const Alignment(1, 0.3),
-    colors: const [
-      Color(0xFFFFFDF6),
-      Color(0xFFFFFDF6),
-      Color(0xFFFFF0C4),
-      Color(0xFFFFFDF6),
-      Color(0xFFFFFDF6),
-    ],
+    colors: esOscuro
+        ? const [
+            Color(0xFF1B1509),
+            Color(0xFF1B1509),
+            Color(0xFF4A3712),
+            Color(0xFF1B1509),
+            Color(0xFF1B1509),
+          ]
+        : const [
+            Color(0xFFFFFDF6),
+            Color(0xFFFFFDF6),
+            Color(0xFFFFF0C4),
+            Color(0xFFFFFDF6),
+            Color(0xFFFFFDF6),
+          ],
     stops: const [0.0, 0.35, 0.5, 0.65, 1.0],
     transform: DesplazamientoDeslizante(porcentaje: -1.5 + 3.0 * (t ?? 0)),
   );
 }
 
-/// Sombra dorada acompañante de [fondoDoradoDeslizante].
-List<BoxShadow> sombraDorada() => [
+/// Sombra dorada acompañante de [fondoDoradoDeslizante]. En oscuro se reduce
+/// la opacidad — una sombra pensada para resaltar sobre fondo blanco satura
+/// demasiado sobre un fondo ya oscuro.
+List<BoxShadow> sombraDorada({bool esOscuro = false}) => [
   BoxShadow(
-    color: const Color(0xFFAD7A16).withValues(alpha: 0.22),
+    color: const Color(0xFFAD7A16).withValues(alpha: esOscuro ? 0.35 : 0.22),
     blurRadius: 18,
     offset: const Offset(0, 4),
   ),
@@ -57,13 +72,18 @@ List<BoxShadow> sombraDorada() => [
 class BrilloDoradoAnimado extends StatefulWidget {
   final Widget Function(BuildContext context, double t) builder;
   final BorderRadius borderRadius;
-  const BrilloDoradoAnimado({super.key, required this.builder, required this.borderRadius});
+  const BrilloDoradoAnimado({
+    super.key,
+    required this.builder,
+    required this.borderRadius,
+  });
 
   @override
   State<BrilloDoradoAnimado> createState() => _BrilloDoradoAnimadoState();
 }
 
-class _BrilloDoradoAnimadoState extends State<BrilloDoradoAnimado> with SingleTickerProviderStateMixin {
+class _BrilloDoradoAnimadoState extends State<BrilloDoradoAnimado>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
   static const _colores = [
@@ -78,7 +98,10 @@ class _BrilloDoradoAnimadoState extends State<BrilloDoradoAnimado> with SingleTi
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 4))..repeat();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    )..repeat();
   }
 
   @override

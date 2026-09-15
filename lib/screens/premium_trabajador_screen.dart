@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+
+import '../theme/app_colors.dart';
+
 import 'package:provider/provider.dart';
+
 import '../models/premium_trabajador.dart';
 import '../providers/app_provider.dart';
 import '../widgets/brillo_dorado.dart';
@@ -26,7 +30,10 @@ class PremiumTrabajadorScreen extends StatelessWidget {
             children: [
               Text(
                 'Visibilidad Premium — $oficio',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
               const SizedBox(height: 6),
               Text(
@@ -34,9 +41,18 @@ class PremiumTrabajadorScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 13, color: Color(0xFF666666)),
               ),
               const SizedBox(height: 16),
-              const _Paso(numero: '1', texto: 'Transfiere \$10.000 a la cuenta indicada por el equipo Chambapp.'),
-              const _Paso(numero: '2', texto: 'Ingresa abajo la referencia de tu comprobante de pago.'),
-              const _Paso(numero: '3', texto: 'El equipo revisa y aprueba — apareces en el Podio de tu oficio.'),
+              const _Paso(
+                numero: '1',
+                texto: 'Transfiere \$10.000 a la cuenta indicada por el equipo Chambapp.',
+              ),
+              const _Paso(
+                numero: '2',
+                texto: 'Ingresa abajo la referencia de tu comprobante de pago.',
+              ),
+              const _Paso(
+                numero: '3',
+                texto: 'El equipo revisa y aprueba — apareces en el Podio de tu oficio.',
+              ),
               const SizedBox(height: 12),
               TextField(
                 controller: controller,
@@ -44,7 +60,10 @@ class PremiumTrabajadorScreen extends StatelessWidget {
                   hintText: 'Referencia del comprobante de pago',
                   filled: true,
                   fillColor: Colors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -52,13 +71,17 @@ class PremiumTrabajadorScreen extends StatelessWidget {
                 onPressed: () async {
                   if (controller.text.trim().isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Ingresa la referencia del comprobante')),
+                      const SnackBar(
+                        content: Text('Ingresa la referencia del comprobante'),
+                      ),
                     );
                     return;
                   }
                   final navigator = Navigator.of(context);
                   final mensajero = ScaffoldMessenger.of(context);
-                  final error = await context.read<AppProvider>().solicitarPremiumTrabajador(
+                  final error = await context
+                      .read<AppProvider>()
+                      .solicitarPremiumTrabajador(
                         oficio: oficio,
                         comprobante: controller.text.trim(),
                       );
@@ -73,11 +96,12 @@ class PremiumTrabajadorScreen extends StatelessWidget {
                     icono: Icons.hourglass_top,
                     titulo: 'Solicitud enviada',
                     mensaje:
-                        'La revisaremos y en cuanto se apruebe, ocuparás un cupo en el Podio de "$oficio" por 30 días.',
+                        'La revisaremos y en cuanto se apruebe, quedarás activo como VIP de "$oficio" por 30 días — rotarás junto a los demás destacados en el Podio.',
                     textoBoton: 'Ver el Podio de $oficio',
                     onVerPodio: () {
                       contextPantalla.read<AppProvider>().irAlPodioDe(oficio);
-                      Navigator.of(contextPantalla).popUntil((route) => route.isFirst);
+                      Navigator.of(contextPantalla)
+                          .popUntil((route) => route.isFirst);
                     },
                   );
                 },
@@ -85,9 +109,14 @@ class PremiumTrabajadorScreen extends StatelessWidget {
                   backgroundColor: const Color(0xFFAD7A16),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                child: const Text('Solicitar Visibilidad Premium', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: const Text(
+                  'Solicitar Visibilidad Premium',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
@@ -100,21 +129,20 @@ class PremiumTrabajadorScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
     final usuario = provider.usuarioActual;
+    final tema = Theme.of(context);
+    final esOscuro = tema.brightness == Brightness.dark;
+    final colorTituloPremium = esOscuro
+        ? const Color(0xFFF5E6BE)
+        : const Color(0xFF3A2A12);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FB),
-      appBar: AppBar(
-        title: const Text('Visibilidad Premium'),
-        backgroundColor: const Color(0xFFF9F9FB),
-        foregroundColor: const Color(0xFF1A1A1A),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('Visibilidad Premium')),
       body: (usuario == null || usuario.oficios.isEmpty)
           ? Center(
               child: Text(
                 'Agrega al menos un oficio en tu perfil para poder destacarte.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Color(0xFF666666)),
+                style: TextStyle(color: tema.textTheme.bodySmall?.color),
               ),
             )
           : ListView(
@@ -124,18 +152,36 @@ class PremiumTrabajadorScreen extends StatelessWidget {
                 const SizedBox(height: 20),
                 const _FilaBeneficios(
                   beneficios: [
-                    _Beneficio(icono: Icons.emoji_events, texto: 'Podio de\ntu oficio'),
-                    _Beneficio(icono: Icons.calendar_month, texto: 'Visible\n30 días'),
-                    _Beneficio(icono: Icons.workspace_premium, texto: 'Insignia dorada\nexclusiva'),
+                    _Beneficio(
+                      iconoAsset: 'assets/icon/podio.png',
+                      texto: 'Podio de\ntu oficio',
+                    ),
+                    _Beneficio(
+                      iconoAsset: 'assets/icon/calendario.png',
+                      texto: 'Visible\n30 días',
+                    ),
+                    _Beneficio(
+                      iconoAsset: 'assets/icon/insignia.png',
+                      texto: 'Insignia dorada\nexclusiva',
+                    ),
                   ],
                 ),
                 const SizedBox(height: 24),
-                Text('Tus oficios', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.grey.shade800)),
+                Text(
+                  'Tus oficios',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: tema.colorScheme.onSurface,
+                  ),
+                ),
                 const SizedBox(height: 12),
                 ...usuario.oficios.map((oficio) {
                   PremiumTrabajador? vigente;
                   for (final p in provider.premiumTrabajadores) {
-                    if (p.usuarioId == usuario.id && p.oficio == oficio && (p.activo || (p.solicitada && !p.aprobada))) {
+                    if (p.usuarioId == usuario.id &&
+                        p.oficio == oficio &&
+                        (p.activo || (p.solicitada && !p.aprobada))) {
                       vigente = p;
                       break;
                     }
@@ -146,15 +192,21 @@ class PremiumTrabajadorScreen extends StatelessWidget {
                   Widget construirTarjeta(double? t) => Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: activo ? null : Colors.white,
-                      gradient: activo ? fondoDoradoDeslizante(t) : null,
+                      color: activo ? null : tema.cardColor,
+                      gradient: activo
+                          ? fondoDoradoDeslizante(t, esOscuro: esOscuro)
+                          : null,
                       borderRadius: BorderRadius.circular(14),
-                      border: activo ? null : Border.all(color: Colors.grey.shade200),
+                      border: activo
+                          ? null
+                          : Border.all(color: tema.dividerColor),
                       boxShadow: activo
-                          ? sombraDorada()
+                          ? sombraDorada(esOscuro: esOscuro)
                           : [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.03),
+                                color: Colors.black.withValues(
+                                  alpha: esOscuro ? 0.2 : 0.03,
+                                ),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),
@@ -163,19 +215,39 @@ class PremiumTrabajadorScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(oficio, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                        Text(
+                          oficio,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                            color: activo
+                                ? colorTituloPremium
+                                : tema.colorScheme.onSurface,
+                          ),
+                        ),
                         const SizedBox(height: 10),
                         if (activo) ...[
                           Row(
                             children: [
-                              const Icon(Icons.check_circle, color: Color(0xFFAD7A16), size: 18),
+                              Icon(
+                                Icons.check_circle,
+                                color: esOscuro
+                                    ? const Color(0xFFE0B84A)
+                                    : const Color(0xFFAD7A16),
+                                size: 18,
+                              ),
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
                                   'Activa hasta ${_formatearFecha(vigente!.expiraEn!)}',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontSize: 13, color: Color(0xFFAD7A16)),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: esOscuro
+                                        ? const Color(0xFFE0B84A)
+                                        : const Color(0xFFAD7A16),
+                                  ),
                                 ),
                               ),
                             ],
@@ -186,28 +258,47 @@ class PremiumTrabajadorScreen extends StatelessWidget {
                             child: OutlinedButton.icon(
                               onPressed: () {
                                 context.read<AppProvider>().irAlPodioDe(oficio);
-                                Navigator.of(context).popUntil((route) => route.isFirst);
+                                Navigator.of(context)
+                                    .popUntil((route) => route.isFirst);
                               },
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: const Color(0xFFAD7A16),
-                                side: const BorderSide(color: Color(0xFFAD7A16)),
+                                side: const BorderSide(
+                                  color: Color(0xFFAD7A16),
+                                ),
                               ),
-                              icon: const Icon(Icons.visibility_outlined, size: 16),
+                              icon: const Icon(
+                                Icons.visibility_outlined,
+                                size: 16,
+                              ),
                               label: Text('Ver mi puesto en $oficio'),
                             ),
                           ),
-                        ] else if (vigente != null && vigente.solicitada && !vigente.aprobada) ...[
+                        ] else if (vigente != null &&
+                            vigente.solicitada &&
+                            !vigente.aprobada) ...[
                           Row(
                             children: [
-                              const Icon(Icons.hourglass_top, color: Color(0xFFAD7A16), size: 18),
+                              Image.asset(
+                                'assets/icon/reloj_arena.png',
+                                width: 18,
+                                height: 18,
+                              ),
                               const SizedBox(width: 6),
-                              const Expanded(child: Text('Tu solicitud está en revisión', style: TextStyle(fontSize: 13))),
+                              const Expanded(
+                                child: Text(
+                                  'Tu solicitud está en revisión',
+                                  style: TextStyle(fontSize: 13),
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 8),
                           OutlinedButton(
                             onPressed: () async {
-                              await context.read<AppProvider>().aprobarPremiumTrabajadorDemo(vigente!.id);
+                              await context
+                                  .read<AppProvider>()
+                                  .aprobarPremiumTrabajadorDemo(vigente!.id);
                               if (!context.mounted) return;
                               _mostrarExito(
                                 context,
@@ -217,8 +308,11 @@ class PremiumTrabajadorScreen extends StatelessWidget {
                                     'Tu perfil ya aparece entre los destacados de "$oficio" por los próximos 30 días.',
                                 textoBoton: 'Ver mi puesto en $oficio',
                                 onVerPodio: () {
-                                  context.read<AppProvider>().irAlPodioDe(oficio);
-                                  Navigator.of(context).popUntil((route) => route.isFirst);
+                                  context.read<AppProvider>().irAlPodioDe(
+                                    oficio,
+                                  );
+                                  Navigator.of(context)
+                                      .popUntil((route) => route.isFirst);
                                 },
                               );
                             },
@@ -227,12 +321,19 @@ class PremiumTrabajadorScreen extends StatelessWidget {
                         ] else if (provider.podioLleno(oficio)) ...[
                           Row(
                             children: [
-                              Icon(Icons.block, size: 18, color: Colors.grey.shade500),
+                              Icon(
+                                Icons.block,
+                                size: 18,
+                                color: Colors.grey.shade500,
+                              ),
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
-                                  'Los 3 cupos de "$oficio" están ocupados. Vuelve a intentar cuando se libere uno.',
-                                  style: TextStyle(fontSize: 13, color: Color(0xFF666666)),
+                                  'Los ${provider.cupoMaximoVipPorOficio} cupos VIP de "$oficio" están ocupados. Vuelve a intentar cuando se libere uno.',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: tema.textTheme.bodySmall?.color,
+                                  ),
                                 ),
                               ),
                             ],
@@ -244,10 +345,14 @@ class PremiumTrabajadorScreen extends StatelessWidget {
                               onPressed: () => _abrirSolicitud(context, oficio),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: const Color(0xFFAD7A16),
-                                side: const BorderSide(color: Color(0xFFAD7A16)),
+                                side: const BorderSide(
+                                  color: Color(0xFFAD7A16),
+                                ),
                               ),
                               icon: const Icon(Icons.star_outline, size: 16),
-                              label: const Text('Solicitar Visibilidad Premium (\$10.000)'),
+                              label: const Text(
+                                'Solicitar Visibilidad Premium (\$10.000)',
+                              ),
                             ),
                           ),
                         ],
@@ -270,7 +375,8 @@ class PremiumTrabajadorScreen extends StatelessWidget {
     );
   }
 
-  String _formatearFecha(DateTime fecha) => '${fecha.day.toString().padLeft(2, '0')}/${fecha.month.toString().padLeft(2, '0')}/${fecha.year}';
+  String _formatearFecha(DateTime fecha) =>
+      '${fecha.day.toString().padLeft(2, '0')}/${fecha.month.toString().padLeft(2, '0')}/${fecha.year}';
 
   void _mostrarExito(
     BuildContext context, {
@@ -292,20 +398,31 @@ class PremiumTrabajadorScreen extends StatelessWidget {
               Container(
                 width: 64,
                 height: 64,
-                decoration: const BoxDecoration(color: Color(0xFFFFF6D8), shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFFF6D8),
+                  shape: BoxShape.circle,
+                ),
                 child: Icon(icono, color: const Color(0xFFAD7A16), size: 30),
               ),
               const SizedBox(height: 16),
               Text(
                 titulo,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A)),
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A1A1A),
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 mensaje,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 13, color: Color(0xFF666666), height: 1.4),
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFF666666),
+                  height: 1.4,
+                ),
               ),
               const SizedBox(height: 22),
               SizedBox(
@@ -321,7 +438,9 @@ class PremiumTrabajadorScreen extends StatelessWidget {
                     backgroundColor: const Color(0xFFAD7A16),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ),
@@ -371,38 +490,73 @@ class _Encabezado extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.emoji_events, size: 13, color: Colors.white),
-                      SizedBox(width: 4),
-                      Text('PODIO DE RECOMENDADOS', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.4)),
+                      Image.asset(
+                        'assets/icon/podio.png',
+                        width: 14,
+                        height: 14,
+                      ),
+                      const SizedBox(width: 4),
+                      const Text(
+                        'PODIO DE RECOMENDADOS',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: 0.4,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 12),
                 const Text(
                   'Destaca tu perfil',
-                  style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Aparece entre los 3 destacados de tu oficio cuando alguien busque tu categoría',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13),
+                  'Rota entre los 3 destacados de tu oficio cuando alguien busque tu categoría',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.85),
+                    fontSize: 13,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
                   children: [
-                    const Text('\$10.000', style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold)),
+                    const Text(
+                      '\$10.000',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(width: 6),
-                    Text('por 30 días, por oficio', style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 12)),
+                    Text(
+                      'por 30 días, por oficio',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.75),
+                        fontSize: 12,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -415,9 +569,14 @@ class _Encabezado extends StatelessWidget {
 }
 
 class _Beneficio {
-  final IconData icono;
+  final IconData? icono;
+  final String? iconoAsset;
   final String texto;
-  const _Beneficio({required this.icono, required this.texto});
+  const _Beneficio({this.icono, this.iconoAsset, required this.texto})
+    : assert(
+        icono != null || iconoAsset != null,
+        'Debe proveer icono o iconoAsset',
+      );
 }
 
 class _FilaBeneficios extends StatelessWidget {
@@ -426,29 +585,58 @@ class _FilaBeneficios extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    final esOscuro = tema.brightness == Brightness.dark;
     return Row(
       children: beneficios
           .map(
             (b) => Expanded(
               child: Container(
                 margin: const EdgeInsets.symmetric(horizontal: 4),
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 8,
+                ),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: tema.cardColor,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.grey.shade200),
+                  border: Border.all(color: tema.dividerColor),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 3)),
+                    BoxShadow(
+                      color: Colors.black.withValues(
+                        alpha: esOscuro ? 0.2 : 0.03,
+                      ),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
                   ],
                 ),
                 child: Column(
                   children: [
-                    Icon(b.icono, color: const Color(0xFFAD7A16), size: 22),
+                    b.iconoAsset != null
+                        ? Image.asset(
+                            b.iconoAsset!,
+                            width: 22,
+                            height: 22,
+                            fit: BoxFit.contain,
+                          )
+                        : Icon(
+                            b.icono,
+                            color: esOscuro
+                                ? const Color(0xFFE0B84A)
+                                : const Color(0xFFAD7A16),
+                            size: 22,
+                          ),
                     const SizedBox(height: 8),
                     Text(
                       b.texto,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A), height: 1.25),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: tema.colorScheme.onSurface,
+                        height: 1.25,
+                      ),
                     ),
                   ],
                 ),
@@ -476,11 +664,26 @@ class _Paso extends StatelessWidget {
             width: 22,
             height: 22,
             alignment: Alignment.center,
-            decoration: const BoxDecoration(color: Color(0xFF0F6E56), shape: BoxShape.circle),
-            child: Text(numero, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+            decoration: const BoxDecoration(
+              color: AppColors.azulCeleste,
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              numero,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
           const SizedBox(width: 10),
-          Expanded(child: Text(texto, style: const TextStyle(fontSize: 13, height: 1.4))),
+          Expanded(
+            child: Text(
+              texto,
+              style: const TextStyle(fontSize: 13, height: 1.4),
+            ),
+          ),
         ],
       ),
     );

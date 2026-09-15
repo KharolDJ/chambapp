@@ -18,22 +18,22 @@ class Calificacion {
   });
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'deUsuarioId': deUsuarioId,
-        'paraUsuarioId': paraUsuarioId,
-        'estrellas': estrellas,
-        'comentario': comentario,
-        'fecha': fecha.toIso8601String(),
-        'peticionId': peticionId,
-      };
+    'id': id,
+    'deUsuarioId': deUsuarioId,
+    'paraUsuarioId': paraUsuarioId,
+    'estrellas': estrellas,
+    'comentario': comentario,
+    'fecha': fecha.toIso8601String(),
+    'peticionId': peticionId,
+  };
 
   factory Calificacion.fromJson(Map<String, dynamic> json) => Calificacion(
-        id: json['id'] as String,
-        deUsuarioId: json['deUsuarioId'] as String,
-        paraUsuarioId: json['paraUsuarioId'] as String,
-        estrellas: json['estrellas'] as int,
-        comentario: json['comentario'] as String?,
-        fecha: DateTime.parse(json['fecha'] as String),
-        peticionId: json['peticionId'] as String?,
-      );
+    id: json['id'] as String,
+    deUsuarioId: json['deUsuarioId'] as String,
+    paraUsuarioId: json['paraUsuarioId'] as String,
+    estrellas: json['estrellas'] as int,
+    comentario: json['comentario'] as String?,
+    fecha: DateTime.parse(json['fecha'] as String),
+    peticionId: json['peticionId'] as String?,
+  );
 }

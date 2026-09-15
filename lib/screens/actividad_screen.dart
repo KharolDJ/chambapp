@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+
+import '../theme/app_colors.dart';
+
 import 'package:provider/provider.dart';
+
 import '../models/peticion.dart';
 import '../models/usuario.dart';
 import '../providers/app_provider.dart';
@@ -15,15 +19,15 @@ class ActividadScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
     final esEmpleador = provider.rolActual == RolUsuario.empleador;
-    final lista = esEmpleador ? provider.misPublicaciones : provider.misIntereses;
+    final lista = esEmpleador
+        ? provider.misPublicaciones
+        : provider.misIntereses;
+
+    final tema = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FB),
       appBar: AppBar(
         title: Text(esEmpleador ? 'Mis publicaciones' : 'Mis intereses'),
-        backgroundColor: const Color(0xFFF9F9FB),
-        foregroundColor: const Color(0xFF1A1A1A),
-        elevation: 0,
       ),
       body: lista.isEmpty
           ? Center(
@@ -33,15 +37,22 @@ class ActividadScreen extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      esEmpleador ? Icons.post_add_outlined : Icons.search_outlined,
+                      esEmpleador
+                          ? Icons.post_add_outlined
+                          : Icons.search_outlined,
                       size: 56,
-                      color: Colors.grey.shade300,
+                      color: tema.dividerColor,
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      esEmpleador ? 'Aún no has publicado nada' : 'Aún no marcaste interés en ninguna',
+                      esEmpleador
+                          ? 'Aún no has publicado nada'
+                          : 'Aún no marcaste interés en ninguna',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF666666)),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: tema.textTheme.bodySmall?.color,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Text(
@@ -49,7 +60,10 @@ class ActividadScreen extends StatelessWidget {
                           ? 'Toca el botón "+" para publicar tu primera petición'
                           : 'Explora el feed y toca "Aplicar" en lo que te interese',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: tema.textTheme.bodySmall?.color,
+                      ),
                     ),
                   ],
                 ),
@@ -74,10 +88,14 @@ class _ItemEmpleador extends StatelessWidget {
     final provider = context.read<AppProvider>();
     Usuario? trabajador;
     try {
-      trabajador = peticion.interesados.firstWhere((u) => u.id == peticion.trabajadorSeleccionadoId);
+      trabajador = peticion.interesados.firstWhere(
+        (u) => u.id == peticion.trabajadorSeleccionadoId,
+      );
     } catch (_) {
       try {
-        trabajador = provider.todosLosUsuarios.firstWhere((u) => u.id == peticion.trabajadorSeleccionadoId);
+        trabajador = provider.todosLosUsuarios.firstWhere(
+          (u) => u.id == peticion.trabajadorSeleccionadoId,
+        );
       } catch (_) {
         trabajador = null;
       }
@@ -111,8 +129,14 @@ class _ItemEmpleador extends StatelessWidget {
               : 'Ya no aparecerá en el feed ni en tus publicaciones. Los interesados y calificaciones asociados se conservan.',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Archivar')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Archivar'),
+          ),
         ],
       ),
     );
@@ -125,7 +149,9 @@ class _ItemEmpleador extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
     final miId = provider.usuarioActual?.id;
-    final yaCalifique = miId != null && provider.yaCalifique(deUsuarioId: miId, peticionId: peticion.id);
+    final yaCalifique =
+        miId != null &&
+        provider.yaCalifique(deUsuarioId: miId, peticionId: peticion.id);
 
     return PeticionCard(
       peticion: peticion,
@@ -135,7 +161,9 @@ class _ItemEmpleador extends StatelessWidget {
           texto: 'Interesados (${peticion.interesados.length})',
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => InteresadosScreen(peticion: peticion)),
+            MaterialPageRoute(
+              builder: (_) => InteresadosScreen(peticion: peticion),
+            ),
           ),
         ),
         AccionPeticion(
@@ -144,21 +172,24 @@ class _ItemEmpleador extends StatelessWidget {
           color: const Color(0xFFAD7A16),
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => PremiumScreen(peticion: peticion)),
+            MaterialPageRoute(
+              builder: (_) => PremiumScreen(peticion: peticion),
+            ),
           ),
         ),
         if (peticion.trabajadorSeleccionadoId != null && !peticion.cerrada)
           AccionPeticion(
             icono: Icons.check_circle_outline,
             texto: 'Finalizar',
-            onTap: () => context.read<AppProvider>().cerrarPeticion(peticion.id),
+            onTap: () =>
+                context.read<AppProvider>().cerrarPeticion(peticion.id),
           ),
         if (peticion.cerrada && peticion.trabajadorSeleccionadoId != null)
           if (yaCalifique)
             const AccionPeticion(
               icono: Icons.check_circle,
               texto: 'Ya calificaste',
-              color: Color(0xFF0F6E56),
+              color: AppColors.azulCeleste,
             )
           else
             AccionPeticion(
@@ -186,7 +217,8 @@ class _ItemTrabajador extends StatelessWidget {
     final provider = context.watch<AppProvider>();
     final miId = provider.usuarioActual?.id;
     final esSeleccionado = peticion.trabajadorSeleccionadoId == miId;
-    final otroSeleccionado = peticion.trabajadorSeleccionadoId != null && !esSeleccionado;
+    final otroSeleccionado =
+        peticion.trabajadorSeleccionadoId != null && !esSeleccionado;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -197,25 +229,44 @@ class _ItemTrabajador extends StatelessWidget {
           child: otroSeleccionado
               ? Row(
                   children: [
-                    Icon(Icons.info_outline, size: 16, color: Colors.grey.shade500),
+                    Icon(
+                      Icons.info_outline,
+                      size: 16,
+                      color: Colors.grey.shade500,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       'El empleador seleccionó a otro trabajador',
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade500,
+                      ),
                     ),
                   ],
                 )
               : _EtapasAplicacion(
-                  vistoPorEmpleador: miId != null && peticion.vistosPorEmpleador.contains(miId),
+                  vistoPorEmpleador:
+                      miId != null &&
+                      peticion.vistosPorEmpleador.contains(miId),
                   seleccionado: esSeleccionado,
+                  premium: peticion.premiumAprobada,
                 ),
         ),
         if (esSeleccionado && peticion.cerrada)
           Padding(
             padding: const EdgeInsets.only(bottom: 14),
-            child: (miId != null && provider.yaCalifique(deUsuarioId: miId, peticionId: peticion.id))
+            child:
+                (miId != null &&
+                    provider.yaCalifique(
+                      deUsuarioId: miId,
+                      peticionId: peticion.id,
+                    ))
                 ? const Chip(
-                    avatar: Icon(Icons.check, size: 16, color: Color(0xFF0F6E56)),
+                    avatar: Icon(
+                      Icons.check,
+                      size: 16,
+                      color: AppColors.azulCeleste,
+                    ),
                     label: Text('Ya calificaste'),
                   )
                 : OutlinedButton.icon(
@@ -241,40 +292,58 @@ class _ItemTrabajador extends StatelessWidget {
 class _EtapasAplicacion extends StatelessWidget {
   final bool vistoPorEmpleador;
   final bool seleccionado;
-  const _EtapasAplicacion({required this.vistoPorEmpleador, required this.seleccionado});
+  final bool premium;
+  const _EtapasAplicacion({
+    required this.vistoPorEmpleador,
+    required this.seleccionado,
+    required this.premium,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        _paso('Aplicaste', true),
-        _linea(vistoPorEmpleador),
-        _paso('Visto', vistoPorEmpleador),
-        _linea(seleccionado),
-        _paso('Te contactan', seleccionado),
+        _paso(context, 'Aplicaste', true),
+        _linea(context, vistoPorEmpleador),
+        _paso(context, 'Visto', vistoPorEmpleador),
+        _linea(context, seleccionado),
+        _paso(context, 'Te contactan', seleccionado),
       ],
     );
   }
 
-  Widget _paso(String texto, bool completado) {
-    final color = completado ? const Color(0xFF0F6E56) : Colors.grey.shade400;
+  Widget _paso(BuildContext context, String texto, bool completado) {
+    final color = !completado
+        ? Theme.of(context).dividerColor
+        : (premium ? const Color(0xFFAD7A16) : AppColors.azulCeleste);
     return Expanded(
       child: Column(
         children: [
-          Icon(completado ? Icons.check_circle : Icons.radio_button_unchecked, size: 16, color: color),
+          Icon(
+            completado ? Icons.check_circle : Icons.radio_button_unchecked,
+            size: 16,
+            color: color,
+          ),
           const SizedBox(height: 2),
-          Text(texto, textAlign: TextAlign.center, style: TextStyle(fontSize: 10, color: color)),
+          Text(
+            texto,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 10, color: color),
+          ),
         ],
       ),
     );
   }
 
-  Widget _linea(bool completado) {
+  Widget _linea(BuildContext context, bool completado) {
+    final color = !completado
+        ? Theme.of(context).dividerColor
+        : (premium ? const Color(0xFFAD7A16) : AppColors.azulCeleste);
     return Container(
       width: 20,
       height: 2,
       margin: const EdgeInsets.only(bottom: 14),
-      color: completado ? const Color(0xFF0F6E56) : Colors.grey.shade300,
+      color: color,
     );
   }
 }

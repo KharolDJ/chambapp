@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+
+import '../theme/app_colors.dart';
+
 import 'package:provider/provider.dart';
+
 import '../models/peticion.dart';
 import '../providers/app_provider.dart';
 
@@ -28,14 +32,10 @@ class _PremiumScreenState extends State<PremiumScreen> {
       orElse: () => widget.peticion,
     );
 
+    final tema = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FB),
-      appBar: AppBar(
-        title: const Text('Visibilidad Premium'),
-        backgroundColor: const Color(0xFFF9F9FB),
-        foregroundColor: const Color(0xFF1A1A1A),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('Visibilidad Premium')),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -43,9 +43,18 @@ class _PremiumScreenState extends State<PremiumScreen> {
           const SizedBox(height: 20),
           const _FilaBeneficios(
             beneficios: [
-              _Beneficio(icono: Icons.trending_up, texto: 'Hasta 5x más\npostulaciones'),
-              _Beneficio(icono: Icons.vertical_align_top, texto: 'Primero en el\nfeed de tu zona'),
-              _Beneficio(icono: Icons.workspace_premium, texto: 'Insignia dorada\n"Destacado"'),
+              _Beneficio(
+                icono: Icons.trending_up,
+                texto: 'Hasta 5x más\npostulaciones',
+              ),
+              _Beneficio(
+                icono: Icons.vertical_align_top,
+                texto: 'Primero en el\nfeed de tu zona',
+              ),
+              _Beneficio(
+                icono: Icons.workspace_premium,
+                texto: 'Insignia dorada\n"Destacado"',
+              ),
             ],
           ),
           const SizedBox(height: 24),
@@ -67,12 +76,17 @@ class _PremiumScreenState extends State<PremiumScreen> {
             Text(
               'Comprobante: ${actualizada.comprobantePago}',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: Color(0xFF666666)),
+              style: TextStyle(
+                fontSize: 12,
+                color: tema.textTheme.bodySmall?.color,
+              ),
             ),
             const SizedBox(height: 20),
             Center(
               child: OutlinedButton(
-                onPressed: () => context.read<AppProvider>().aprobarPremiumDemo(actualizada.id),
+                onPressed: () => context.read<AppProvider>().aprobarPremiumDemo(
+                  actualizada.id,
+                ),
                 child: const Text('Simular aprobación (demo)'),
               ),
             ),
@@ -83,21 +97,39 @@ class _PremiumScreenState extends State<PremiumScreen> {
               texto: 'Esta publicación ya está finalizada, no se puede solicitar Visibilidad Premium',
             )
           else ...[
-            const Text('Cómo funciona', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            const Text(
+              'Cómo funciona',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+            ),
             const SizedBox(height: 12),
-            const _Paso(numero: '1', texto: 'Transfiere \$10.000 a la cuenta indicada por el equipo Chambapp.'),
-            const _Paso(numero: '2', texto: 'Ingresa abajo la referencia de tu comprobante de pago.'),
-            const _Paso(numero: '3', texto: 'El equipo revisa y aprueba tu solicitud — tu publicación queda destacada.'),
+            const _Paso(
+              numero: '1',
+              texto: 'Transfiere \$10.000 a la cuenta indicada por el equipo Chambapp.',
+            ),
+            const _Paso(
+              numero: '2',
+              texto: 'Ingresa abajo la referencia de tu comprobante de pago.',
+            ),
+            const _Paso(
+              numero: '3',
+              texto: 'El equipo revisa y aprueba tu solicitud — tu publicación queda destacada.',
+            ),
             const SizedBox(height: 20),
-            const Text('Referencia del comprobante de pago', style: TextStyle(fontWeight: FontWeight.w600)),
+            const Text(
+              'Referencia del comprobante de pago',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
             const SizedBox(height: 8),
             TextField(
               controller: _comprobanteController,
               decoration: InputDecoration(
                 hintText: 'Ej: código de la transferencia',
                 filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                fillColor: tema.cardColor,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
               ),
             ),
             const SizedBox(height: 20),
@@ -105,19 +137,29 @@ class _PremiumScreenState extends State<PremiumScreen> {
               onPressed: () {
                 if (_comprobanteController.text.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Ingresa la referencia del comprobante')),
+                    const SnackBar(
+                      content: Text('Ingresa la referencia del comprobante'),
+                    ),
                   );
                   return;
                 }
-                context.read<AppProvider>().solicitarPremium(actualizada.id, _comprobanteController.text.trim());
+                context.read<AppProvider>().solicitarPremium(
+                  actualizada.id,
+                  _comprobanteController.text.trim(),
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFAD7A16),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-              child: const Text('Solicitar Visibilidad Premium', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Solicitar Visibilidad Premium',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ],
@@ -162,7 +204,10 @@ class _Encabezado extends StatelessWidget {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.18),
                         borderRadius: BorderRadius.circular(20),
@@ -172,7 +217,15 @@ class _Encabezado extends StatelessWidget {
                         children: [
                           Icon(Icons.star, size: 13, color: Colors.white),
                           SizedBox(width: 4),
-                          Text('PREMIUM', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.5)),
+                          Text(
+                            'PREMIUM',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -181,21 +234,41 @@ class _Encabezado extends StatelessWidget {
                 const SizedBox(height: 12),
                 const Text(
                   'Destaca tu publicación',
-                  style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Aparece primero cuando alguien busque servicios en tu zona',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13),
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.85),
+                    fontSize: 13,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
                   children: [
-                    const Text('\$10.000', style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold)),
+                    const Text(
+                      '\$10.000',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(width: 6),
-                    Text('pago único', style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 12)),
+                    Text(
+                      'pago único',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.75),
+                        fontSize: 12,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -219,19 +292,29 @@ class _FilaBeneficios extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tema = Theme.of(context);
     return Row(
       children: beneficios
           .map(
             (b) => Expanded(
               child: Container(
                 margin: const EdgeInsets.symmetric(horizontal: 4),
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 8,
+                ),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: tema.cardColor,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.grey.shade200),
+                  border: Border.all(color: tema.dividerColor),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 3)),
+                    BoxShadow(
+                      color: Colors.black.withValues(
+                        alpha: tema.brightness == Brightness.dark ? 0.2 : 0.03,
+                      ),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
                   ],
                 ),
                 child: Column(
@@ -241,7 +324,12 @@ class _FilaBeneficios extends StatelessWidget {
                     Text(
                       b.texto,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A), height: 1.25),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: tema.colorScheme.onSurface,
+                        height: 1.25,
+                      ),
                     ),
                   ],
                 ),
@@ -261,31 +349,37 @@ class _VistaPrevia extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Así se ve en el feed', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+        const Text(
+          'Así se ve en el feed',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+        ),
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: _tarjetaEjemplo(destacada: false)),
+            Expanded(child: _tarjetaEjemplo(context, destacada: false)),
             const SizedBox(width: 10),
-            Expanded(child: _tarjetaEjemplo(destacada: true)),
+            Expanded(child: _tarjetaEjemplo(context, destacada: true)),
           ],
         ),
       ],
     );
   }
 
-  Widget _tarjetaEjemplo({required bool destacada}) {
+  Widget _tarjetaEjemplo(BuildContext context, {required bool destacada}) {
+    final tema = Theme.of(context);
     return Column(
       children: [
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: destacada ? const Color(0xFFFFFDF6) : Colors.white,
+            color: destacada ? const Color(0xFFFFFDF6) : tema.cardColor,
             borderRadius: BorderRadius.circular(12),
-            border: destacada ? null : Border.all(color: Colors.grey.shade200),
+            border: destacada ? null : Border.all(color: tema.dividerColor),
             boxShadow: [
               BoxShadow(
-                color: destacada ? const Color(0xFFAD7A16).withValues(alpha: 0.22) : Colors.black.withValues(alpha: 0.03),
+                color: destacada
+                    ? const Color(0xFFAD7A16).withValues(alpha: 0.22)
+                    : Colors.black.withValues(alpha: 0.03),
                 blurRadius: destacada ? 12 : 6,
                 offset: const Offset(0, 3),
               ),
@@ -304,29 +398,58 @@ class _VistaPrevia extends StatelessWidget {
                       const SizedBox(width: 3),
                       const Text(
                         'DESTACADO',
-                        style: TextStyle(fontSize: 7, fontWeight: FontWeight.bold, color: Color(0xFFAD7A16), letterSpacing: 0.3),
+                        style: TextStyle(
+                          fontSize: 7,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFAD7A16),
+                          letterSpacing: 0.3,
+                        ),
                       ),
                     ],
                   ),
                 ),
               Row(
                 children: [
-                  CircleAvatar(radius: 10, backgroundColor: const Color(0xFFE3F2EC), child: Text('T', style: TextStyle(fontSize: 9, color: Color(0xFF666666)))),
+                  CircleAvatar(
+                    radius: 10,
+                    backgroundColor: const Color(0xFFE3F2EC),
+                    child: Text(
+                      'T',
+                      style: TextStyle(fontSize: 9, color: Color(0xFF666666)),
+                    ),
+                  ),
                   const SizedBox(width: 6),
                   Expanded(
-                    child: Container(height: 6, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(3))),
+                    child: Container(
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
-              Container(height: 6, width: 60, decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(3))),
+              Container(
+                height: 6,
+                width: 60,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
             ],
           ),
         ),
         const SizedBox(height: 6),
         Text(
           destacada ? 'Con Premium' : 'Sin Premium',
-          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: destacada ? const Color(0xFFAD7A16) : Colors.grey.shade500),
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: destacada ? const Color(0xFFAD7A16) : Colors.grey.shade500,
+          ),
         ),
       ],
     );
@@ -349,11 +472,26 @@ class _Paso extends StatelessWidget {
             width: 22,
             height: 22,
             alignment: Alignment.center,
-            decoration: const BoxDecoration(color: Color(0xFF0F6E56), shape: BoxShape.circle),
-            child: Text(numero, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+            decoration: const BoxDecoration(
+              color: AppColors.azulCeleste,
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              numero,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
           const SizedBox(width: 10),
-          Expanded(child: Text(texto, style: const TextStyle(fontSize: 13, height: 1.4))),
+          Expanded(
+            child: Text(
+              texto,
+              style: const TextStyle(fontSize: 13, height: 1.4),
+            ),
+          ),
         ],
       ),
     );
@@ -364,7 +502,11 @@ class _EstadoSimple extends StatelessWidget {
   final IconData icono;
   final Color color;
   final String texto;
-  const _EstadoSimple({required this.icono, required this.color, required this.texto});
+  const _EstadoSimple({
+    required this.icono,
+    required this.color,
+    required this.texto,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -372,7 +514,11 @@ class _EstadoSimple extends StatelessWidget {
       children: [
         Icon(icono, color: color, size: 48),
         const SizedBox(height: 12),
-        Text(texto, textAlign: TextAlign.center, style: TextStyle(color: color == Colors.grey.shade500 ? color : null)),
+        Text(
+          texto,
+          textAlign: TextAlign.center,
+          style: TextStyle(color: color == Colors.grey.shade500 ? color : null),
+        ),
       ],
     );
   }

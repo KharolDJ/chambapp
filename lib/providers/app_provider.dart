@@ -1,16 +1,19 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/peticion.dart';
 import '../models/usuario.dart';
 import '../models/calificacion.dart';
 import '../models/notificacion.dart';
 import '../models/premium_trabajador.dart';
 import '../models/reporte.dart';
+import '../models/verificacion_identidad.dart';
 
 enum RolUsuario { empleador, trabajador }
 
@@ -22,16 +25,21 @@ class AppProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _suscripcionPeticiones;
-  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _suscripcionCalificaciones;
-  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _suscripcionNotificaciones;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
+  _suscripcionPeticiones;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
+  _suscripcionCalificaciones;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
+  _suscripcionNotificaciones;
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _suscripcionUsuarios;
-  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _suscripcionPremiumTrabajadores;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
+  _suscripcionPremiumTrabajadores;
 
   static const _claveUsuarios = 'chambapp_usuarios';
   static const _claveRol = 'chambapp_rol_actual';
   static const _claveNotificaciones = 'chambapp_notificaciones_activas';
   static const _claveRadio = 'chambapp_radio_busqueda_km';
+  static const _claveTema = 'chambapp_tema_preferido';
 
   // Cuentas de los autores del proyecto — únicas con acceso al panel de
   // Administración (reportes). Lista fija por ahora; se reemplaza por un
@@ -51,7 +59,8 @@ class AppProvider extends ChangeNotifier {
   // se actualiza solo, así que hay que refrescarlo explícitamente
   // (`recargarVerificacionCorreo`) después de que la persona confirme el
   // correo desde su bandeja de entrada.
-  bool get correoVerificado => usuarioActual == null || (_auth.currentUser?.emailVerified ?? false);
+  bool get correoVerificado =>
+      usuarioActual == null || (_auth.currentUser?.emailVerified ?? false);
 
   Future<void> recargarVerificacionCorreo() async {
     try {
@@ -75,6 +84,7 @@ class AppProvider extends ChangeNotifier {
   Usuario? usuarioActual;
   bool notificacionesActivas = true;
   double radioBusquedaKm = 50;
+  ThemeMode temaPreferido = ThemeMode.system;
 
   // Todos los usuarios reales registrados, sincronizados en tiempo real desde
   // Firestore (a diferencia de [usuarios] abajo, que es solo la lista fija de
@@ -88,13 +98,140 @@ class AppProvider extends ChangeNotifier {
   // feed, sin necesidad de cuenta.
   final List<PremiumTrabajador> premiumTrabajadores = [];
 
-  List<PremiumTrabajador> podioPara(String oficio) {
-    final activos = premiumTrabajadores.where((p) => p.oficio == oficio && p.activo).toList()
-      ..sort((a, b) => (a.expiraEn ?? a.solicitadaEn).compareTo(b.expiraEn ?? b.solicitadaEn));
-    return activos.take(3).toList();
+  // Verificación de identidad (cédula) del usuario con sesión activa. A
+  // diferencia de [premiumTrabajadores], no se escucha en tiempo real para
+  // todo el mundo: contiene la ruta local de la foto de la cédula, un dato
+  // más sensible que el resto del perfil, así que solo se consulta bajo
+  // demanda para el propio usuario (ver [cargarMiVerificacionIdentidad]).
+  VerificacionIdentidad? miVerificacionIdentidad;
+
+  Future<void> cargarMiVerificacionIdentidad() async {
+    final actual = usuarioActual;
+    if (actual == null) return;
+    try {
+      final doc = await _db
+          .collection('verificacionesIdentidad')
+          .doc(actual.id)
+          .get();
+      miVerificacionIdentidad = doc.exists
+          ? VerificacionIdentidad.fromFirestore(doc.data()!, doc.id)
+          : null;
+    } catch (_) {
+      // Sin conexión u otro error transitorio: la pantalla se queda en su
+      // estado anterior y se puede reintentar volviendo a abrirla.
+    }
+    notifyListeners();
   }
 
-  bool podioLleno(String oficio) => podioPara(oficio).length >= 3;
+  Future<String?> solicitarVerificacionIdentidad({
+    required String numeroCedula,
+    required String fotoCedulaPath,
+  }) async {
+    final actual = usuarioActual;
+    if (actual == null) {
+      return 'Debes iniciar sesión para solicitar la verificación.';
+    }
+    if (actual.perfilVerificado) return 'Tu perfil ya está verificado.';
+    if (miVerificacionIdentidad != null &&
+        miVerificacionIdentidad!.solicitada &&
+        !miVerificacionIdentidad!.aprobada) {
+      return 'Ya tienes una solicitud de verificación en revisión.';
+    }
+
+    final doc = VerificacionIdentidad(
+      id: actual.id,
+      usuarioId: actual.id,
+      numeroCedula: numeroCedula,
+      fotoCedulaPath: fotoCedulaPath,
+      solicitada: true,
+      solicitadaEn: DateTime.now(),
+    );
+    try {
+      await _db
+          .collection('verificacionesIdentidad')
+          .doc(doc.id)
+          .set(doc.toFirestore());
+    } catch (_) {
+      return 'No se pudo enviar la solicitud. Intenta de nuevo.';
+    }
+    miVerificacionIdentidad = doc;
+    // El número de cédula queda también autodeclarado en el perfil, igual
+    // que si se hubiera guardado desde Editar perfil.
+    actual.cedula = numeroCedula;
+    notifyListeners();
+    unawaited(_guardarEstado());
+    try {
+      await _db.collection('usuarios').doc(actual.id).update({
+        'cedula': numeroCedula,
+      });
+    } catch (_) {
+      // Igual que en actualizarPerfil: la copia local ya quedó actualizada.
+    }
+    return null;
+  }
+
+  Future<void> aprobarVerificacionIdentidadDemo() async {
+    final solicitud = miVerificacionIdentidad;
+    final actual = usuarioActual;
+    if (solicitud == null || actual == null || solicitud.aprobada) return;
+
+    try {
+      await _db.collection('verificacionesIdentidad').doc(solicitud.id).update({
+        'aprobada': true,
+      });
+      await _db.collection('usuarios').doc(actual.id).update({
+        'perfilVerificado': true,
+      });
+    } catch (_) {
+      return;
+    }
+    miVerificacionIdentidad = VerificacionIdentidad(
+      id: solicitud.id,
+      usuarioId: solicitud.usuarioId,
+      numeroCedula: solicitud.numeroCedula,
+      fotoCedulaPath: solicitud.fotoCedulaPath,
+      solicitada: true,
+      aprobada: true,
+      solicitadaEn: solicitud.solicitadaEn,
+    );
+    actual.perfilVerificado = true;
+    notifyListeners();
+    unawaited(
+      _crearNotificacion(
+        paraUsuarioId: actual.id,
+        mensaje: 'Tu perfil fue verificado con tu cédula.',
+      ),
+    );
+  }
+
+  // Rotación estilo Airbnb/Mercado Pago (2026-09-14): "Visibilidad Premium"
+  // ya no reserva uno de solo 3 cupos fijos por 30 días — ahora vende hasta
+  // [_cupoMaximoVipPorOficio] "pases VIP" por oficio, y el Podio muestra 3 al
+  // azar entre todos los VIP activos en cada carga. Así todo el que paga
+  // recibe exposición real a lo largo del mes, en vez de quedar bloqueado si
+  // alguien más llegó primero.
+  static const _cupoMaximoVipPorOficio = 10;
+
+  List<PremiumTrabajador> vipActivosPara(String oficio) =>
+      premiumTrabajadores.where((p) => p.oficio == oficio && p.activo).toList();
+
+  bool podioLleno(String oficio) =>
+      vipActivosPara(oficio).length >= _cupoMaximoVipPorOficio;
+
+  int get cupoMaximoVipPorOficio => _cupoMaximoVipPorOficio;
+
+  /// Los 3 que se muestran ahora mismo en el Podio de [oficio]. Si hay 3 o
+  /// menos VIP activos, se muestran todos. Si hay más, se eligen 3 al azar
+  /// con una semilla que cambia cada 15 minutos — estable dentro de esa
+  /// ventana (no "parpadea" en cada rebuild de la pantalla), pero rota a lo
+  /// largo del día para repartir la exposición entre todos los VIP.
+  List<PremiumTrabajador> podioPara(String oficio) {
+    final activos = vipActivosPara(oficio);
+    if (activos.length <= 3) return activos;
+    final ventana = DateTime.now().millisecondsSinceEpoch ~/ (15 * 60 * 1000);
+    final aleatorio = Random(Object.hash(oficio, ventana));
+    return ([...activos]..shuffle(aleatorio)).take(3).toList();
+  }
 
   // Señal de navegación efímera: "ve al feed y filtra por esta categoría".
   // No es un dato de negocio, solo un puente entre PremiumTrabajadorScreen
@@ -115,7 +252,10 @@ class AppProvider extends ChangeNotifier {
     final t = termino.trim().toLowerCase();
     if (t.isEmpty) return const [];
     return todosLosUsuarios
-        .where((u) => u.id != usuarioActual?.id && u.nombre.toLowerCase().contains(t))
+        .where(
+          (u) =>
+              u.id != usuarioActual?.id && u.nombre.toLowerCase().contains(t),
+        )
         .toList();
   }
 
@@ -192,110 +332,112 @@ class AppProvider extends ChangeNotifier {
   final List<Peticion> peticiones = [];
 
   List<Calificacion> _calificacionesDemo() => [
-        Calificacion(
-          id: 'demo-cal-1',
-          deUsuarioId: 'u-rosa',
-          paraUsuarioId: 'u-diego',
-          estrellas: 5,
-          comentario: 'Excelente trabajo, muy puntual y ordenado.',
-          fecha: DateTime.now().subtract(const Duration(days: 3)),
-          peticionId: '5',
-        ),
-      ];
+    Calificacion(
+      id: 'demo-cal-1',
+      deUsuarioId: 'u-rosa',
+      paraUsuarioId: 'u-diego',
+      estrellas: 5,
+      comentario: 'Excelente trabajo, muy puntual y ordenado.',
+      fecha: DateTime.now().subtract(const Duration(days: 3)),
+      peticionId: '5',
+    ),
+  ];
 
   List<Peticion> _peticionesDemo() => [
-        Peticion(
-          id: '1',
-          autorId: 'u-maria',
-          autorNombre: 'María J.',
-          barrio: 'Provenza',
-          descripcion: 'Se dañó la tubería de la cocina, necesito un plomero urgente',
-          categoria: 'Plomería',
-          urgente: true,
-          creadaEn: DateTime.now().subtract(const Duration(minutes: 20)),
-          lat: 7.1198,
-          lng: -73.1210,
-          interesados: [...usuarios.where((u) => u.id == 'u-rosa')],
-        ),
-        Peticion(
-          id: '2',
-          autorId: 'u-carlos',
-          autorNombre: 'Carlos R.',
-          barrio: 'La Concordia',
-          descripcion: 'Busco quien pinte una fachada pequeña este fin de semana',
-          categoria: 'Pintura',
-          creadaEn: DateTime.now().subtract(const Duration(hours: 2)),
-          lat: 7.1245,
-          lng: -73.1189,
-        ),
-        Peticion(
-          id: '3',
-          autorId: 'u-rosa',
-          autorNombre: 'Rosa T.',
-          barrio: 'Kennedy',
-          descripcion: 'Necesito instalar un tomacorriente nuevo en la sala',
-          categoria: 'Electricidad',
-          creadaEn: DateTime.now().subtract(const Duration(hours: 5)),
-          lat: 7.1156,
-          lng: -73.1257,
-          interesados: [...usuarios.where((u) => u.id == 'u-maria')],
-        ),
-        Peticion(
-          id: '4',
-          autorId: 'u-sofia',
-          autorNombre: 'Sofía Ortiz',
-          barrio: 'Cabecera',
-          descripcion: 'Corto circuito en el tablero eléctrico, necesito ayuda urgente hoy mismo',
-          categoria: 'Electricidad',
-          urgente: true,
-          creadaEn: DateTime.now().subtract(const Duration(minutes: 5)),
-          lat: 7.1220,
-          lng: -73.1230,
-          premiumSolicitada: true,
-          premiumAprobada: true,
-          comprobantePago: 'demo-001',
-        ),
-        Peticion(
-          id: '5',
-          autorId: 'u-rosa',
-          autorNombre: 'Rosa T.',
-          barrio: 'Kennedy',
-          descripcion: 'Arreglo de una puerta de closet y un mueble de cocina',
-          categoria: 'Carpintería',
-          creadaEn: DateTime.now().subtract(const Duration(days: 4)),
-          lat: 7.1180,
-          lng: -73.1200,
-          interesados: [...usuarios.where((u) => u.id == 'u-diego')],
-          trabajadorSeleccionadoId: 'u-diego',
-          cerrada: true,
-        ),
-        Peticion(
-          id: '6',
-          autorId: 'u-maria',
-          autorNombre: 'María J.',
-          barrio: 'Cabecera',
-          descripcion: 'Necesito limpieza profunda de apartamento antes de una mudanza',
-          categoria: 'Limpieza del hogar',
-          creadaEn: DateTime.now().subtract(const Duration(hours: 8)),
-          lat: 7.1265,
-          lng: -73.1175,
-          interesados: [
-            ...usuarios.where((u) => u.id == 'u-laura'),
-            ...usuarios.where((u) => u.id == 'u-rosa'),
-          ],
-        ),
-        Peticion(
-          id: '7',
-          autorId: 'u-carlos',
-          autorNombre: 'Carlos R.',
-          barrio: 'Provenza',
-          descripcion: 'Busco quien me ayude a preparar comida para una reunión familiar el sábado',
-          categoria: 'Cocina',
-          creadaEn: DateTime.now().subtract(const Duration(minutes: 45)),
-          lat: 7.1140,
-          lng: -73.1245,
-        ),
-      ];
+    Peticion(
+      id: '1',
+      autorId: 'u-maria',
+      autorNombre: 'María J.',
+      barrio: 'Provenza',
+      descripcion:
+          'Se dañó la tubería de la cocina, necesito un plomero urgente',
+      categoria: 'Plomería',
+      urgente: true,
+      creadaEn: DateTime.now().subtract(const Duration(minutes: 20)),
+      lat: 7.1198,
+      lng: -73.1210,
+      interesados: [...usuarios.where((u) => u.id == 'u-rosa')],
+    ),
+    Peticion(
+      id: '2',
+      autorId: 'u-carlos',
+      autorNombre: 'Carlos R.',
+      barrio: 'La Concordia',
+      descripcion: 'Busco quien pinte una fachada pequeña este fin de semana',
+      categoria: 'Pintura',
+      creadaEn: DateTime.now().subtract(const Duration(hours: 2)),
+      lat: 7.1245,
+      lng: -73.1189,
+    ),
+    Peticion(
+      id: '3',
+      autorId: 'u-rosa',
+      autorNombre: 'Rosa T.',
+      barrio: 'Kennedy',
+      descripcion: 'Necesito instalar un tomacorriente nuevo en la sala',
+      categoria: 'Electricidad',
+      creadaEn: DateTime.now().subtract(const Duration(hours: 5)),
+      lat: 7.1156,
+      lng: -73.1257,
+      interesados: [...usuarios.where((u) => u.id == 'u-maria')],
+    ),
+    Peticion(
+      id: '4',
+      autorId: 'u-sofia',
+      autorNombre: 'Sofía Ortiz',
+      barrio: 'Cabecera',
+      descripcion: 'Corto circuito en el tablero eléctrico, necesito ayuda urgente hoy mismo',
+      categoria: 'Electricidad',
+      urgente: true,
+      creadaEn: DateTime.now().subtract(const Duration(minutes: 5)),
+      lat: 7.1220,
+      lng: -73.1230,
+      premiumSolicitada: true,
+      premiumAprobada: true,
+      comprobantePago: 'demo-001',
+    ),
+    Peticion(
+      id: '5',
+      autorId: 'u-rosa',
+      autorNombre: 'Rosa T.',
+      barrio: 'Kennedy',
+      descripcion: 'Arreglo de una puerta de closet y un mueble de cocina',
+      categoria: 'Carpintería',
+      creadaEn: DateTime.now().subtract(const Duration(days: 4)),
+      lat: 7.1180,
+      lng: -73.1200,
+      interesados: [...usuarios.where((u) => u.id == 'u-diego')],
+      trabajadorSeleccionadoId: 'u-diego',
+      cerrada: true,
+    ),
+    Peticion(
+      id: '6',
+      autorId: 'u-maria',
+      autorNombre: 'María J.',
+      barrio: 'Cabecera',
+      descripcion:
+          'Necesito limpieza profunda de apartamento antes de una mudanza',
+      categoria: 'Limpieza del hogar',
+      creadaEn: DateTime.now().subtract(const Duration(hours: 8)),
+      lat: 7.1265,
+      lng: -73.1175,
+      interesados: [
+        ...usuarios.where((u) => u.id == 'u-laura'),
+        ...usuarios.where((u) => u.id == 'u-rosa'),
+      ],
+    ),
+    Peticion(
+      id: '7',
+      autorId: 'u-carlos',
+      autorNombre: 'Carlos R.',
+      barrio: 'Provenza',
+      descripcion: 'Busco quien me ayude a preparar comida para una reunión familiar el sábado',
+      categoria: 'Cocina',
+      creadaEn: DateTime.now().subtract(const Duration(minutes: 45)),
+      lat: 7.1140,
+      lng: -73.1245,
+    ),
+  ];
 
   Future<void> cargarEstadoGuardado() async {
     final prefs = await SharedPreferences.getInstance();
@@ -317,6 +459,10 @@ class AppProvider extends ChangeNotifier {
 
     notificacionesActivas = prefs.getBool(_claveNotificaciones) ?? true;
     radioBusquedaKm = prefs.getDouble(_claveRadio) ?? 50;
+    final temaGuardado = prefs.getString(_claveTema);
+    if (temaGuardado != null) {
+      temaPreferido = ThemeMode.values.byName(temaGuardado);
+    }
 
     // La sesión real de identidad viene de Firebase Auth, no de lo guardado
     // localmente — si hay una sesión activa, tiene prioridad.
@@ -364,13 +510,20 @@ class AppProvider extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    _suscripcionNotificaciones =
-        _db.collection('notificaciones').where('paraUsuarioId', isEqualTo: uid).snapshots().listen((snapshot) {
-      notificaciones
-        ..clear()
-        ..addAll(snapshot.docs.map((doc) => Notificacion.fromFirestore(doc.data(), doc.id)));
-      notifyListeners();
-    });
+    _suscripcionNotificaciones = _db
+        .collection('notificaciones')
+        .where('paraUsuarioId', isEqualTo: uid)
+        .snapshots()
+        .listen((snapshot) {
+          notificaciones
+            ..clear()
+            ..addAll(
+              snapshot.docs.map(
+                (doc) => Notificacion.fromFirestore(doc.data(), doc.id),
+              ),
+            );
+          notifyListeners();
+        });
   }
 
   /// Escucha en tiempo real el directorio completo de usuarios (para la
@@ -386,7 +539,9 @@ class AppProvider extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    _suscripcionUsuarios = _db.collection('usuarios').snapshots().listen((snapshot) {
+    _suscripcionUsuarios = _db.collection('usuarios').snapshots().listen((
+      snapshot,
+    ) {
       todosLosUsuarios
         ..clear()
         ..addAll(snapshot.docs.map((doc) => Usuario.fromJson(doc.data())));
@@ -408,7 +563,10 @@ class AppProvider extends ChangeNotifier {
         // usuarios reales. `merge: true` evita pisar una cuenta real si
         // algún día coincidiera un id (no debería pasar, usan ids fijos).
         for (final u in usuarios) {
-          await _db.collection('usuarios').doc(u.id).set(u.toJson(), SetOptions(merge: true));
+          await _db
+              .collection('usuarios')
+              .doc(u.id)
+              .set(u.toJson(), SetOptions(merge: true));
         }
         for (final p in _peticionesDemo()) {
           await _db.collection('peticiones').doc(p.id).set(p.toFirestore());
@@ -423,28 +581,46 @@ class AppProvider extends ChangeNotifier {
     }
 
     await _suscripcionPeticiones?.cancel();
-    _suscripcionPeticiones = _db.collection('peticiones').snapshots().listen((snapshot) {
+    _suscripcionPeticiones = _db.collection('peticiones').snapshots().listen((
+      snapshot,
+    ) {
       peticiones
         ..clear()
-        ..addAll(snapshot.docs.map((doc) => Peticion.fromFirestore(doc.data(), doc.id)));
+        ..addAll(
+          snapshot.docs.map(
+            (doc) => Peticion.fromFirestore(doc.data(), doc.id),
+          ),
+        );
       notifyListeners();
     });
 
     await _suscripcionCalificaciones?.cancel();
-    _suscripcionCalificaciones = _db.collection('calificaciones').snapshots().listen((snapshot) {
-      calificaciones
-        ..clear()
-        ..addAll(snapshot.docs.map((doc) => Calificacion.fromJson(doc.data())));
-      notifyListeners();
-    });
+    _suscripcionCalificaciones = _db
+        .collection('calificaciones')
+        .snapshots()
+        .listen((snapshot) {
+          calificaciones
+            ..clear()
+            ..addAll(
+              snapshot.docs.map((doc) => Calificacion.fromJson(doc.data())),
+            );
+          notifyListeners();
+        });
 
     await _suscripcionPremiumTrabajadores?.cancel();
-    _suscripcionPremiumTrabajadores = _db.collection('premiumTrabajador').snapshots().listen((snapshot) {
-      premiumTrabajadores
-        ..clear()
-        ..addAll(snapshot.docs.map((doc) => PremiumTrabajador.fromFirestore(doc.data(), doc.id)));
-      notifyListeners();
-    });
+    _suscripcionPremiumTrabajadores = _db
+        .collection('premiumTrabajador')
+        .snapshots()
+        .listen((snapshot) {
+          premiumTrabajadores
+            ..clear()
+            ..addAll(
+              snapshot.docs.map(
+                (doc) => PremiumTrabajador.fromFirestore(doc.data(), doc.id),
+              ),
+            );
+          notifyListeners();
+        });
   }
 
   @override
@@ -471,9 +647,14 @@ class AppProvider extends ChangeNotifier {
 
     await prefs.setBool(_claveNotificaciones, notificacionesActivas);
     await prefs.setDouble(_claveRadio, radioBusquedaKm);
+    await prefs.setString(_claveTema, temaPreferido.name);
   }
 
-  Future<void> _crearNotificacion({required String paraUsuarioId, required String mensaje, String? peticionId}) async {
+  Future<void> _crearNotificacion({
+    required String paraUsuarioId,
+    required String mensaje,
+    String? peticionId,
+  }) async {
     final notif = Notificacion(
       id: _db.collection('notificaciones').doc().id,
       paraUsuarioId: paraUsuarioId,
@@ -482,7 +663,10 @@ class AppProvider extends ChangeNotifier {
       peticionId: peticionId,
     );
     try {
-      await _db.collection('notificaciones').doc(notif.id).set(notif.toFirestore());
+      await _db
+          .collection('notificaciones')
+          .doc(notif.id)
+          .set(notif.toFirestore());
     } catch (_) {
       // Si falla, simplemente no se genera el aviso; no debe tumbar la
       // operación principal que la disparó (marcar interés, calificar, etc.).
@@ -524,6 +708,7 @@ class AppProvider extends ChangeNotifier {
     List<String>? oficios,
     String? fotoPath,
     String? cedula,
+    String? barrio,
   }) async {
     try {
       final credencial = await _auth.createUserWithEmailAndPassword(
@@ -540,6 +725,7 @@ class AppProvider extends ChangeNotifier {
         oficios: oficios,
         fotoPath: fotoPath,
         cedula: cedula,
+        barrio: barrio,
       );
       await _db.collection('usuarios').doc(uid).set(nuevoUsuario.toJson());
       usuarioActual = nuevoUsuario;
@@ -555,10 +741,19 @@ class AppProvider extends ChangeNotifier {
     }
   }
 
-  Future<String?> iniciarSesionConFirebase({required String correo, required String password}) async {
+  Future<String?> iniciarSesionConFirebase({
+    required String correo,
+    required String password,
+  }) async {
     try {
-      final credencial = await _auth.signInWithEmailAndPassword(email: correo.trim(), password: password);
-      final doc = await _db.collection('usuarios').doc(credencial.user!.uid).get();
+      final credencial = await _auth.signInWithEmailAndPassword(
+        email: correo.trim(),
+        password: password,
+      );
+      final doc = await _db
+          .collection('usuarios')
+          .doc(credencial.user!.uid)
+          .get();
       if (!doc.exists) {
         return 'No encontramos tu perfil. Contacta soporte.';
       }
@@ -581,6 +776,7 @@ class AppProvider extends ChangeNotifier {
     List<String>? oficios,
     String? fotoPath,
     String? cedula,
+    String? barrio,
   }) async {
     final actual = usuarioActual;
     if (actual == null) return;
@@ -589,6 +785,7 @@ class AppProvider extends ChangeNotifier {
     actual.oficios = oficios ?? [];
     if (fotoPath != null) actual.fotoPath = fotoPath;
     if (cedula != null) actual.cedula = cedula;
+    if (barrio != null) actual.barrio = barrio;
     notifyListeners();
     unawaited(_guardarEstado());
     try {
@@ -609,12 +806,31 @@ class AppProvider extends ChangeNotifier {
     unawaited(_guardarEstado());
   }
 
-  Future<void> eliminarCuentaActual() async {
+  /// Elimina la cuenta actual. Devuelve `null` si tuvo éxito, o un mensaje
+  /// de error para mostrar al usuario si no se pudo completar.
+  Future<String?> eliminarCuentaActual() async {
     final actual = usuarioActual;
-    if (actual == null) return;
+    if (actual == null) return null;
+
+    // Se borra la cuenta de Auth PRIMERO: si esto falla (ej. Firebase exige
+    // sesión reciente), se aborta sin tocar Firestore ni el estado local —
+    // antes se borraba el perfil de Firestore antes que la cuenta de Auth,
+    // así que un fallo aquí dejaba una cuenta de Auth "viva" pero sin perfil
+    // (huérfana, sin forma de recuperarla ni de volver a iniciar sesión).
+    try {
+      await _auth.currentUser?.delete();
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'requires-recent-login') {
+        return 'Por seguridad, cierra sesión y vuelve a iniciarla antes de eliminar tu cuenta.';
+      }
+      return 'No se pudo eliminar tu cuenta. Intenta de nuevo.';
+    } catch (_) {
+      return 'No se pudo eliminar tu cuenta. Intenta de nuevo.';
+    }
+
     try {
       // Archiva sus peticiones y libera cualquier cupo del Podio antes de
-      // borrar la cuenta — de lo contrario quedan "vivas" indefinidamente:
+      // borrar el perfil — de lo contrario quedan "vivas" indefinidamente:
       // publicaciones sin dueño real aceptando "Aplicar", y un cupo de
       // Visibilidad Premium ocupado hasta por 30 días aunque la cuenta ya
       // no exista.
@@ -633,26 +849,22 @@ class AppProvider extends ChangeNotifier {
           .where('aprobada', isEqualTo: true)
           .get();
       for (final doc in premiumActivo.docs) {
-        batch.update(doc.reference, {'expiraEn': DateTime.now().subtract(const Duration(seconds: 1)).toIso8601String()});
+        batch.update(doc.reference, {
+          'expiraEn': DateTime.now()
+              .subtract(const Duration(seconds: 1))
+              .toIso8601String(),
+        });
       }
       await batch.commit();
     } catch (_) {
-      // Sin conexión u otro error transitorio: la cuenta igual se borra;
-      // sus peticiones/cupos quedan pendientes de limpiar en un futuro
-      // intento, no es un fallo crítico para el borrado en sí.
+      // Sin conexión u otro error transitorio: la cuenta de Auth ya se
+      // borró; sus peticiones/cupos quedan pendientes de limpiar en un
+      // futuro intento, no es un fallo crítico para el borrado en sí.
     }
     try {
       await _db.collection('usuarios').doc(actual.id).delete();
     } catch (_) {
       // Continúa con la limpieza local aunque Firestore falle.
-    }
-    try {
-      await _auth.currentUser?.delete();
-    } on FirebaseAuthException catch (e) {
-      if (e.code != 'requires-recent-login') rethrow;
-      // Firebase exige haber iniciado sesión recientemente para borrar la
-      // cuenta de Auth. Por ahora dejamos esa cuenta huérfana (sin perfil
-      // en Firestore) — es una limitación aceptable del prototipo.
     }
     usuarioActual = null;
     rolActual = null;
@@ -660,10 +872,17 @@ class AppProvider extends ChangeNotifier {
     unawaited(_escucharUsuarios(null));
     notifyListeners();
     unawaited(_guardarEstado());
+    return null;
   }
 
   void actualizarNotificaciones(bool activas) {
     notificacionesActivas = activas;
+    notifyListeners();
+    unawaited(_guardarEstado());
+  }
+
+  void actualizarTema(ThemeMode modo) {
+    temaPreferido = modo;
     notifyListeners();
     unawaited(_guardarEstado());
   }
@@ -676,7 +895,10 @@ class AppProvider extends ChangeNotifier {
 
   Future<void> publicarPeticion(Peticion peticion) async {
     try {
-      await _db.collection('peticiones').doc(peticion.id).set(peticion.toFirestore());
+      await _db
+          .collection('peticiones')
+          .doc(peticion.id)
+          .set(peticion.toFirestore());
     } catch (_) {
       // El listener de Firestore es la única fuente de verdad de la lista;
       // si la escritura falla, la petición simplemente no aparece.
@@ -685,10 +907,21 @@ class AppProvider extends ChangeNotifier {
 
   Future<void> marcarInteres(String peticionId) async {
     final usuario = usuarioActual;
-    assert(usuario != null, 'No se puede marcar interés sin un usuario registrado');
+    assert(
+      usuario != null,
+      'No se puede marcar interés sin un usuario registrado',
+    );
     if (usuario == null) return;
 
-    final peticion = peticiones.firstWhere((p) => p.id == peticionId);
+    // La petición pudo archivarse/eliminarse entre que la pantalla la mostró
+    // y el tap llegó aquí (listener en tiempo real) — sin esto, firstWhere
+    // lanzaría una excepción no capturada dentro de esta llamada.
+    Peticion? peticion;
+    try {
+      peticion = peticiones.firstWhere((p) => p.id == peticionId);
+    } catch (_) {
+      return;
+    }
     final yaInteresado = peticion.interesados.any((u) => u.id == usuario.id);
     if (yaInteresado && peticion.trabajadorSeleccionadoId == usuario.id) {
       // Ya fue seleccionado por el empleador para este trabajo: no puede
@@ -713,32 +946,48 @@ class AppProvider extends ChangeNotifier {
     }
 
     if (!yaInteresado) {
-      unawaited(_crearNotificacion(
-        paraUsuarioId: peticion.autorId,
-        mensaje: '${usuario.nombre} se interesó en tu publicación "${_truncar(peticion.descripcion)}"',
-        peticionId: peticion.id,
-      ));
+      unawaited(
+        _crearNotificacion(
+          paraUsuarioId: peticion.autorId,
+          mensaje:
+              '${usuario.nombre} se interesó en tu publicación "${_truncar(peticion.descripcion)}"',
+          peticionId: peticion.id,
+        ),
+      );
       unawaited(_guardarEstado());
     }
   }
 
   Future<void> marcarVistoPorEmpleador(String peticionId) async {
-    final peticion = peticiones.firstWhere((p) => p.id == peticionId);
-    final nuevos =
-        peticion.interesados.map((u) => u.id).where((id) => !peticion.vistosPorEmpleador.contains(id)).toList();
+    Peticion? peticion;
+    try {
+      peticion = peticiones.firstWhere((p) => p.id == peticionId);
+    } catch (_) {
+      return;
+    }
+    final vistosActuales = peticion.vistosPorEmpleador;
+    final nuevos = peticion.interesados
+        .map((u) => u.id)
+        .where((id) => !vistosActuales.contains(id))
+        .toList();
     if (nuevos.isEmpty) return;
 
     for (final id in nuevos) {
-      unawaited(_crearNotificacion(
-        paraUsuarioId: id,
-        mensaje: 'El empleador vio tu perfil en "${_truncar(peticion.descripcion)}"',
-        peticionId: peticion.id,
-      ));
+      unawaited(
+        _crearNotificacion(
+          paraUsuarioId: id,
+          mensaje:
+              'El empleador vio tu perfil en "${_truncar(peticion.descripcion)}"',
+          peticionId: peticion.id,
+        ),
+      );
     }
 
     final actualizados = {...peticion.vistosPorEmpleador, ...nuevos}.toList();
     try {
-      await _db.collection('peticiones').doc(peticionId).update({'vistosPorEmpleador': actualizados});
+      await _db.collection('peticiones').doc(peticionId).update({
+        'vistosPorEmpleador': actualizados,
+      });
     } catch (_) {
       // Las notificaciones ya se generaron en Firestore; si esta escritura
       // falla, se puede volver a marcar como visto en un próximo intento.
@@ -746,25 +995,43 @@ class AppProvider extends ChangeNotifier {
     unawaited(_guardarEstado());
   }
 
-  Future<void> seleccionarTrabajador(String peticionId, String usuarioId) async {
+  Future<void> seleccionarTrabajador(
+    String peticionId,
+    String usuarioId,
+  ) async {
     try {
-      await _db.collection('peticiones').doc(peticionId).update({'trabajadorSeleccionadoId': usuarioId});
+      await _db.collection('peticiones').doc(peticionId).update({
+        'trabajadorSeleccionadoId': usuarioId,
+      });
     } catch (_) {
       return;
     }
-    final peticion = peticiones.firstWhere((p) => p.id == peticionId);
-    unawaited(_crearNotificacion(
-      paraUsuarioId: usuarioId,
-      mensaje:
-          '¡Fuiste seleccionado para "${_truncar(peticion.descripcion)}"! El empleador te contactará por WhatsApp',
-      peticionId: peticionId,
-    ));
+    // La escritura ya se aplicó; si la petición desapareció del snapshot
+    // local justo después, solo se omite la notificación (no crítico).
+    Peticion? peticion;
+    try {
+      peticion = peticiones.firstWhere((p) => p.id == peticionId);
+    } catch (_) {
+      peticion = null;
+    }
+    if (peticion != null) {
+      unawaited(
+        _crearNotificacion(
+          paraUsuarioId: usuarioId,
+          mensaje:
+              '¡Fuiste seleccionado para "${_truncar(peticion.descripcion)}"! El empleador te contactará por WhatsApp',
+          peticionId: peticionId,
+        ),
+      );
+    }
     unawaited(_guardarEstado());
   }
 
   Future<void> cerrarPeticion(String peticionId) async {
     try {
-      await _db.collection('peticiones').doc(peticionId).update({'cerrada': true});
+      await _db.collection('peticiones').doc(peticionId).update({
+        'cerrada': true,
+      });
     } catch (_) {
       // Silencioso: el listener reflejará el estado real en cuanto se
       // reconecte, si la escritura llegó a aplicarse.
@@ -777,61 +1044,79 @@ class AppProvider extends ChangeNotifier {
   // pero el documento sigue existiendo.
   Future<void> archivarPeticion(String peticionId) async {
     try {
-      await _db.collection('peticiones').doc(peticionId).update({'archivada': true});
+      await _db.collection('peticiones').doc(peticionId).update({
+        'archivada': true,
+      });
     } catch (_) {
       // Silencioso, igual que el resto de escrituras de estado de petición.
     }
   }
 
   Future<void> calificarUsuario(Calificacion calificacion) async {
+    final calificacionRef = _db
+        .collection('calificaciones')
+        .doc(calificacion.id);
+    final usuarioRef = _db
+        .collection('usuarios')
+        .doc(calificacion.paraUsuarioId);
+
+    // El promedio se recalcula DENTRO de una transacción (lee el estado más
+    // reciente de `usuarios/{id}` y escribe el nuevo promedio en la misma
+    // operación atómica) — a diferencia de leer la lista local y hacer un
+    // `.update()` suelto, esto evita que dos calificaciones casi simultáneas
+    // al mismo usuario se pisen entre sí (Firestore reintenta la transacción
+    // automáticamente si detecta que el documento cambió mientras corría).
+    double promedio = 0;
+    int totalCalificaciones = 0;
     try {
-      await _db.collection('calificaciones').doc(calificacion.id).set(calificacion.toJson());
+      await _db.runTransaction((tx) async {
+        final usuarioSnap = await tx.get(usuarioRef);
+        final promedioActual =
+            (usuarioSnap.data()?['calificacionPromedio'] as num?)?.toDouble() ??
+            0.0;
+        final totalActual =
+            (usuarioSnap.data()?['numeroCalificaciones'] as num?)?.toInt() ?? 0;
+        totalCalificaciones = totalActual + 1;
+        promedio =
+            (promedioActual * totalActual + calificacion.estrellas) /
+            totalCalificaciones;
+
+        tx.set(calificacionRef, calificacion.toJson());
+        tx.update(usuarioRef, {
+          'calificacionPromedio': promedio,
+          'numeroCalificaciones': totalCalificaciones,
+        });
+      });
     } catch (_) {
       return;
     }
 
-    unawaited(_crearNotificacion(
-      paraUsuarioId: calificacion.paraUsuarioId,
-      mensaje: 'Recibiste una calificación de ${calificacion.estrellas} estrellas',
-    ));
+    unawaited(
+      _crearNotificacion(
+        paraUsuarioId: calificacion.paraUsuarioId,
+        mensaje:
+            'Recibiste una calificación de ${calificacion.estrellas} estrellas',
+      ),
+    );
     unawaited(_guardarEstado());
-
-    // El promedio se calcula incluyendo esta calificación aunque el
-    // listener de Firestore todavía no haya reflejado el nuevo documento
-    // en la lista local (evita depender del orden de llegada del snapshot).
-    final calificacionesDelUsuario = [
-      ...calificaciones.where((c) => c.paraUsuarioId == calificacion.paraUsuarioId && c.id != calificacion.id),
-      calificacion,
-    ];
-    final promedio = calificacionesDelUsuario.map((c) => c.estrellas).reduce((a, b) => a + b) /
-        calificacionesDelUsuario.length;
 
     for (final u in usuarios) {
       if (u.id == calificacion.paraUsuarioId) {
         u.calificacionPromedio = promedio;
-        u.numeroCalificaciones = calificacionesDelUsuario.length;
+        u.numeroCalificaciones = totalCalificaciones;
       }
     }
     for (final u in todosLosUsuarios) {
       if (u.id == calificacion.paraUsuarioId) {
         u.calificacionPromedio = promedio;
-        u.numeroCalificaciones = calificacionesDelUsuario.length;
+        u.numeroCalificaciones = totalCalificaciones;
       }
     }
     if (usuarioActual?.id == calificacion.paraUsuarioId) {
       usuarioActual!.calificacionPromedio = promedio;
-      usuarioActual!.numeroCalificaciones = calificacionesDelUsuario.length;
+      usuarioActual!.numeroCalificaciones = totalCalificaciones;
     }
     notifyListeners();
-
-    try {
-      await _db.collection('usuarios').doc(calificacion.paraUsuarioId).update({
-        'calificacionPromedio': promedio,
-        'numeroCalificaciones': calificacionesDelUsuario.length,
-      });
-    } catch (_) {
-      // El promedio local ya se actualizó para la UI de este dispositivo.
-    }
   }
 
   Future<void> solicitarPremium(String peticionId, String comprobante) async {
@@ -847,16 +1132,30 @@ class AppProvider extends ChangeNotifier {
 
   Future<void> aprobarPremiumDemo(String peticionId) async {
     try {
-      await _db.collection('peticiones').doc(peticionId).update({'premiumAprobada': true});
+      await _db.collection('peticiones').doc(peticionId).update({
+        'premiumAprobada': true,
+      });
     } catch (_) {
       return;
     }
-    final peticion = peticiones.firstWhere((p) => p.id == peticionId);
-    unawaited(_crearNotificacion(
-      paraUsuarioId: peticion.autorId,
-      mensaje: 'Tu Visibilidad Premium fue aprobada para "${_truncar(peticion.descripcion)}"',
-      peticionId: peticionId,
-    ));
+    // La escritura ya se aplicó; si la petición desapareció del snapshot
+    // local justo después, solo se omite la notificación (no crítico).
+    Peticion? peticion;
+    try {
+      peticion = peticiones.firstWhere((p) => p.id == peticionId);
+    } catch (_) {
+      peticion = null;
+    }
+    if (peticion != null) {
+      unawaited(
+        _crearNotificacion(
+          paraUsuarioId: peticion.autorId,
+          mensaje:
+              'Tu Visibilidad Premium fue aprobada para "${_truncar(peticion.descripcion)}"',
+          peticionId: peticionId,
+        ),
+      );
+    }
     unawaited(_guardarEstado());
   }
 
@@ -865,14 +1164,21 @@ class AppProvider extends ChangeNotifier {
     required String comprobante,
   }) async {
     final actual = usuarioActual;
-    if (actual == null) return 'Debes iniciar sesión para solicitar Visibilidad Premium.';
+    if (actual == null) {
+      return 'Debes iniciar sesión para solicitar Visibilidad Premium.';
+    }
     if (podioLleno(oficio)) {
-      return 'Los 3 cupos de "$oficio" ya están ocupados. Vuelve a intentar cuando se libere uno.';
+      return 'Los $_cupoMaximoVipPorOficio cupos VIP de "$oficio" ya están ocupados. Vuelve a intentar cuando se libere uno.';
     }
     final yaTiene = premiumTrabajadores.any(
-      (p) => p.usuarioId == actual.id && p.oficio == oficio && (p.activo || (p.solicitada && !p.aprobada)),
+      (p) =>
+          p.usuarioId == actual.id &&
+          p.oficio == oficio &&
+          (p.activo || (p.solicitada && !p.aprobada)),
     );
-    if (yaTiene) return 'Ya tienes una solicitud activa o en revisión para "$oficio".';
+    if (yaTiene) {
+      return 'Ya tienes una solicitud activa o en revisión para "$oficio".';
+    }
 
     final doc = PremiumTrabajador(
       id: _db.collection('premiumTrabajador').doc().id,
@@ -887,7 +1193,10 @@ class AppProvider extends ChangeNotifier {
       numeroCalificaciones: actual.numeroCalificaciones,
     );
     try {
-      await _db.collection('premiumTrabajador').doc(doc.id).set(doc.toFirestore());
+      await _db
+          .collection('premiumTrabajador')
+          .doc(doc.id)
+          .set(doc.toFirestore());
     } catch (_) {
       return 'No se pudo enviar la solicitud. Intenta de nuevo.';
     }
@@ -915,28 +1224,85 @@ class AppProvider extends ChangeNotifier {
     } catch (_) {
       return;
     }
-    unawaited(_crearNotificacion(
-      paraUsuarioId: solicitud.usuarioId,
-      mensaje: 'Tu Visibilidad Premium fue aprobada para "${solicitud.oficio}"',
-    ));
+    unawaited(
+      _crearNotificacion(
+        paraUsuarioId: solicitud.usuarioId,
+        mensaje:
+            'Tu Visibilidad Premium fue aprobada para "${solicitud.oficio}"',
+      ),
+    );
   }
 
   bool yaCalifique({required String deUsuarioId, required String peticionId}) =>
-      calificaciones.any((c) => c.deUsuarioId == deUsuarioId && c.peticionId == peticionId);
+      calificaciones.any(
+        (c) => c.deUsuarioId == deUsuarioId && c.peticionId == peticionId,
+      );
 
-  List<Peticion> get misPublicaciones =>
-      peticiones.where((p) => p.autorId == usuarioActual?.id && !p.archivada).toList();
+  List<Peticion> get misPublicaciones => peticiones
+      .where((p) => p.autorId == usuarioActual?.id && !p.archivada)
+      .toList();
 
-  List<Peticion> get misIntereses =>
-      peticiones.where((p) => p.interesados.any((u) => u.id == usuarioActual?.id)).toList();
+  /// Mis publicaciones que todavía admiten invitar a alguien (no archivadas,
+  /// no finalizadas) — la lista que se ofrece al invitar desde el perfil de
+  /// un trabajador (ej. desde el Podio de Recomendados).
+  List<Peticion> get misPublicacionesInvitables =>
+      misPublicaciones.where((p) => !p.cerrada).toList();
+
+  /// Invita a [trabajador] a aplicar a la publicación [peticionId] — usado
+  /// desde el perfil público de un trabajador (típicamente al llegar desde
+  /// el Podio de Recomendados). No lo agrega directo a `interesados`: solo
+  /// le manda una notificación con el enlace a la publicación, y es el
+  /// propio trabajador quien decide aplicar desde ahí — mismo flujo de
+  /// siempre (aplicar → aparece en Interesados → el empleador selecciona y
+  /// recién ahí se abre WhatsApp), sin saltarse ese filtro.
+  Future<String?> invitarTrabajador({
+    required String peticionId,
+    required Usuario trabajador,
+  }) async {
+    final actual = usuarioActual;
+    if (actual == null) return 'Debes iniciar sesión para invitar.';
+
+    Peticion? peticion;
+    try {
+      peticion = peticiones.firstWhere((p) => p.id == peticionId);
+    } catch (_) {
+      return 'Esa publicación ya no está disponible.';
+    }
+    if (peticion.autorId != actual.id) {
+      return 'Solo puedes invitar desde tus propias publicaciones.';
+    }
+    if (peticion.cerrada) {
+      return 'Esa publicación ya está finalizada.';
+    }
+    if (peticion.interesados.any((u) => u.id == trabajador.id)) {
+      return '${trabajador.nombre} ya está entre los interesados de esa publicación.';
+    }
+
+    unawaited(
+      _crearNotificacion(
+        paraUsuarioId: trabajador.id,
+        mensaje:
+            '${actual.nombre} te invitó a aplicar a "${_truncar(peticion.descripcion)}"',
+        peticionId: peticionId,
+      ),
+    );
+    return null;
+  }
+
+  List<Peticion> get misIntereses => peticiones
+      .where((p) => p.interesados.any((u) => u.id == usuarioActual?.id))
+      .toList();
 
   List<Notificacion> get misNotificaciones {
-    final propias = notificaciones.where((n) => n.paraUsuarioId == usuarioActual?.id).toList();
+    final propias = notificaciones
+        .where((n) => n.paraUsuarioId == usuarioActual?.id)
+        .toList();
     propias.sort((a, b) => b.fecha.compareTo(a.fecha));
     return propias;
   }
 
-  int get notificacionesSinLeerCount => misNotificaciones.where((n) => !n.leida).length;
+  int get notificacionesSinLeerCount =>
+      misNotificaciones.where((n) => !n.leida).length;
 
   Future<void> marcarTodasNotificacionesLeidas() async {
     final noLeidas = misNotificaciones.where((n) => !n.leida).toList();
@@ -960,7 +1326,12 @@ class AppProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> crearReporte({required String tipo, required String contraId, required String motivo, String? comentario}) async {
+  Future<void> crearReporte({
+    required String tipo,
+    required String contraId,
+    required String motivo,
+    String? comentario,
+  }) async {
     final usuario = usuarioActual;
     if (usuario == null) return;
     final reporte = Reporte(
@@ -973,7 +1344,10 @@ class AppProvider extends ChangeNotifier {
       fecha: DateTime.now(),
     );
     try {
-      await _db.collection('reportes').doc(reporte.id).set(reporte.toFirestore());
+      await _db
+          .collection('reportes')
+          .doc(reporte.id)
+          .set(reporte.toFirestore());
     } catch (_) {
       // Silencioso: el usuario ya recibió confirmación visual del envío.
     }
@@ -987,7 +1361,9 @@ class AppProvider extends ChangeNotifier {
       final snapshot = await _db.collection('reportes').get();
       reportes
         ..clear()
-        ..addAll(snapshot.docs.map((doc) => Reporte.fromFirestore(doc.data(), doc.id)));
+        ..addAll(
+          snapshot.docs.map((doc) => Reporte.fromFirestore(doc.data(), doc.id)),
+        );
       notifyListeners();
     } catch (_) {
       // Sin conexión o sin permiso: se deja la lista como estaba.
@@ -1002,7 +1378,9 @@ class AppProvider extends ChangeNotifier {
     if (local.isNotEmpty) return local.first.nombre;
     try {
       final doc = await _db.collection('usuarios').doc(usuarioId).get();
-      if (doc.exists) return (doc.data()?['nombre'] as String?) ?? 'Usuario eliminado';
+      if (doc.exists) {
+        return (doc.data()?['nombre'] as String?) ?? 'Usuario eliminado';
+      }
     } catch (_) {
       // Sin conexión: se informa como no disponible más abajo.
     }

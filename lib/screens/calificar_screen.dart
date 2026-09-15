@@ -1,6 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+
+import '../theme/app_colors.dart';
+
 import 'package:provider/provider.dart';
+
 import '../models/calificacion.dart';
 import '../providers/app_provider.dart';
 
@@ -35,29 +39,27 @@ class _CalificarScreenState extends State<CalificarScreen> {
     if (usuarioActual == null) return;
 
     context.read<AppProvider>().calificarUsuario(
-          Calificacion(
-            id: FirebaseFirestore.instance.collection('calificaciones').doc().id,
-            deUsuarioId: usuarioActual.id,
-            paraUsuarioId: widget.paraUsuarioId,
-            estrellas: _estrellas,
-            comentario: _comentarioController.text.trim().isEmpty ? null : _comentarioController.text.trim(),
-            fecha: DateTime.now(),
-            peticionId: widget.peticionId,
-          ),
-        );
+      Calificacion(
+        id: FirebaseFirestore.instance.collection('calificaciones').doc().id,
+        deUsuarioId: usuarioActual.id,
+        paraUsuarioId: widget.paraUsuarioId,
+        estrellas: _estrellas,
+        comentario: _comentarioController.text.trim().isEmpty
+            ? null
+            : _comentarioController.text.trim(),
+        fecha: DateTime.now(),
+        peticionId: widget.peticionId,
+      ),
+    );
     Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FB),
-      appBar: AppBar(
-        title: const Text('Calificar'),
-        backgroundColor: const Color(0xFFF9F9FB),
-        foregroundColor: const Color(0xFF1A1A1A),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('Calificar')),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -69,14 +71,25 @@ class _CalificarScreenState extends State<CalificarScreen> {
                   Container(
                     width: 64,
                     height: 64,
-                    decoration: const BoxDecoration(color: Color(0xFFE1F5EE), shape: BoxShape.circle),
-                    child: const Icon(Icons.person, size: 32, color: Color(0xFF0F6E56)),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFE1F5EE),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.person,
+                      size: 32,
+                      color: AppColors.azulCeleste,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Text(
                     'Calificando a ${widget.paraNombre}',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A)),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: tema.colorScheme.onSurface,
+                    ),
                   ),
                 ],
               ),
@@ -85,11 +98,17 @@ class _CalificarScreenState extends State<CalificarScreen> {
             Container(
               padding: const EdgeInsets.symmetric(vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: tema.cardColor,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.grey.shade200),
+                border: Border.all(color: tema.dividerColor),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 3)),
+                  BoxShadow(
+                    color: Colors.black.withValues(
+                      alpha: tema.brightness == Brightness.dark ? 0.2 : 0.04,
+                    ),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
                 ],
               ),
               child: Row(
@@ -114,20 +133,28 @@ class _CalificarScreenState extends State<CalificarScreen> {
               decoration: InputDecoration(
                 labelText: 'Comentario (opcional)',
                 filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                fillColor: tema.cardColor,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
               ),
             ),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () => _enviar(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0F6E56),
+                backgroundColor: AppColors.azulCeleste,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-              child: const Text('Enviar calificación', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Enviar calificación',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),

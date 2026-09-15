@@ -1,15 +1,18 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+
+import '../theme/app_colors.dart';
+
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+
 import '../providers/app_provider.dart';
+import '../widgets/color_avatar.dart';
 import 'login_screen.dart';
 
-const _petroleo = Color(0xFF0F6E56);
+const _acento = AppColors.azulCeleste;
 const _mostazaTexto = Color(0xFFAD7A16);
-const _papel = Color(0xFFF9F9FB);
-const _grafito = Color(0xFF1A1A1A);
 
 enum _TipoPaso { nombre, correo, oficios, datosFinales }
 
@@ -28,6 +31,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _celularController = TextEditingController();
   final _cedulaController = TextEditingController();
+  final _barrioController = TextEditingController();
 
   final List<String> _oficiosSeleccionados = [];
   String? _fotoPath;
@@ -69,13 +73,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
   };
 
   List<_TipoPaso> get _pasos => _esTrabajador
-      ? [_TipoPaso.nombre, _TipoPaso.correo, _TipoPaso.oficios, _TipoPaso.datosFinales]
+      ? [
+          _TipoPaso.nombre,
+          _TipoPaso.correo,
+          _TipoPaso.oficios,
+          _TipoPaso.datosFinales,
+        ]
       : [_TipoPaso.nombre, _TipoPaso.correo, _TipoPaso.datosFinales];
 
   @override
   void initState() {
     super.initState();
-    _esTrabajador = context.read<AppProvider>().rolActual == RolUsuario.trabajador;
+    _esTrabajador =
+        context.read<AppProvider>().rolActual == RolUsuario.trabajador;
     _correoController = TextEditingController(text: widget.correoInicial ?? '');
   }
 
@@ -86,6 +96,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _passwordController.dispose();
     _celularController.dispose();
     _cedulaController.dispose();
+    _barrioController.dispose();
     super.dispose();
   }
 
@@ -112,7 +123,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
     if (origen == null) return;
 
-    final archivo = await ImagePicker().pickImage(source: origen, maxWidth: 800, imageQuality: 80);
+    final archivo = await ImagePicker().pickImage(
+      source: origen,
+      maxWidth: 800,
+      imageQuality: 80,
+    );
     if (archivo == null) return;
     setState(() => _fotoPath = archivo.path);
   }
@@ -148,7 +163,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         return;
       }
       if (_passwordController.text.length < 6) {
-        setState(() => _errorPassword = 'La contraseña debe tener al menos 6 caracteres');
+        setState(
+          () =>
+              _errorPassword = 'La contraseña debe tener al menos 6 caracteres',
+        );
         return;
       }
       setState(() {
@@ -187,14 +205,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
       celular: texto,
       oficios: _esTrabajador ? _oficiosSeleccionados : null,
       fotoPath: _fotoPath,
-      cedula: _cedulaController.text.trim().isEmpty ? null : _cedulaController.text.trim(),
+      cedula: _cedulaController.text.trim().isEmpty
+          ? null
+          : _cedulaController.text.trim(),
+      barrio: _barrioController.text.trim().isEmpty
+          ? null
+          : _barrioController.text.trim(),
     );
 
     if (!mounted) return;
     setState(() => _enviando = false);
 
     if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error)));
       return;
     }
     Navigator.of(context).pop(true);
@@ -218,13 +242,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final esUltimoPaso = _paso == pasos.length - 1;
 
     return Scaffold(
-      backgroundColor: _papel,
       appBar: AppBar(
-        leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: _atras),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: _atras,
+        ),
         title: const Text('Crear tu cuenta'),
-        backgroundColor: _papel,
-        foregroundColor: _grafito,
-        elevation: 0,
       ),
       body: SafeArea(
         child: Padding(
@@ -239,13 +262,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   value: (_paso + 1) / pasos.length,
                   minHeight: 6,
                   backgroundColor: const Color(0xFFE1F5EE),
-                  color: _petroleo,
+                  color: _acento,
                 ),
               ),
               const SizedBox(height: 6),
               Text(
                 'Paso ${_paso + 1} de ${pasos.length}',
-                style: TextStyle(fontSize: 12, color: Color(0xFF666666)),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).textTheme.bodySmall?.color,
+                ),
               ),
               const SizedBox(height: 24),
               Expanded(
@@ -255,7 +281,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     transitionBuilder: (child, animation) => FadeTransition(
                       opacity: animation,
                       child: SlideTransition(
-                        position: Tween<Offset>(begin: const Offset(0.05, 0), end: Offset.zero).animate(animation),
+                        position: Tween<Offset>(
+                          begin: const Offset(0.05, 0),
+                          end: Offset.zero,
+                        ).animate(animation),
                         child: child,
                       ),
                     ),
@@ -273,13 +302,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: OutlinedButton.icon(
                       onPressed: _enviando ? null : _atras,
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: _petroleo,
-                        side: const BorderSide(color: _petroleo),
+                        foregroundColor: _acento,
+                        side: const BorderSide(color: _acento),
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       icon: const Icon(Icons.arrow_back, size: 18),
-                      label: const Text('Atrás', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      label: const Text(
+                        'Atrás',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -288,21 +325,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: ElevatedButton.icon(
                       onPressed: _enviando ? null : _siguiente,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _petroleo,
+                        backgroundColor: _acento,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       icon: _enviando
                           ? const SizedBox(
                               width: 18,
                               height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
-                          : Icon(esUltimoPaso ? Icons.check : Icons.arrow_forward, size: 18),
+                          : Icon(
+                              esUltimoPaso ? Icons.check : Icons.arrow_forward,
+                              size: 18,
+                            ),
                       label: Text(
                         esUltimoPaso ? 'Registrarme' : 'Continuar',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -313,7 +361,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 Center(
                   child: TextButton(
                     onPressed: _irALogin,
-                    child: const Text('¿Ya tienes cuenta? Inicia sesión', style: TextStyle(color: _mostazaTexto)),
+                    child: const Text(
+                      '¿Ya tienes cuenta? Inicia sesión',
+                      style: TextStyle(color: _mostazaTexto),
+                    ),
                   ),
                 ),
               ],
@@ -331,17 +382,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
+            Text(
               '¿Cómo te llamas?',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _grafito),
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
             const SizedBox(height: 8),
-            Text('Cuéntanos tu nombre completo para tu perfil.', style: TextStyle(color: Color(0xFF666666))),
+            Text(
+              'Cuéntanos tu nombre completo para tu perfil.',
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodySmall?.color,
+              ),
+            ),
             const SizedBox(height: 20),
             TextField(
               controller: _nombreController,
               autofocus: true,
-              decoration: _decoracion('Nombre completo', 'assets/icon/nav_perfil.png', error: _errorNombre),
+              decoration: _decoracion(
+                'Nombre completo',
+                'assets/icon/nav_perfil.png',
+                error: _errorNombre,
+              ),
               onChanged: (_) {
                 if (_errorNombre != null) setState(() => _errorNombre = null);
               },
@@ -353,18 +417,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
+            Text(
               '¿Cuál es tu correo?',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _grafito),
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
             const SizedBox(height: 8),
-            Text('Lo usaremos para verificar tu cuenta.', style: TextStyle(color: Color(0xFF666666))),
+            Text(
+              'Lo usaremos para verificar tu cuenta.',
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodySmall?.color,
+              ),
+            ),
             const SizedBox(height: 20),
             TextField(
               controller: _correoController,
               autofocus: true,
               keyboardType: TextInputType.emailAddress,
-              decoration: _decoracion('Correo electrónico', 'assets/icon/correo.png', error: _errorCorreo),
+              decoration: _decoracion(
+                'Correo electrónico',
+                'assets/icon/correo.png',
+                error: _errorCorreo,
+              ),
               onChanged: (_) {
                 if (_errorCorreo != null) setState(() => _errorCorreo = null);
               },
@@ -380,7 +457,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 error: _errorPassword,
               ),
               onChanged: (_) {
-                if (_errorPassword != null) setState(() => _errorPassword = null);
+                if (_errorPassword != null) {
+                  setState(() => _errorPassword = null);
+                }
               },
             ),
           ],
@@ -390,12 +469,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
+            Text(
               '¿En qué trabajas?',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _grafito),
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
             const SizedBox(height: 8),
-            Text('Elige uno o varios oficios que sepas hacer.', style: TextStyle(color: Color(0xFF666666))),
+            Text(
+              'Elige uno o varios oficios que sepas hacer.',
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodySmall?.color,
+              ),
+            ),
             const SizedBox(height: 20),
             Wrap(
               spacing: 8,
@@ -406,7 +494,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   avatar: SizedBox(
                     width: 18,
                     height: 18,
-                    child: Image.asset(_iconosCategoria[servicio]!, fit: BoxFit.contain),
+                    child: Image.asset(
+                      _iconosCategoria[servicio]!,
+                      fit: BoxFit.contain,
+                    ),
                   ),
                   label: Text(servicio),
                   selected: seleccionado,
@@ -420,11 +511,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       _mostrarErrorOficios = false;
                     });
                   },
-                  selectedColor: _petroleo.withValues(alpha: 0.18),
-                  checkmarkColor: _petroleo,
-                  labelStyle: TextStyle(color: seleccionado ? _petroleo : _grafito),
-                  side: BorderSide(color: seleccionado ? _petroleo : Colors.grey.shade300),
-                  backgroundColor: Colors.white,
+                  selectedColor: _acento.withValues(alpha: 0.18),
+                  checkmarkColor: _acento,
+                  labelStyle: TextStyle(
+                    color: seleccionado
+                        ? _acento
+                        : Theme.of(context).colorScheme.onSurface,
+                  ),
+                  side: BorderSide(
+                    color: seleccionado
+                        ? _acento
+                        : Theme.of(context).dividerColor,
+                  ),
+                  backgroundColor: Theme.of(context).cardColor,
                 );
               }).toList(),
             ),
@@ -443,23 +542,53 @@ class _RegisterScreenState extends State<RegisterScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
+            Text(
               'Ya casi terminamos',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _grafito),
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
             const SizedBox(height: 8),
-            Text('Tu celular y una foto de perfil (opcional).', style: TextStyle(color: Color(0xFF666666))),
+            Text(
+              'Tu celular y una foto de perfil (opcional).',
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodySmall?.color,
+              ),
+            ),
             const SizedBox(height: 20),
             Center(
               child: GestureDetector(
                 onTap: _elegirFoto,
                 child: Stack(
                   children: [
-                    CircleAvatar(
-                      radius: 55,
-                      backgroundColor: const Color(0xFFE1F5EE),
-                      backgroundImage: _fotoPath != null ? FileImage(File(_fotoPath!)) : null,
-                      child: _fotoPath == null ? const Icon(Icons.person, size: 60, color: _petroleo) : null,
+                    Builder(
+                      builder: (context) {
+                        final nombre = _nombreController.text.trim();
+                        final colorAvatar = colorAvatarPara(
+                          nombre.isNotEmpty ? nombre : 'chambapp',
+                        );
+                        return CircleAvatar(
+                          radius: 55,
+                          backgroundColor: colorAvatar.fondo,
+                          backgroundImage: _fotoPath != null
+                              ? FileImage(File(_fotoPath!))
+                              : null,
+                          child: _fotoPath != null
+                              ? null
+                              : Text(
+                                  nombre.isNotEmpty
+                                      ? nombre[0].toUpperCase()
+                                      : '?',
+                                  style: TextStyle(
+                                    color: colorAvatar.texto,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 40,
+                                  ),
+                                ),
+                        );
+                      },
                     ),
                     Positioned(
                       bottom: 0,
@@ -467,11 +596,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: _petroleo,
+                          color: _acento,
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 2),
                         ),
-                        child: const Icon(Icons.camera_alt, size: 18, color: Colors.white),
+                        child: const Icon(
+                          Icons.camera_alt,
+                          size: 18,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ],
@@ -494,6 +627,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
             const SizedBox(height: 16),
             TextField(
+              controller: _barrioController,
+              decoration: _decoracion(
+                'Barrio / zona (opcional)',
+                'assets/icon/marcador_posicion.png',
+                helper: 'Ayuda a mostrar trabajos y trabajadores cerca de ti',
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
               controller: _cedulaController,
               keyboardType: TextInputType.number,
               decoration: _decoracion(
@@ -507,18 +649,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  InputDecoration _decoracion(String label, String iconoAsset, {String? helper, String? error}) {
+  InputDecoration _decoracion(
+    String label,
+    String? iconoAsset, {
+    IconData? icono,
+    String? helper,
+    String? error,
+  }) {
     return InputDecoration(
       labelText: label,
       helperText: error == null ? helper : null,
       errorText: error,
       prefixIcon: Padding(
-        padding: const EdgeInsets.all(12),
-        child: SizedBox(width: 22, height: 22, child: Image.asset(iconoAsset, fit: BoxFit.contain)),
+        padding: const EdgeInsets.only(right: 8),
+        child: SizedBox(
+          width: 18,
+          height: 18,
+          child: iconoAsset != null
+              ? Image.asset(iconoAsset, fit: BoxFit.contain)
+              : Icon(icono, size: 18, color: Colors.grey.shade600),
+        ),
       ),
-      filled: true,
-      fillColor: Colors.white,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+      prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+      border: UnderlineInputBorder(
+        borderSide: BorderSide(color: Theme.of(context).dividerColor),
+      ),
+      enabledBorder: UnderlineInputBorder(
+        borderSide: BorderSide(color: Theme.of(context).dividerColor),
+      ),
+      focusedBorder: const UnderlineInputBorder(
+        borderSide: BorderSide(color: _acento, width: 1.5),
+      ),
+      errorBorder: const UnderlineInputBorder(
+        borderSide: BorderSide(color: Color(0xFFB54834)),
+      ),
+      focusedErrorBorder: const UnderlineInputBorder(
+        borderSide: BorderSide(color: Color(0xFFB54834), width: 1.5),
+      ),
     );
   }
 }

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+
+import '../theme/app_colors.dart';
+
 import 'package:provider/provider.dart';
+
 import '../providers/app_provider.dart';
 
-const _petroleo = Color(0xFF0F6E56);
-const _papel = Color(0xFFF9F9FB);
-const _grafito = Color(0xFF1A1A1A);
+const _acento = AppColors.azulCeleste;
 const _ladrillo = Color(0xFFB54834);
 
 class ReportarScreen extends StatefulWidget {
@@ -45,37 +47,39 @@ class _ReportarScreenState extends State<ReportarScreen> {
 
   Future<void> _enviar() async {
     if (_motivo == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selecciona un motivo')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Selecciona un motivo')));
       return;
     }
     setState(() => _enviando = true);
     await context.read<AppProvider>().crearReporte(
-          tipo: widget.tipo,
-          contraId: widget.contraId,
-          motivo: _motivo!,
-          comentario: _comentarioController.text.trim().isEmpty ? null : _comentarioController.text.trim(),
-        );
+      tipo: widget.tipo,
+      contraId: widget.contraId,
+      motivo: _motivo!,
+      comentario: _comentarioController.text.trim().isEmpty
+          ? null
+          : _comentarioController.text.trim(),
+    );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Gracias, revisaremos tu reporte'), backgroundColor: _petroleo),
+      const SnackBar(
+        content: Text('Gracias, revisaremos tu reporte'),
+        backgroundColor: _acento,
+      ),
     );
     Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
-    final titulo = widget.tipo == 'peticion' ? 'Reportar publicación' : 'Reportar usuario';
+    final titulo = widget.tipo == 'peticion'
+        ? 'Reportar publicación'
+        : 'Reportar usuario';
+
+    final tema = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: _papel,
-      appBar: AppBar(
-        title: Text(titulo),
-        backgroundColor: _papel,
-        foregroundColor: _grafito,
-        elevation: 0,
-      ),
+      appBar: AppBar(title: Text(titulo)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(20),
@@ -83,22 +87,39 @@ class _ReportarScreenState extends State<ReportarScreen> {
             Container(
               width: 56,
               height: 56,
-              decoration: const BoxDecoration(color: Color(0xFFF7E3DD), shape: BoxShape.circle),
-              child: const Icon(Icons.flag_outlined, size: 26, color: _ladrillo),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF7E3DD),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.flag_outlined,
+                size: 26,
+                color: _ladrillo,
+              ),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               '¿Cuál es el motivo?',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: _grafito),
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: tema.colorScheme.onSurface,
+              ),
             ),
             const SizedBox(height: 8),
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: tema.cardColor,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.grey.shade200),
+                border: Border.all(color: tema.dividerColor),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 3)),
+                  BoxShadow(
+                    color: Colors.black.withValues(
+                      alpha: tema.brightness == Brightness.dark ? 0.2 : 0.04,
+                    ),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
                 ],
               ),
               child: RadioGroup<String>(
@@ -110,7 +131,7 @@ class _ReportarScreenState extends State<ReportarScreen> {
                         (m) => RadioListTile<String>(
                           value: m,
                           title: Text(m),
-                          activeColor: _petroleo,
+                          activeColor: _acento,
                         ),
                       )
                       .toList(),
@@ -124,8 +145,11 @@ class _ReportarScreenState extends State<ReportarScreen> {
               decoration: InputDecoration(
                 labelText: 'Comentario (opcional)',
                 filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                fillColor: tema.cardColor,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -135,15 +159,23 @@ class _ReportarScreenState extends State<ReportarScreen> {
                 backgroundColor: _ladrillo,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               child: _enviando
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
                     )
-                  : const Text('Enviar reporte', style: TextStyle(fontWeight: FontWeight.bold)),
+                  : const Text(
+                      'Enviar reporte',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
             ),
           ],
         ),

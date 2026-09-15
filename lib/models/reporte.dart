@@ -18,38 +18,39 @@ class Reporte {
   });
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'deUsuarioId': deUsuarioId,
-        'tipo': tipo,
-        'contraId': contraId,
-        'motivo': motivo,
-        'comentario': comentario,
-        'fecha': fecha.toIso8601String(),
-      };
+    'id': id,
+    'deUsuarioId': deUsuarioId,
+    'tipo': tipo,
+    'contraId': contraId,
+    'motivo': motivo,
+    'comentario': comentario,
+    'fecha': fecha.toIso8601String(),
+  };
 
   factory Reporte.fromJson(Map<String, dynamic> json) => Reporte(
-        id: json['id'] as String,
-        deUsuarioId: json['deUsuarioId'] as String,
-        tipo: json['tipo'] as String,
-        contraId: json['contraId'] as String,
-        motivo: json['motivo'] as String,
-        comentario: json['comentario'] as String?,
-        fecha: DateTime.parse(json['fecha'] as String),
-      );
+    id: json['id'] as String,
+    deUsuarioId: json['deUsuarioId'] as String,
+    tipo: json['tipo'] as String,
+    contraId: json['contraId'] as String,
+    motivo: json['motivo'] as String,
+    comentario: json['comentario'] as String?,
+    fecha: DateTime.parse(json['fecha'] as String),
+  );
 
   /// Serializa para guardar como documento de Firestore (colección
   /// `reportes`). El id del documento es el propio [id] de esta clase — no
   /// se repite dentro del mapa.
   Map<String, dynamic> toFirestore() => {
-        'deUsuarioId': deUsuarioId,
-        'tipo': tipo,
-        'contraId': contraId,
-        'motivo': motivo,
-        'comentario': comentario,
-        'fecha': fecha.toIso8601String(),
-      };
+    'deUsuarioId': deUsuarioId,
+    'tipo': tipo,
+    'contraId': contraId,
+    'motivo': motivo,
+    'comentario': comentario,
+    'fecha': fecha.toIso8601String(),
+  };
 
-  factory Reporte.fromFirestore(Map<String, dynamic> data, String id) => Reporte(
+  factory Reporte.fromFirestore(Map<String, dynamic> data, String id) =>
+      Reporte(
         id: id,
         deUsuarioId: data['deUsuarioId'] as String,
         tipo: data['tipo'] as String,

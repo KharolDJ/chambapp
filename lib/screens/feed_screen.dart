@@ -1,12 +1,17 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+
+import '../theme/app_colors.dart';
+
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
+
 import '../models/peticion.dart';
 import '../models/premium_trabajador.dart';
 import '../models/usuario.dart';
 import '../providers/app_provider.dart';
+import '../widgets/color_avatar.dart';
 import '../widgets/peticion_card.dart';
 import 'login_screen.dart';
 import 'perfil_publico_screen.dart';
@@ -48,7 +53,10 @@ class _FeedScreenState extends State<FeedScreen> {
     try {
       final servicioActivo = await Geolocator.isLocationServiceEnabled();
       if (!servicioActivo) {
-        setState(() => _avisoUbicacion = 'Activa la ubicación para ordenar el feed por cercanía');
+        setState(
+          () => _avisoUbicacion =
+              'Activa la ubicación para ordenar el feed por cercanía',
+        );
         return;
       }
 
@@ -56,13 +64,19 @@ class _FeedScreenState extends State<FeedScreen> {
       if (permiso == LocationPermission.denied) {
         permiso = await Geolocator.requestPermission();
       }
-      if (permiso == LocationPermission.denied || permiso == LocationPermission.deniedForever) {
-        setState(() => _avisoUbicacion = 'Sin permiso de ubicación, el feed se muestra en orden normal');
+      if (permiso == LocationPermission.denied ||
+          permiso == LocationPermission.deniedForever) {
+        setState(
+          () => _avisoUbicacion =
+              'Sin permiso de ubicación, el feed se muestra en orden normal',
+        );
         return;
       }
 
       final posicion = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(timeLimit: Duration(seconds: 8)),
+        locationSettings: const LocationSettings(
+          timeLimit: Duration(seconds: 8),
+        ),
       );
       if (!mounted) return;
       setState(() {
@@ -71,7 +85,9 @@ class _FeedScreenState extends State<FeedScreen> {
       });
     } catch (_) {
       if (!mounted) return;
-      setState(() => _avisoUbicacion = 'No se pudo obtener tu ubicación, el feed se muestra en orden normal');
+      setState(
+        () => _avisoUbicacion = 'No se pudo obtener tu ubicación, el feed se muestra en orden normal',
+      );
     }
   }
 
@@ -100,13 +116,15 @@ class _FeedScreenState extends State<FeedScreen> {
                 Navigator.pop(context);
               },
             ),
-            ...categorias.map((c) => ListTile(
-                  title: Text(c),
-                  onTap: () {
-                    setState(() => _categoriaFiltro = c);
-                    Navigator.pop(context);
-                  },
-                )),
+            ...categorias.map(
+              (c) => ListTile(
+                title: Text(c),
+                onTap: () {
+                  setState(() => _categoriaFiltro = c);
+                  Navigator.pop(context);
+                },
+              ),
+            ),
           ],
         ),
       ),
@@ -115,7 +133,9 @@ class _FeedScreenState extends State<FeedScreen> {
 
   void _alternarOrden() {
     setState(() {
-      _ordenPor = _ordenPor == OrdenFeed.cercania ? OrdenFeed.recientes : OrdenFeed.cercania;
+      _ordenPor = _ordenPor == OrdenFeed.cercania
+          ? OrdenFeed.recientes
+          : OrdenFeed.cercania;
     });
   }
 
@@ -130,8 +150,14 @@ class _FeedScreenState extends State<FeedScreen> {
           children: opciones.map((km) {
             final activo = provider.radioBusquedaKm == km;
             return ListTile(
-              title: Text(km.isInfinite ? 'Toda la ciudad' : '${km.toStringAsFixed(0)} km'),
-              trailing: activo ? const Icon(Icons.check, color: Color(0xFF0F6E56)) : null,
+              title: Text(
+                km.isInfinite
+                    ? 'Toda la ciudad'
+                    : '${km.toStringAsFixed(0)} km',
+              ),
+              trailing: activo
+                  ? const Icon(Icons.check, color: AppColors.azulCeleste)
+                  : null,
               onTap: () {
                 context.read<AppProvider>().actualizarRadioBusqueda(km);
                 Navigator.pop(context);
@@ -158,23 +184,24 @@ class _FeedScreenState extends State<FeedScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: activo ? colorActivo : Colors.white,
+            color: activo ? colorActivo : Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: activo ? colorActivo : Colors.grey.shade300),
+            border: Border.all(
+              color: activo ? colorActivo : Theme.of(context).dividerColor,
+            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (icono != null) ...[
-                icono,
-                const SizedBox(width: 4),
-              ],
+              if (icono != null) ...[icono, const SizedBox(width: 4)],
               Text(
                 label,
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: activo ? Colors.white : const Color(0xFF1A1A1A),
+                  color: activo
+                      ? Colors.white
+                      : Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ],
@@ -187,7 +214,11 @@ class _FeedScreenState extends State<FeedScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
-    final categorias = provider.peticiones.where((p) => !p.archivada).map((p) => p.categoria).toSet().toList();
+    final categorias = provider.peticiones
+        .where((p) => !p.archivada)
+        .map((p) => p.categoria)
+        .toSet()
+        .toList();
 
     if (provider.categoriaParaVerEnFeed != null) {
       final categoriaPendiente = provider.categoriaParaVerEnFeed!;
@@ -201,7 +232,9 @@ class _FeedScreenState extends State<FeedScreen> {
     final peticionesVisibles = provider.peticiones.where((p) => !p.archivada);
     var lista = _categoriaFiltro == null
         ? [...peticionesVisibles]
-        : peticionesVisibles.where((p) => p.categoria == _categoriaFiltro).toList();
+        : peticionesVisibles
+              .where((p) => p.categoria == _categoriaFiltro)
+              .toList();
 
     if (_soloUrgentes) {
       lista = lista.where((p) => p.urgente).toList();
@@ -247,26 +280,33 @@ class _FeedScreenState extends State<FeedScreen> {
     });
 
     final personasEncontradas = provider.buscarUsuariosPorNombre(_busqueda);
-    final podioCategoria = _categoriaFiltro == null ? const <PremiumTrabajador>[] : provider.podioPara(_categoriaFiltro!);
+    final podioCategoria = _categoriaFiltro == null
+        ? const <PremiumTrabajador>[]
+        : provider.podioPara(_categoriaFiltro!);
     final esEmpleador = provider.rolActual == RolUsuario.empleador;
-    final categoriasConPodio =
-        provider.premiumTrabajadores.where((p) => p.activo).map((p) => p.oficio).toSet().toList();
+    final categoriasConPodio = provider.premiumTrabajadores
+        .where((p) => p.activo)
+        .map((p) => p.oficio)
+        .toSet()
+        .toList();
 
-    final cargandoUbicacion = _posicionActual == null && _avisoUbicacion == null;
+    final cargandoUbicacion =
+        _posicionActual == null && _avisoUbicacion == null;
+
+    final tema = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FB),
       appBar: AppBar(
         title: const Text('Cerca de ti'),
-        backgroundColor: const Color(0xFFF9F9FB),
-        foregroundColor: const Color(0xFF1A1A1A),
-        elevation: 0,
         actions: [
           if (provider.usuarioActual == null)
             IconButton(
               icon: const Icon(Icons.login),
               tooltip: 'Iniciar sesión o registrarme',
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+              ),
             ),
         ],
       ),
@@ -275,7 +315,7 @@ class _FeedScreenState extends State<FeedScreen> {
           if (cargandoUbicacion)
             const LinearProgressIndicator(
               minHeight: 3,
-              color: Color(0xFF0F6E56),
+              color: AppColors.azulCeleste,
               backgroundColor: Color(0xFFE1F5EE),
             ),
           if (_avisoUbicacion != null)
@@ -290,7 +330,6 @@ class _FeedScreenState extends State<FeedScreen> {
             ),
           Container(
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-            color: const Color(0xFFF9F9FB),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -309,9 +348,12 @@ class _FeedScreenState extends State<FeedScreen> {
                             },
                           ),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: tema.cardColor,
                     contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
                   ),
                   onChanged: (value) => setState(() => _busqueda = value),
                 ),
@@ -321,9 +363,11 @@ class _FeedScreenState extends State<FeedScreen> {
                   child: Row(
                     children: [
                       _chip(
-                        label: _categoriaFiltro == null ? 'Categoría ▾' : '$_categoriaFiltro ▾',
+                        label: _categoriaFiltro == null
+                            ? 'Categoría ▾'
+                            : '$_categoriaFiltro ▾',
                         activo: _categoriaFiltro != null,
-                        colorActivo: const Color(0xFF0F6E56),
+                        colorActivo: AppColors.azulCeleste,
                         onTap: () => _mostrarFiltro(context, categorias),
                       ),
                       _chip(
@@ -331,23 +375,36 @@ class _FeedScreenState extends State<FeedScreen> {
                         icono: SizedBox(
                           width: 20,
                           height: 20,
-                          child: Image.asset('assets/icon/urgente.png', fit: BoxFit.contain),
+                          child: Image.asset(
+                            'assets/icon/urgente.png',
+                            fit: BoxFit.contain,
+                          ),
                         ),
                         activo: _soloUrgentes,
                         colorActivo: const Color(0xFFB54834),
-                        onTap: () => setState(() => _soloUrgentes = !_soloUrgentes),
+                        onTap: () =>
+                            setState(() => _soloUrgentes = !_soloUrgentes),
                       ),
                       _chip(
-                        label: _ordenPor == OrdenFeed.cercania ? 'Cercanía' : 'Recientes',
+                        label: _ordenPor == OrdenFeed.cercania
+                            ? 'Cercanía'
+                            : 'Recientes',
                         icono: _ordenPor == OrdenFeed.cercania
                             ? SizedBox(
                                 width: 20,
                                 height: 20,
-                                child: Image.asset('assets/icon/cercania.png', fit: BoxFit.contain),
+                                child: Image.asset(
+                                  'assets/icon/cercania.png',
+                                  fit: BoxFit.contain,
+                                ),
                               )
-                            : const Icon(Icons.access_time, size: 15, color: Color(0xFF666666)),
+                            : Icon(
+                                Icons.access_time,
+                                size: 15,
+                                color: tema.textTheme.bodySmall?.color,
+                              ),
                         activo: false,
-                        colorActivo: const Color(0xFF0F6E56),
+                        colorActivo: AppColors.azulCeleste,
                         onTap: _alternarOrden,
                       ),
                       _chip(
@@ -357,10 +414,13 @@ class _FeedScreenState extends State<FeedScreen> {
                         icono: SizedBox(
                           width: 20,
                           height: 20,
-                          child: Image.asset('assets/icon/toda_la_ciudad.png', fit: BoxFit.contain),
+                          child: Image.asset(
+                            'assets/icon/toda_la_ciudad.png',
+                            fit: BoxFit.contain,
+                          ),
                         ),
                         activo: false,
-                        colorActivo: const Color(0xFF0F6E56),
+                        colorActivo: AppColors.azulCeleste,
                         onTap: () => _mostrarRadio(context),
                       ),
                     ],
@@ -375,15 +435,25 @@ class _FeedScreenState extends State<FeedScreen> {
               controller: _scrollController,
               slivers: [
                 if (personasEncontradas.isNotEmpty)
-                  SliverToBoxAdapter(child: _FranjaPersonas(personas: personasEncontradas)),
+                  SliverToBoxAdapter(
+                    child: _FranjaPersonas(personas: personasEncontradas),
+                  ),
                 if (podioCategoria.isNotEmpty)
-                  SliverToBoxAdapter(child: _FranjaPodio(categoria: _categoriaFiltro!, podio: podioCategoria))
-                else if (_categoriaFiltro == null && esEmpleador && categoriasConPodio.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: _FranjaPodio(
+                      categoria: _categoriaFiltro!,
+                      podio: podioCategoria,
+                    ),
+                  )
+                else if (_categoriaFiltro == null &&
+                    esEmpleador &&
+                    categoriasConPodio.isNotEmpty)
                   SliverToBoxAdapter(
                     child: _CarruselPodios(
                       categorias: categoriasConPodio,
                       provider: provider,
-                      onSeleccionar: (categoria) => setState(() => _categoriaFiltro = categoria),
+                      onSeleccionar: (categoria) =>
+                          setState(() => _categoriaFiltro = categoria),
                     ),
                   ),
                 if (lista.isEmpty)
@@ -392,7 +462,9 @@ class _FeedScreenState extends State<FeedScreen> {
                     child: Center(
                       child: lista.length != listaSinFiltroDeRadio.length
                           ? Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 32),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 32,
+                              ),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -401,12 +473,16 @@ class _FeedScreenState extends State<FeedScreen> {
                                         ? 'No hay publicaciones que coincidan con tu búsqueda'
                                         : 'No hay publicaciones dentro de tu radio de búsqueda (${provider.radioBusquedaKm.toStringAsFixed(0)} km)',
                                     textAlign: TextAlign.center,
-                                    style: TextStyle(color: Color(0xFF666666)),
+                                    style: TextStyle(
+                                      color: tema.textTheme.bodySmall?.color,
+                                    ),
                                   ),
                                   const SizedBox(height: 12),
                                   TextButton(
                                     onPressed: () => _mostrarRadio(context),
-                                    child: const Text('Ampliar radio de búsqueda'),
+                                    child: const Text(
+                                      'Ampliar radio de búsqueda',
+                                    ),
                                   ),
                                 ],
                               ),
@@ -415,7 +491,9 @@ class _FeedScreenState extends State<FeedScreen> {
                               _soloUrgentes
                                   ? 'No hay publicaciones urgentes con estos filtros'
                                   : 'No hay publicaciones con estos filtros',
-                              style: TextStyle(color: Color(0xFF666666)),
+                              style: TextStyle(
+                                color: tema.textTheme.bodySmall?.color,
+                              ),
                             ),
                     ),
                   )
@@ -460,14 +538,24 @@ class _TarjetaEscalable extends StatelessWidget {
   final GlobalKey viewportKey;
   final Widget child;
 
-  const _TarjetaEscalable({required this.controlador, required this.viewportKey, required this.child});
+  const _TarjetaEscalable({
+    required this.controlador,
+    required this.viewportKey,
+    required this.child,
+  });
 
   double _calcularEscala(BuildContext context) {
-    final cajaViewport = viewportKey.currentContext?.findRenderObject() as RenderBox?;
+    final cajaViewport =
+        viewportKey.currentContext?.findRenderObject() as RenderBox?;
     final cajaItem = context.findRenderObject() as RenderBox?;
-    if (cajaViewport == null || cajaItem == null || !cajaItem.attached) return _escalaMaxima;
+    if (cajaViewport == null || cajaItem == null || !cajaItem.attached) {
+      return _escalaMaxima;
+    }
 
-    final posicionItem = cajaItem.localToGlobal(Offset.zero, ancestor: cajaViewport);
+    final posicionItem = cajaItem.localToGlobal(
+      Offset.zero,
+      ancestor: cajaViewport,
+    );
     final centroItem = posicionItem.dy + cajaItem.size.height / 2;
     final centroViewport = cajaViewport.size.height / 2;
     final distancia = (centroItem - centroViewport).abs();
@@ -513,7 +601,7 @@ class _FranjaPersonas extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFF9F9FB),
+      color: Theme.of(context).scaffoldBackgroundColor,
       padding: const EdgeInsets.only(bottom: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -522,7 +610,12 @@ class _FranjaPersonas extends StatelessWidget {
             padding: EdgeInsets.only(left: 16, bottom: 6),
             child: Text(
               'PERSONAS',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5, color: Colors.grey),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+                color: Colors.grey,
+              ),
             ),
           ),
           SizedBox(
@@ -540,17 +633,33 @@ class _FranjaPersonas extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                     onTap: () => Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => PerfilPublicoScreen(usuarioId: u.id)),
+                      MaterialPageRoute(
+                        builder: (_) => PerfilPublicoScreen(usuarioId: u.id),
+                      ),
                     ),
                     child: SizedBox(
                       width: 72,
                       child: Column(
                         children: [
-                          CircleAvatar(
-                            radius: 26,
-                            backgroundColor: const Color(0xFFE1F5EE),
-                            backgroundImage: foto,
-                            child: foto == null ? const Icon(Icons.person, color: Color(0xFF0F6E56)) : null,
+                          Builder(
+                            builder: (context) {
+                              final colorAvatar = colorAvatarPara(u.id);
+                              return CircleAvatar(
+                                radius: 26,
+                                backgroundColor: colorAvatar.fondo,
+                                backgroundImage: foto,
+                                child: foto == null
+                                    ? Text(
+                                        u.nombre[0].toUpperCase(),
+                                        style: TextStyle(
+                                          color: colorAvatar.texto,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 18,
+                                        ),
+                                      )
+                                    : null,
+                              );
+                            },
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -558,7 +667,10 @@ class _FranjaPersonas extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(fontSize: 11, color: Color(0xFF1A1A1A)),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
                           ),
                         ],
                       ),
@@ -583,7 +695,11 @@ class _CarruselPodios extends StatelessWidget {
   final List<String> categorias;
   final AppProvider provider;
   final ValueChanged<String> onSeleccionar;
-  const _CarruselPodios({required this.categorias, required this.provider, required this.onSeleccionar});
+  const _CarruselPodios({
+    required this.categorias,
+    required this.provider,
+    required this.onSeleccionar,
+  });
 
   ImageProvider? _fotoSiExiste(String? ruta) {
     if (ruta == null) return null;
@@ -603,11 +719,20 @@ class _CarruselPodios extends StatelessWidget {
             padding: EdgeInsets.only(left: 16, bottom: 8),
             child: Row(
               children: [
-                Icon(Icons.emoji_events, size: 15, color: Color(0xFF0F6E56)),
+                Icon(
+                  Icons.emoji_events,
+                  size: 15,
+                  color: AppColors.azulCeleste,
+                ),
                 SizedBox(width: 6),
                 Text(
                   'DESTACADOS POR CATEGORÍA',
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5, color: Color(0xFF0F6E56)),
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                    color: AppColors.azulCeleste,
+                  ),
                 ),
               ],
             ),
@@ -630,12 +755,15 @@ class _CarruselPodios extends StatelessWidget {
                       width: 168,
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFF0F6E56), width: 1.2),
+                        border: Border.all(
+                          color: AppColors.azulCeleste,
+                          width: 1.2,
+                        ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF0F6E56).withValues(alpha: 0.1),
+                            color: AppColors.azulCeleste.withValues(alpha: 0.1),
                             blurRadius: 10,
                             offset: const Offset(0, 3),
                           ),
@@ -648,7 +776,11 @@ class _CarruselPodios extends StatelessWidget {
                             categoria,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A)),
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
                           ),
                           const Spacer(),
                           SizedBox(
@@ -660,14 +792,34 @@ class _CarruselPodios extends StatelessWidget {
                                     left: j * 20.0,
                                     child: CircleAvatar(
                                       radius: 16,
-                                      backgroundColor: Colors.white,
-                                      child: CircleAvatar(
-                                        radius: 14,
-                                        backgroundColor: const Color(0xFFE3F2EC),
-                                        backgroundImage: _fotoSiExiste(podio[j].usuarioFotoPath),
-                                        child: _fotoSiExiste(podio[j].usuarioFotoPath) == null
-                                            ? const Icon(Icons.person, size: 14, color: Color(0xFF0F6E56))
-                                            : null,
+                                      backgroundColor: Theme.of(context)
+                                          .cardColor,
+                                      child: Builder(
+                                        builder: (context) {
+                                          final foto = _fotoSiExiste(
+                                            podio[j].usuarioFotoPath,
+                                          );
+                                          final colorAvatar = colorAvatarPara(
+                                            podio[j].usuarioId,
+                                          );
+                                          return CircleAvatar(
+                                            radius: 14,
+                                            backgroundColor: colorAvatar.fondo,
+                                            backgroundImage: foto,
+                                            child: foto == null
+                                                ? Text(
+                                                    podio[j].usuarioNombre[0]
+                                                        .toUpperCase(),
+                                                    style: TextStyle(
+                                                      color: colorAvatar.texto,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 11,
+                                                    ),
+                                                  )
+                                                : null,
+                                          );
+                                        },
                                       ),
                                     ),
                                   ),
@@ -676,8 +828,14 @@ class _CarruselPodios extends StatelessWidget {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            '${podio.length}/3 destacados',
-                            style: const TextStyle(fontSize: 11, color: Color(0xFF666666)),
+                            '${provider.vipActivosPara(categoria).length} VIP en rotación',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.color,
+                            ),
                           ),
                         ],
                       ),
@@ -716,11 +874,15 @@ class _FranjaPodio extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF0F6E56), width: 1.2),
+        border: Border.all(color: AppColors.azulCeleste, width: 1.2),
         boxShadow: [
-          BoxShadow(color: const Color(0xFF0F6E56).withValues(alpha: 0.12), blurRadius: 14, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: AppColors.azulCeleste.withValues(alpha: 0.12),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -728,12 +890,21 @@ class _FranjaPodio extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.emoji_events, size: 15, color: Color(0xFFAD7A16)),
+              const Icon(
+                Icons.emoji_events,
+                size: 15,
+                color: Color(0xFFAD7A16),
+              ),
               const SizedBox(width: 5),
               Expanded(
                 child: Text(
                   'PODIO DE RECOMENDADOS · ${categoria.toUpperCase()}',
-                  style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, letterSpacing: 0.4, color: Color(0xFFAD7A16)),
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.4,
+                    color: Color(0xFFAD7A16),
+                  ),
                 ),
               ),
             ],
@@ -747,13 +918,17 @@ class _FranjaPodio extends StatelessWidget {
               itemBuilder: (context, i) {
                 final p = podio[i];
                 final foto = _fotoSiExiste(p.usuarioFotoPath);
+                final colorAvatar = colorAvatarPara(p.usuarioId);
                 return Padding(
                   padding: const EdgeInsets.only(right: 14),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(12),
                     onTap: () => Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => PerfilPublicoScreen(usuarioId: p.usuarioId)),
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            PerfilPublicoScreen(usuarioId: p.usuarioId),
+                      ),
                     ),
                     child: SizedBox(
                       width: 72,
@@ -766,13 +941,22 @@ class _FranjaPodio extends StatelessWidget {
                                 padding: const EdgeInsets.all(2),
                                 decoration: const BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: Color(0xFF0F6E56),
+                                  color: AppColors.azulCeleste,
                                 ),
                                 child: CircleAvatar(
                                   radius: 24,
-                                  backgroundColor: const Color(0xFFE3F2EC),
+                                  backgroundColor: colorAvatar.fondo,
                                   backgroundImage: foto,
-                                  child: foto == null ? const Icon(Icons.person, color: Color(0xFF0F6E56)) : null,
+                                  child: foto == null
+                                      ? Text(
+                                          p.usuarioNombre[0].toUpperCase(),
+                                          style: TextStyle(
+                                            color: colorAvatar.texto,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 17,
+                                          ),
+                                        )
+                                      : null,
                                 ),
                               ),
                               Positioned(
@@ -780,8 +964,15 @@ class _FranjaPodio extends StatelessWidget {
                                 right: -2,
                                 child: Container(
                                   padding: const EdgeInsets.all(3),
-                                  decoration: const BoxDecoration(color: Color(0xFFAD7A16), shape: BoxShape.circle),
-                                  child: const Icon(Icons.star, size: 9, color: Colors.white),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFAD7A16),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.star,
+                                    size: 9,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
                             ],
@@ -792,7 +983,10 @@ class _FranjaPodio extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(fontSize: 11, color: Color(0xFF1A1A1A)),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
                           ),
                         ],
                       ),

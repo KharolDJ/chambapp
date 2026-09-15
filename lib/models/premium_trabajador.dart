@@ -34,37 +34,44 @@ class PremiumTrabajador {
     this.numeroCalificaciones = 0,
   });
 
-  bool get activo => aprobada && expiraEn != null && expiraEn!.isAfter(DateTime.now());
+  bool get activo =>
+      aprobada && expiraEn != null && expiraEn!.isAfter(DateTime.now());
 
   /// Serializa para guardar como documento de Firestore (colección
   /// `premiumTrabajador`). El id del documento es el propio [id] de esta
   /// clase — no se repite dentro del mapa.
   Map<String, dynamic> toFirestore() => {
-        'usuarioId': usuarioId,
-        'oficio': oficio,
-        'solicitada': solicitada,
-        'aprobada': aprobada,
-        'comprobantePago': comprobantePago,
-        'solicitadaEn': solicitadaEn.toIso8601String(),
-        'expiraEn': expiraEn?.toIso8601String(),
-        'usuarioNombre': usuarioNombre,
-        'usuarioFotoPath': usuarioFotoPath,
-        'calificacionPromedio': calificacionPromedio,
-        'numeroCalificaciones': numeroCalificaciones,
-      };
+    'usuarioId': usuarioId,
+    'oficio': oficio,
+    'solicitada': solicitada,
+    'aprobada': aprobada,
+    'comprobantePago': comprobantePago,
+    'solicitadaEn': solicitadaEn.toIso8601String(),
+    'expiraEn': expiraEn?.toIso8601String(),
+    'usuarioNombre': usuarioNombre,
+    'usuarioFotoPath': usuarioFotoPath,
+    'calificacionPromedio': calificacionPromedio,
+    'numeroCalificaciones': numeroCalificaciones,
+  };
 
-  factory PremiumTrabajador.fromFirestore(Map<String, dynamic> data, String id) => PremiumTrabajador(
-        id: id,
-        usuarioId: data['usuarioId'] as String,
-        oficio: data['oficio'] as String,
-        solicitada: data['solicitada'] as bool? ?? false,
-        aprobada: data['aprobada'] as bool? ?? false,
-        comprobantePago: data['comprobantePago'] as String?,
-        solicitadaEn: DateTime.parse(data['solicitadaEn'] as String),
-        expiraEn: data['expiraEn'] != null ? DateTime.parse(data['expiraEn'] as String) : null,
-        usuarioNombre: data['usuarioNombre'] as String? ?? 'Usuario',
-        usuarioFotoPath: data['usuarioFotoPath'] as String?,
-        calificacionPromedio: (data['calificacionPromedio'] as num?)?.toDouble() ?? 0,
-        numeroCalificaciones: (data['numeroCalificaciones'] as num?)?.toInt() ?? 0,
-      );
+  factory PremiumTrabajador.fromFirestore(
+    Map<String, dynamic> data,
+    String id,
+  ) => PremiumTrabajador(
+    id: id,
+    usuarioId: data['usuarioId'] as String,
+    oficio: data['oficio'] as String,
+    solicitada: data['solicitada'] as bool? ?? false,
+    aprobada: data['aprobada'] as bool? ?? false,
+    comprobantePago: data['comprobantePago'] as String?,
+    solicitadaEn: DateTime.parse(data['solicitadaEn'] as String),
+    expiraEn: data['expiraEn'] != null
+        ? DateTime.parse(data['expiraEn'] as String)
+        : null,
+    usuarioNombre: data['usuarioNombre'] as String? ?? 'Usuario',
+    usuarioFotoPath: data['usuarioFotoPath'] as String?,
+    calificacionPromedio:
+        (data['calificacionPromedio'] as num?)?.toDouble() ?? 0,
+    numeroCalificaciones: (data['numeroCalificaciones'] as num?)?.toInt() ?? 0,
+  );
 }

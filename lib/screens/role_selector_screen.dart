@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+
+import '../theme/app_colors.dart';
+
 import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
+
 import '../providers/app_provider.dart';
 import 'main_nav_screen.dart';
 
-const _fondo = Color(0xFFF9F9FB);
-const _tituloOscuro = Color(0xFF1A1A1A);
-const _subtitulo = Color(0xFF666666);
-const _petroleo = Color(0xFF0F6E56);
+const _acento = AppColors.azulCeleste;
 const _dorado = Color(0xFFAD7A16);
 
 class RoleSelectorScreen extends StatelessWidget {
@@ -26,15 +27,11 @@ class RoleSelectorScreen extends StatelessWidget {
     final provider = context.watch<AppProvider>();
     final yaTieneCuenta = provider.usuarioActual != null;
 
+    final tema = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: _fondo,
       appBar: yaTieneCuenta
-          ? AppBar(
-              title: const Text('Cambiar de modo'),
-              backgroundColor: _fondo,
-              elevation: 0,
-              foregroundColor: _tituloOscuro,
-            )
+          ? AppBar(title: const Text('Cambiar de modo'))
           : null,
       body: SafeArea(
         child: LayoutBuilder(
@@ -42,7 +39,9 @@ class RoleSelectorScreen extends StatelessWidget {
             return SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 16),
               child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight - 32),
+                constraints: BoxConstraints(
+                  minHeight: constraints.maxHeight - 32,
+                ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -56,19 +55,24 @@ class RoleSelectorScreen extends StatelessWidget {
                     Text(
                       'Chambapp',
                       textAlign: TextAlign.center,
-                      style: (Theme.of(context).textTheme.headlineSmall ?? const TextStyle()).copyWith(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: _tituloOscuro,
-                        letterSpacing: -0.5,
-                      ),
+                      style: (tema.textTheme.headlineSmall ?? const TextStyle())
+                          .copyWith(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: tema.colorScheme.onSurface,
+                            letterSpacing: -0.5,
+                          ),
                     ),
                     const SizedBox(height: 32),
                     if (yaTieneCuenta) ...[
                       Center(
                         child: Text(
                           'Modo actual: ${provider.rolActual == RolUsuario.empleador ? 'Empleador' : 'Trabajador'}',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _petroleo),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: _acento,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -76,26 +80,31 @@ class RoleSelectorScreen extends StatelessWidget {
                     Text(
                       '¿Qué necesitas hoy?',
                       textAlign: TextAlign.center,
-                      style: (Theme.of(context).textTheme.titleLarge ?? const TextStyle()).copyWith(
-                        fontSize: 21,
-                        fontWeight: FontWeight.bold,
-                        color: _tituloOscuro,
-                      ),
+                      style: (tema.textTheme.titleLarge ?? const TextStyle())
+                          .copyWith(
+                            fontSize: 21,
+                            fontWeight: FontWeight.bold,
+                            color: tema.colorScheme.onSurface,
+                          ),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
+                    Text(
                       'Elige tu perfil para empezar',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 13, color: _subtitulo),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: tema.textTheme.bodySmall?.color,
+                      ),
                     ),
                     const SizedBox(height: 28),
                     _HeroRolCard(
                       iconoAsset: 'assets/icon/taladro_de_mano.png',
                       titulo: 'Ofrezco un servicio',
                       subtitulo: 'Explora peticiones cerca de ti',
-                      color: _petroleo,
+                      color: _acento,
                       colorClaro: const Color(0xFFE3F2EC),
-                      onTap: () => _seleccionarRol(context, RolUsuario.trabajador),
+                      onTap: () =>
+                          _seleccionarRol(context, RolUsuario.trabajador),
                     ),
                     const SizedBox(height: 16),
                     _HeroRolCard(
@@ -104,7 +113,8 @@ class RoleSelectorScreen extends StatelessWidget {
                       subtitulo: 'Publica lo que necesitas',
                       color: _dorado,
                       colorClaro: const Color(0xFFFAEEDA),
-                      onTap: () => _seleccionarRol(context, RolUsuario.empleador),
+                      onTap: () =>
+                          _seleccionarRol(context, RolUsuario.empleador),
                     ),
                   ],
                 ),
@@ -170,11 +180,19 @@ class _HeroRolCardState extends State<_HeroRolCard> {
           curve: Curves.easeOut,
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: _activo ? widget.colorClaro : Colors.white,
+            color: _activo ? widget.colorClaro : Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: widget.color.withValues(alpha: _activo ? 0.6 : 0.35)),
+            border: Border.all(
+              color: widget.color.withValues(alpha: _activo ? 0.6 : 0.35),
+            ),
             boxShadow: _activo
-                ? [BoxShadow(color: widget.color.withValues(alpha: 0.18), blurRadius: 16, offset: const Offset(0, 6))]
+                ? [
+                    BoxShadow(
+                      color: widget.color.withValues(alpha: 0.18),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ]
                 : null,
           ),
           child: Row(
@@ -196,10 +214,20 @@ class _HeroRolCardState extends State<_HeroRolCard> {
                   children: [
                     Text(
                       widget.titulo,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: _tituloOscuro),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
                     const SizedBox(height: 3),
-                    Text(widget.subtitulo, style: const TextStyle(fontSize: 13, color: _subtitulo)),
+                    Text(
+                      widget.subtitulo,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Theme.of(context).textTheme.bodySmall?.color,
+                      ),
+                    ),
                   ],
                 ),
               ),

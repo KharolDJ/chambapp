@@ -1,11 +1,17 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+
+import '../theme/app_colors.dart';
+
 import 'package:provider/provider.dart';
+
 import '../models/peticion.dart';
+import '../models/usuario.dart';
 import '../providers/app_provider.dart';
 import '../screens/detalle_peticion_screen.dart';
 import 'brillo_dorado.dart';
+import 'color_avatar.dart';
 
 /// Una acción del panel inferior de [PeticionCard]. Con [onTap] nulo se
 /// muestra como una insignia de estado (ej. "Ya calificaste") en vez de un
@@ -17,8 +23,16 @@ class AccionPeticion {
   final String texto;
   final VoidCallback? onTap;
   final Color? color;
-  const AccionPeticion({this.icono, this.iconoAsset, required this.texto, this.onTap, this.color})
-      : assert(icono != null || iconoAsset != null, 'Debe proveer icono o iconoAsset');
+  const AccionPeticion({
+    this.icono,
+    this.iconoAsset,
+    required this.texto,
+    this.onTap,
+    this.color,
+  }) : assert(
+         icono != null || iconoAsset != null,
+         'Debe proveer icono o iconoAsset',
+       );
 }
 
 class PeticionCard extends StatelessWidget {
@@ -26,7 +40,12 @@ class PeticionCard extends StatelessWidget {
   final double? distanciaKm;
   final List<AccionPeticion>? acciones;
 
-  const PeticionCard({super.key, required this.peticion, this.distanciaKm, this.acciones});
+  const PeticionCard({
+    super.key,
+    required this.peticion,
+    this.distanciaKm,
+    this.acciones,
+  });
 
   String _tiempoTranscurrido() {
     final diff = DateTime.now().difference(peticion.creadaEn);
@@ -44,7 +63,10 @@ class PeticionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
-    final yaMeInteresa = provider.usuarioActual != null &&
+    final tema = Theme.of(context);
+    final esOscuro = tema.brightness == Brightness.dark;
+    final yaMeInteresa =
+        provider.usuarioActual != null &&
         peticion.interesados.any((u) => u.id == provider.usuarioActual!.id);
     final esTrabajador = provider.rolActual == RolUsuario.trabajador;
     final distanciaTexto = _textoDistancia();
@@ -55,10 +77,12 @@ class PeticionCard extends StatelessWidget {
         '${peticion.interesados.length} interesados',
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(fontSize: 12, color: Color(0xFF666666)),
+        style: TextStyle(fontSize: 12, color: tema.textTheme.bodySmall?.color),
       );
     } else if (yaMeInteresa) {
-      final colorAplicaste = peticion.premiumAprobada ? const Color(0xFFAD7A16) : const Color(0xFF0F6E56);
+      final colorAplicaste = peticion.premiumAprobada
+          ? (esOscuro ? const Color(0xFFE0B84A) : const Color(0xFFAD7A16))
+          : (esOscuro ? AppColors.azulCelesteOscuro : AppColors.azulCeleste);
       estado = Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -76,163 +100,303 @@ class PeticionCard extends StatelessWidget {
       );
     }
 
+    final colorAvatar = colorAvatarPara(peticion.autorId);
+    // Búsqueda null-safe (no firstWhere): el autor puede no estar todavía en
+    // el snapshot local de todosLosUsuarios si su cuenta es muy reciente.
+    final autoresCoincidentes = provider.todosLosUsuarios.where(
+      (u) => u.id == peticion.autorId,
+    );
+    final Usuario? autor = autoresCoincidentes.isEmpty
+        ? null
+        : autoresCoincidentes.first;
+
+    // El fondo dorado (fondoDoradoDeslizante) SIEMPRE es crema pálido en
+    // claro o bronce casi negro en oscuro — nunca el fondo normal de la
+    // tarjeta — así que el texto sobre él necesita su propia pareja de
+    // colores por tema, distinta a la del resto de la tarjeta.
+    final colorTitulo = tema.colorScheme.onSurface;
+    final colorSubtitulo = tema.textTheme.bodySmall?.color ?? Colors.grey;
+    final colorTituloPremium = esOscuro
+        ? const Color(0xFFF5E6BE)
+        : const Color(0xFF3A2A12);
+    final colorSubtituloPremium = esOscuro
+        ? const Color(0xFFC9A968)
+        : const Color(0xFF7A5B2E);
+    final colorTituloActivo = peticion.premiumAprobada
+        ? colorTituloPremium
+        : colorTitulo;
+    final colorSubtituloActivo = peticion.premiumAprobada
+        ? colorSubtituloPremium
+        : colorSubtitulo;
+
     Widget construirTarjeta(double? t) => InkWell(
       borderRadius: BorderRadius.circular(peticion.premiumAprobada ? 14 : 16),
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => DetallePeticionScreen(peticion: peticion, distanciaKm: distanciaKm),
+          builder: (_) => DetallePeticionScreen(
+            peticion: peticion,
+            distanciaKm: distanciaKm,
+          ),
         ),
       ),
       child: Container(
         decoration: BoxDecoration(
-          color: peticion.premiumAprobada ? null : Colors.white,
-          gradient: peticion.premiumAprobada ? fondoDoradoDeslizante(t) : null,
-          borderRadius: BorderRadius.circular(peticion.premiumAprobada ? 14 : 16),
-          border: peticion.premiumAprobada ? null : Border.all(color: Colors.grey.shade200),
+          color: peticion.premiumAprobada ? null : tema.cardColor,
+          gradient: peticion.premiumAprobada
+              ? fondoDoradoDeslizante(t, esOscuro: esOscuro)
+              : null,
+          borderRadius: BorderRadius.circular(
+            peticion.premiumAprobada ? 14 : 16,
+          ),
+          border: peticion.premiumAprobada
+              ? null
+              : Border.all(color: tema.dividerColor),
           boxShadow: peticion.premiumAprobada
-              ? sombraDorada()
+              ? sombraDorada(esOscuro: esOscuro)
               : [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
+                    color: Colors.black.withValues(
+                      alpha: esOscuro ? 0.24 : 0.04,
+                    ),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
                 ],
         ),
-        child: Stack(
-          children: [
-            Padding(
-              padding: EdgeInsets.fromLTRB(16, peticion.premiumAprobada ? 38 : 16, 16, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (peticion.premiumAprobada || peticion.urgente)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
                     children: [
-                      CircleAvatar(
-                        radius: 18,
-                        backgroundColor: const Color(0xFFE3F2EC),
-                        child: Text(
-                          peticion.autorNombre[0],
-                          style: const TextStyle(color: Color(0xFF0F6E56), fontWeight: FontWeight.bold, fontSize: 13),
+                      if (peticion.premiumAprobada) ...[
+                        SizedBox(
+                          width: 13,
+                          height: 13,
+                          child: Image.asset(
+                            'assets/icon/estrella.png',
+                            fit: BoxFit.contain,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              peticion.autorNombre,
-                              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFF1A1A1A)),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              [
-                                peticion.barrio,
-                                ?distanciaTexto,
-                                _tiempoTranscurrido(),
-                              ].join(' · '),
-                              style: const TextStyle(fontSize: 12, color: Color(0xFF666666)),
-                            ),
-                          ],
+                        const SizedBox(width: 5),
+                        Text(
+                          'Oferta destacada',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: esOscuro
+                                ? const Color(0xFFE0B84A)
+                                : const Color(0xFFAD7A16),
+                            letterSpacing: 0.3,
+                          ),
                         ),
-                      ),
+                      ],
+                      if (peticion.premiumAprobada && peticion.urgente)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Container(
+                            width: 3,
+                            height: 3,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade400,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      if (peticion.urgente)
+                        Text(
+                          'Se precisa urgentemente',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: esOscuro
+                                ? const Color(0xFFE0785A)
+                                : const Color(0xFFB54834),
+                            letterSpacing: 0.3,
+                          ),
+                        ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  if (peticion.fotoUrl != null)
-                    Container(
-                      height: 100,
-                      width: double.infinity,
-                      margin: const EdgeInsets.only(bottom: 10),
-                      clipBehavior: Clip.antiAlias,
-                      decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
-                      child: Image.file(
-                        File(peticion.fotoUrl!),
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 32),
+                ),
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 18,
+                    backgroundColor: colorAvatar.fondo,
+                    child: Text(
+                      peticion.autorNombre[0].toUpperCase(),
+                      style: TextStyle(
+                        color: colorAvatar.texto,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
                       ),
                     ),
-                  Text(
-                    peticion.descripcion,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 14, height: 1.35, color: Color(0xFF1A1A1A)),
                   ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Row(
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            if (peticion.urgente) _Etiqueta(texto: 'Urgente', color: const Color(0xFFB54834)),
-                            if (peticion.urgente) const SizedBox(width: 6),
-                            Flexible(child: _Etiqueta(texto: peticion.categoria, color: const Color(0xFF0F6E56))),
+                            Flexible(
+                              child: Text(
+                                peticion.autorNombre,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14,
+                                  color: colorTituloActivo,
+                                ),
+                              ),
+                            ),
+                            if (autor != null &&
+                                autor.numeroCalificaciones > 0) ...[
+                              const SizedBox(width: 6),
+                              const Icon(
+                                Icons.star,
+                                size: 13,
+                                color: Color(0xFFAD7A16),
+                              ),
+                              const SizedBox(width: 2),
+                              Text(
+                                autor.calificacionPromedio.toStringAsFixed(1),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFFAD7A16),
+                                ),
+                              ),
+                            ],
+                            if (autor?.perfilVerificado ?? false) ...[
+                              const SizedBox(width: 4),
+                              Image.asset(
+                                'assets/icon/verificado.png',
+                                width: 14,
+                                height: 14,
+                              ),
+                            ],
                           ],
                         ),
-                      ),
-                      ?estado,
-                    ],
+                        const SizedBox(height: 3),
+                        Text(
+                          [
+                            peticion.barrio,
+                            ?distanciaTexto,
+                            _tiempoTranscurrido(),
+                          ].join(' · '),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: colorSubtituloActivo,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  if (acciones != null && acciones!.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    if (peticion.premiumAprobada)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFF6D8).withValues(alpha: 0.55),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFFE0A93B).withValues(alpha: 0.35)),
-                        ),
-                        child: Wrap(
-                          spacing: 6,
-                          runSpacing: 6,
-                          children: acciones!.map(_botonAccion).toList(),
-                        ),
-                      )
-                    else ...[
-                      Divider(height: 1, color: Colors.grey.shade200),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: acciones!.map(_botonAccion).toList(),
-                      ),
-                    ],
-                  ],
                 ],
               ),
-            ),
-            if (peticion.premiumAprobada)
-              Positioned(
-                top: 10,
-                left: 16,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: Image.asset('assets/icon/estrella.png', fit: BoxFit.contain),
+              const SizedBox(height: 14),
+              if (peticion.fotoUrl != null)
+                Container(
+                  height: 100,
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 10),
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(
+                    color: esOscuro
+                        ? const Color(0xFF23262B)
+                        : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Image.file(
+                    File(peticion.fotoUrl!),
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Icon(
+                      Icons.image_outlined,
+                      color: Colors.grey.shade400,
+                      size: 32,
                     ),
-                    const SizedBox(width: 5),
-                    const Text(
-                      'DESTACADO',
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFAD7A16), letterSpacing: 0.4),
-                    ),
-                  ],
+                  ),
+                ),
+              Text(
+                peticion.descripcion,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 14,
+                  height: 1.35,
+                  color: colorTituloActivo,
                 ),
               ),
-          ],
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Flexible(
+                          child: _Etiqueta(
+                            texto: peticion.categoria,
+                            color: esOscuro
+                                ? AppColors.azulCelesteOscuro
+                                : AppColors.azulCeleste,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ?estado,
+                ],
+              ),
+              if (acciones != null && acciones!.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                if (peticion.premiumAprobada)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+                    decoration: BoxDecoration(
+                      color: esOscuro
+                          ? Colors.black.withValues(alpha: 0.25)
+                          : const Color(0xFFFFF6D8).withValues(alpha: 0.55),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: const Color(0xFFE0A93B).withValues(alpha: 0.35),
+                      ),
+                    ),
+                    child: Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: acciones!
+                          .map((a) => _botonAccion(a, colorTituloPremium))
+                          .toList(),
+                    ),
+                  )
+                else ...[
+                  Divider(height: 1, color: tema.dividerColor),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: acciones!
+                        .map((a) => _botonAccion(a, colorTitulo))
+                        .toList(),
+                  ),
+                ],
+              ],
+            ],
+          ),
         ),
       ),
     );
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
+      margin: const EdgeInsets.only(bottom: 16),
       child: peticion.premiumAprobada
           ? BrilloDoradoAnimado(
               borderRadius: BorderRadius.circular(16),
@@ -244,23 +408,37 @@ class PeticionCard extends StatelessWidget {
 
   Widget _iconoDeAccion(AccionPeticion accion, Color color) {
     if (accion.iconoAsset != null) {
-      return SizedBox(width: 20, height: 20, child: Image.asset(accion.iconoAsset!, fit: BoxFit.contain));
+      return SizedBox(
+        width: 20,
+        height: 20,
+        child: Image.asset(accion.iconoAsset!, fit: BoxFit.contain),
+      );
     }
     return Icon(accion.icono, size: 20, color: color);
   }
 
-  Widget _botonAccion(AccionPeticion accion) {
-    final color = accion.color ?? const Color(0xFF1A1A1A);
+  Widget _botonAccion(AccionPeticion accion, Color colorPorDefecto) {
+    final color = accion.color ?? colorPorDefecto;
     if (accion.onTap == null) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
-        decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             _iconoDeAccion(accion, color),
             const SizedBox(width: 6),
-            Text(accion.texto, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
+            Text(
+              accion.texto,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
           ],
         ),
       );
@@ -279,7 +457,14 @@ class PeticionCard extends StatelessWidget {
           children: [
             _iconoDeAccion(accion, color),
             const SizedBox(width: 6),
-            Text(accion.texto, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
+            Text(
+              accion.texto,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
           ],
         ),
       ),
@@ -294,6 +479,9 @@ class _Etiqueta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(texto, style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w600));
+    return Text(
+      texto,
+      style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w600),
+    );
   }
 }

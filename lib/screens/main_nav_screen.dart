@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+
+import '../theme/app_colors.dart';
+
 import 'package:provider/provider.dart';
+
 import '../providers/app_provider.dart';
 import 'feed_screen.dart';
 import 'actividad_screen.dart';
@@ -18,7 +22,12 @@ class MainNavScreen extends StatefulWidget {
 class _MainNavScreenState extends State<MainNavScreen> {
   int _indice = 0;
 
-  final _pantallas = const [FeedScreen(), ActividadScreen(), NotificacionesScreen(), PerfilScreen()];
+  final _pantallas = const [
+    FeedScreen(),
+    ActividadScreen(),
+    NotificacionesScreen(),
+    PerfilScreen(),
+  ];
 
   Future<void> _abrirPublicar(BuildContext context) async {
     final provider = context.read<AppProvider>();
@@ -34,11 +43,18 @@ class _MainNavScreenState extends State<MainNavScreen> {
     if (!context.mounted) return;
     if (!context.read<AppProvider>().correoVerificado) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Verifica tu correo antes de publicar — revisa tu perfil')),
+        const SnackBar(
+          content: Text(
+            'Verifica tu correo antes de publicar — revisa tu perfil',
+          ),
+        ),
       );
       return;
     }
-    Navigator.push(context, MaterialPageRoute(builder: (_) => const PublicarScreen()));
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const PublicarScreen()),
+    );
   }
 
   @override
@@ -59,7 +75,7 @@ class _MainNavScreenState extends State<MainNavScreen> {
       body: IndexedStack(index: _indice, children: _pantallas),
       floatingActionButton: esEmpleador
           ? FloatingActionButton(
-              backgroundColor: const Color(0xFF0F6E56),
+              backgroundColor: AppColors.azulCeleste,
               onPressed: () => _abrirPublicar(context),
               child: const Icon(Icons.add, color: Colors.white),
             )
@@ -76,8 +92,20 @@ class _MainNavScreenState extends State<MainNavScreen> {
                     Expanded(
                       child: Row(
                         children: [
-                          Expanded(child: _botonNav('assets/icon/nav_inicio.png', 'Inicio', 0)),
-                          Expanded(child: _botonNav('assets/icon/nav_actividad.png', 'Actividad', 1)),
+                          Expanded(
+                            child: _botonNav(
+                              'assets/icon/nav_inicio.png',
+                              'Inicio',
+                              0,
+                            ),
+                          ),
+                          Expanded(
+                            child: _botonNav(
+                              'assets/icon/nav_actividad.png',
+                              'Actividad',
+                              1,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -86,10 +114,20 @@ class _MainNavScreenState extends State<MainNavScreen> {
                       child: Row(
                         children: [
                           Expanded(
-                            child: _botonNav('assets/icon/nav_avisos.png', 'Avisos', 2,
-                                mostrarPunto: hayNotificacionesSinLeer),
+                            child: _botonNav(
+                              'assets/icon/nav_avisos.png',
+                              'Avisos',
+                              2,
+                              mostrarPunto: hayNotificacionesSinLeer,
+                            ),
                           ),
-                          Expanded(child: _botonNav('assets/icon/nav_perfil.png', 'Perfil', 3)),
+                          Expanded(
+                            child: _botonNav(
+                              'assets/icon/nav_perfil.png',
+                              'Perfil',
+                              3,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -97,13 +135,35 @@ class _MainNavScreenState extends State<MainNavScreen> {
                 )
               : Row(
                   children: [
-                    Expanded(child: _botonNav('assets/icon/nav_inicio.png', 'Inicio', 0)),
-                    Expanded(child: _botonNav('assets/icon/nav_actividad.png', 'Actividad', 1)),
                     Expanded(
-                      child: _botonNav('assets/icon/nav_avisos.png', 'Avisos', 2,
-                          mostrarPunto: hayNotificacionesSinLeer),
+                      child: _botonNav(
+                        'assets/icon/nav_inicio.png',
+                        'Inicio',
+                        0,
+                      ),
                     ),
-                    Expanded(child: _botonNav('assets/icon/nav_perfil.png', 'Perfil', 3)),
+                    Expanded(
+                      child: _botonNav(
+                        'assets/icon/nav_actividad.png',
+                        'Actividad',
+                        1,
+                      ),
+                    ),
+                    Expanded(
+                      child: _botonNav(
+                        'assets/icon/nav_avisos.png',
+                        'Avisos',
+                        2,
+                        mostrarPunto: hayNotificacionesSinLeer,
+                      ),
+                    ),
+                    Expanded(
+                      child: _botonNav(
+                        'assets/icon/nav_perfil.png',
+                        'Perfil',
+                        3,
+                      ),
+                    ),
                   ],
                 ),
         ),
@@ -111,9 +171,14 @@ class _MainNavScreenState extends State<MainNavScreen> {
     );
   }
 
-  Widget _botonNav(String iconoAsset, String texto, int indice, {bool mostrarPunto = false}) {
+  Widget _botonNav(
+    String iconoAsset,
+    String texto,
+    int indice, {
+    bool mostrarPunto = false,
+  }) {
     final activo = _indice == indice;
-    final color = activo ? const Color(0xFF0F6E56) : Colors.grey;
+    final color = activo ? AppColors.azulCeleste : Colors.grey;
     return InkWell(
       onTap: () => setState(() => _indice = indice),
       child: Padding(
@@ -136,7 +201,10 @@ class _MainNavScreenState extends State<MainNavScreen> {
                     child: Container(
                       width: 8,
                       height: 8,
-                      decoration: const BoxDecoration(color: Color(0xFFB54834), shape: BoxShape.circle),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFB54834),
+                        shape: BoxShape.circle,
+                      ),
                     ),
                   ),
               ],

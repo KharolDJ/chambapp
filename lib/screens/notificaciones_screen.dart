@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../models/notificacion.dart';
 import '../models/peticion.dart';
 import '../providers/app_provider.dart';
@@ -19,21 +20,14 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
   void initState() {
     super.initState();
     final provider = context.read<AppProvider>();
-    _idsNoLeidasAlAbrir = provider.misNotificaciones.where((n) => !n.leida).map((n) => n.id).toSet();
+    _idsNoLeidasAlAbrir = provider.misNotificaciones
+        .where((n) => !n.leida)
+        .map((n) => n.id)
+        .toSet();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<AppProvider>().marcarTodasNotificacionesLeidas();
     });
-  }
-
-  IconData _iconoPara(String mensaje) {
-    final m = mensaje.toLowerCase();
-    if (m.contains('premium') || m.contains('podio')) return Icons.star;
-    if (m.contains('calific')) return Icons.star_rate_rounded;
-    if (m.contains('seleccion')) return Icons.check_circle;
-    if (m.contains('vio tu perfil')) return Icons.visibility;
-    if (m.contains('interes')) return Icons.person_add_alt_1;
-    return Icons.notifications;
   }
 
   String _tiempoTranscurrido(DateTime fecha) {
@@ -42,6 +36,9 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
     if (diff.inHours < 24) return 'hace ${diff.inHours} h';
     return 'hace ${diff.inDays} d';
   }
+
+  String _formatearFecha(DateTime fecha) =>
+      '${fecha.day.toString().padLeft(2, '0')}/${fecha.month.toString().padLeft(2, '0')}/${fecha.year}';
 
   void _tocarNotificacion(BuildContext context, Notificacion n) {
     if (n.peticionId == null) return;
@@ -53,30 +50,40 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
       peticion = null;
     }
     if (peticion == null) return;
-    Navigator.push(context, MaterialPageRoute(builder: (_) => DetallePeticionScreen(peticion: peticion!)));
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DetallePeticionScreen(peticion: peticion!),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
     final lista = provider.misNotificaciones;
+    final tema = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FB),
-      appBar: AppBar(
-        title: const Text('Notificaciones'),
-        backgroundColor: const Color(0xFFF9F9FB),
-        foregroundColor: const Color(0xFF1A1A1A),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('Notificaciones')),
       body: lista.isEmpty
           ? Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.notifications_none, size: 56, color: Colors.grey.shade300),
+                  Opacity(
+                    opacity: 0.35,
+                    child: Image.asset(
+                      'assets/icon/notificacion.png',
+                      width: 56,
+                      height: 56,
+                    ),
+                  ),
                   const SizedBox(height: 16),
-                  Text('No tienes notificaciones todavía', style: TextStyle(color: Color(0xFF666666))),
+                  Text(
+                    'No tienes notificaciones todavía',
+                    style: TextStyle(color: tema.textTheme.bodySmall?.color),
+                  ),
                 ],
               ),
             )
@@ -93,61 +100,70 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
                     margin: const EdgeInsets.only(bottom: 10),
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: tema.cardColor,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.grey.shade200),
+                      border: Border.all(color: tema.dividerColor),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 3)),
+                        BoxShadow(
+                          color: Colors.black.withValues(
+                            alpha: tema.brightness == Brightness.dark
+                                ? 0.2
+                                : 0.04,
+                          ),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
                       ],
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            Container(
-                              width: 36,
-                              height: 36,
-                              decoration: const BoxDecoration(color: Color(0xFFE1F5EE), shape: BoxShape.circle),
-                              child: Icon(_iconoPara(n.mensaje), size: 18, color: const Color(0xFF0F6E56)),
-                            ),
-                            if (eraNoLeida)
-                              Positioned(
-                                top: -2,
-                                right: -2,
-                                child: Container(
-                                  width: 11,
-                                  height: 11,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFB54834),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white, width: 1.5),
-                                  ),
-                                ),
+                        if (eraNoLeida)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 5, right: 8),
+                            child: Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFB54834),
+                                shape: BoxShape.circle,
                               ),
-                          ],
-                        ),
-                        const SizedBox(width: 12),
+                            ),
+                          ),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(n.mensaje, style: const TextStyle(fontSize: 14, color: Color(0xFF1A1A1A))),
+                              Text(
+                                n.mensaje,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: tema.colorScheme.onSurface,
+                                ),
+                              ),
                               const SizedBox(height: 4),
                               Text(
-                                _tiempoTranscurrido(n.fecha),
-                                style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                                '${_tiempoTranscurrido(n.fecha)} · ${_formatearFecha(n.fecha)}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: tema.textTheme.bodySmall?.color,
+                                ),
                               ),
                             ],
                           ),
                         ),
                         IconButton(
-                          icon: Icon(Icons.close, size: 18, color: Colors.grey.shade400),
+                          icon: Icon(
+                            Icons.close,
+                            size: 18,
+                            color: tema.textTheme.bodySmall?.color,
+                          ),
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
                           tooltip: 'Eliminar notificación',
-                          onPressed: () => context.read<AppProvider>().eliminarNotificacion(n.id),
+                          onPressed: () => context
+                              .read<AppProvider>()
+                              .eliminarNotificacion(n.id),
                         ),
                       ],
                     ),

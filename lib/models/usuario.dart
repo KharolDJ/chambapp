@@ -6,6 +6,8 @@ class Usuario {
   List<String> oficios;
   String? fotoPath;
   String? cedula;
+  String? barrio;
+  bool perfilVerificado;
   double calificacionPromedio;
   int numeroCalificaciones;
 
@@ -17,21 +19,25 @@ class Usuario {
     List<String>? oficios,
     this.fotoPath,
     this.cedula,
+    this.barrio,
+    this.perfilVerificado = false,
     this.calificacionPromedio = 0,
     this.numeroCalificaciones = 0,
   }) : oficios = oficios ?? [];
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'nombre': nombre,
-        'correo': correo,
-        'celular': celular,
-        'oficios': oficios,
-        'fotoPath': fotoPath,
-        'cedula': cedula,
-        'calificacionPromedio': calificacionPromedio,
-        'numeroCalificaciones': numeroCalificaciones,
-      };
+    'id': id,
+    'nombre': nombre,
+    'correo': correo,
+    'celular': celular,
+    'oficios': oficios,
+    'fotoPath': fotoPath,
+    'cedula': cedula,
+    'barrio': barrio,
+    'perfilVerificado': perfilVerificado,
+    'calificacionPromedio': calificacionPromedio,
+    'numeroCalificaciones': numeroCalificaciones,
+  };
 
   factory Usuario.fromJson(Map<String, dynamic> json) {
     // Migracion desde el campo viejo `oficio` (String unico) a `oficios`
@@ -53,8 +59,12 @@ class Usuario {
       oficios: oficios,
       fotoPath: json['fotoPath'] as String?,
       cedula: json['cedula'] as String?,
-      calificacionPromedio: (json['calificacionPromedio'] as num?)?.toDouble() ?? 0,
-      numeroCalificaciones: (json['numeroCalificaciones'] as num?)?.toInt() ?? 0,
+      barrio: json['barrio'] as String?,
+      perfilVerificado: json['perfilVerificado'] as bool? ?? false,
+      calificacionPromedio:
+          (json['calificacionPromedio'] as num?)?.toDouble() ?? 0,
+      numeroCalificaciones:
+          (json['numeroCalificaciones'] as num?)?.toInt() ?? 0,
     );
   }
 }
