@@ -1,127 +1,55 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
-
 import 'package:provider/provider.dart';
 
 import '../models/premium_trabajador.dart';
 import '../providers/app_provider.dart';
 import '../widgets/brillo_dorado.dart';
+import 'pago_paypal_screen.dart';
 
 class PremiumTrabajadorScreen extends StatelessWidget {
   const PremiumTrabajadorScreen({super.key});
 
-  void _abrirSolicitud(BuildContext contextPantalla, String oficio) {
-    final controller = TextEditingController();
-    showModalBottomSheet(
-      context: contextPantalla,
-      isScrollControlled: true,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 20,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Visibilidad Premium — $oficio',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Destaca tu perfil en el Podio de Recomendados de $oficio por 30 días — \$10.000',
-                style: TextStyle(fontSize: 13, color: Color(0xFF666666)),
-              ),
-              const SizedBox(height: 16),
-              const _Paso(
-                numero: '1',
-                texto: 'Transfiere \$10.000 a la cuenta indicada por el equipo Chambapp.',
-              ),
-              const _Paso(
-                numero: '2',
-                texto: 'Ingresa abajo la referencia de tu comprobante de pago.',
-              ),
-              const _Paso(
-                numero: '3',
-                texto: 'El equipo revisa y aprueba — apareces en el Podio de tu oficio.',
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: controller,
-                decoration: InputDecoration(
-                  hintText: 'Referencia del comprobante de pago',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () async {
-                  if (controller.text.trim().isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Ingresa la referencia del comprobante'),
-                      ),
-                    );
-                    return;
-                  }
-                  final navigator = Navigator.of(context);
-                  final mensajero = ScaffoldMessenger.of(context);
-                  final error = await context
-                      .read<AppProvider>()
-                      .solicitarPremiumTrabajador(
-                        oficio: oficio,
-                        comprobante: controller.text.trim(),
-                      );
-                  navigator.pop();
-                  if (error != null) {
-                    mensajero.showSnackBar(SnackBar(content: Text(error)));
-                    return;
-                  }
-                  if (!contextPantalla.mounted) return;
-                  _mostrarExito(
-                    contextPantalla,
-                    icono: Icons.hourglass_top,
-                    titulo: 'Solicitud enviada',
-                    mensaje:
-                        'La revisaremos y en cuanto se apruebe, quedarás activo como VIP de "$oficio" por 30 días — rotarás junto a los demás destacados en el Podio.',
-                    textoBoton: 'Ver el Podio de $oficio',
-                    onVerPodio: () {
-                      contextPantalla.read<AppProvider>().irAlPodioDe(oficio);
-                      Navigator.of(contextPantalla)
-                          .popUntil((route) => route.isFirst);
-                    },
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFAD7A16),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  'Solicitar Visibilidad Premium',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ),
+  Future<void> _pagarYActivar(BuildContext context, String oficio) async {
+    final resultado = await Navigator.push<ResultadoPagoPaypal>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const PagoPaypalScreen(
+          montoUsd: '2.50',
+          descripcion: 'Visibilidad Premium Chambapp (sandbox)',
         ),
       ),
+    );
+    if (resultado == null) return; // cancelado
+    if (!context.mounted) return;
+    if (resultado.estado != 'COMPLETED') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('El pago no se completó (estado: ${resultado.estado})'),
+        ),
+      );
+      return;
+    }
+    final error = await context.read<AppProvider>().activarPremiumTrabajador(
+      oficio: oficio,
+      ordenPaypalId: resultado.ordenId,
+    );
+    if (!context.mounted) return;
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+      return;
+    }
+    _mostrarExito(
+      context,
+      icono: Icons.emoji_events,
+      titulo: '¡Ya estás en el Podio!',
+      mensaje:
+          'Tu perfil ya aparece entre los destacados de "$oficio" por los próximos 30 días.',
+      textoBoton: 'Ver mi puesto en $oficio',
+      onVerPodio: () {
+        context.read<AppProvider>().irAlPodioDe(oficio);
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      },
     );
   }
 
@@ -274,50 +202,6 @@ class PremiumTrabajadorScreen extends StatelessWidget {
                               label: Text('Ver mi puesto en $oficio'),
                             ),
                           ),
-                        ] else if (vigente != null &&
-                            vigente.solicitada &&
-                            !vigente.aprobada) ...[
-                          Row(
-                            children: [
-                              Image.asset(
-                                'assets/icon/reloj_arena.png',
-                                width: 18,
-                                height: 18,
-                              ),
-                              const SizedBox(width: 6),
-                              const Expanded(
-                                child: Text(
-                                  'Tu solicitud está en revisión',
-                                  style: TextStyle(fontSize: 13),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          OutlinedButton(
-                            onPressed: () async {
-                              await context
-                                  .read<AppProvider>()
-                                  .aprobarPremiumTrabajadorDemo(vigente!.id);
-                              if (!context.mounted) return;
-                              _mostrarExito(
-                                context,
-                                icono: Icons.emoji_events,
-                                titulo: '¡Ya estás en el Podio!',
-                                mensaje:
-                                    'Tu perfil ya aparece entre los destacados de "$oficio" por los próximos 30 días.',
-                                textoBoton: 'Ver mi puesto en $oficio',
-                                onVerPodio: () {
-                                  context.read<AppProvider>().irAlPodioDe(
-                                    oficio,
-                                  );
-                                  Navigator.of(context)
-                                      .popUntil((route) => route.isFirst);
-                                },
-                              );
-                            },
-                            child: const Text('Simular aprobación (demo)'),
-                          ),
                         ] else if (provider.podioLleno(oficio)) ...[
                           Row(
                             children: [
@@ -342,16 +226,16 @@ class PremiumTrabajadorScreen extends StatelessWidget {
                           SizedBox(
                             width: double.infinity,
                             child: OutlinedButton.icon(
-                              onPressed: () => _abrirSolicitud(context, oficio),
+                              onPressed: () => _pagarYActivar(context, oficio),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: const Color(0xFFAD7A16),
                                 side: const BorderSide(
                                   color: Color(0xFFAD7A16),
                                 ),
                               ),
-                              icon: const Icon(Icons.star_outline, size: 16),
+                              icon: const Icon(Icons.lock_outline, size: 16),
                               label: const Text(
-                                'Solicitar Visibilidad Premium (\$10.000)',
+                                'Pagar con PayPal (sandbox)',
                               ),
                             ),
                           ),
@@ -644,48 +528,6 @@ class _FilaBeneficios extends StatelessWidget {
             ),
           )
           .toList(),
-    );
-  }
-}
-
-class _Paso extends StatelessWidget {
-  final String numero;
-  final String texto;
-  const _Paso({required this.numero, required this.texto});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 22,
-            height: 22,
-            alignment: Alignment.center,
-            decoration: const BoxDecoration(
-              color: AppColors.azulCeleste,
-              shape: BoxShape.circle,
-            ),
-            child: Text(
-              numero,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              texto,
-              style: const TextStyle(fontSize: 13, height: 1.4),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

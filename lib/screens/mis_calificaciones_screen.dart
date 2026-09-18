@@ -35,7 +35,7 @@ class MisCalificacionesScreen extends StatelessWidget {
                     children: [
                       const Icon(
                         Icons.star,
-                        color: Color(0xFFAD7A16),
+                        color: AppColors.doradoCalificacion,
                         size: 22,
                       ),
                       const SizedBox(width: 6),
@@ -144,7 +144,7 @@ class MisCalificacionesScreen extends StatelessWidget {
                                       ? Icons.star
                                       : Icons.star_border,
                                   size: 18,
-                                  color: const Color(0xFFAD7A16),
+                                  color: AppColors.doradoCalificacion,
                                 ),
                               ),
                             ),

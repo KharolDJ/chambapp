@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../models/peticion.dart';
 import '../providers/app_provider.dart';
+import 'pago_paypal_screen.dart';
 
 class PremiumScreen extends StatefulWidget {
   final Peticion peticion;
@@ -16,12 +17,35 @@ class PremiumScreen extends StatefulWidget {
 }
 
 class _PremiumScreenState extends State<PremiumScreen> {
-  final _comprobanteController = TextEditingController();
+  bool _pagando = false;
 
-  @override
-  void dispose() {
-    _comprobanteController.dispose();
-    super.dispose();
+  Future<void> _pagar(String peticionId) async {
+    setState(() => _pagando = true);
+    final resultado = await Navigator.push<ResultadoPagoPaypal>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const PagoPaypalScreen(
+          montoUsd: '2.50',
+          descripcion: 'Visibilidad Premium Chambapp (sandbox)',
+        ),
+      ),
+    );
+    if (!mounted) return;
+    setState(() => _pagando = false);
+    if (resultado == null) return; // cancelado
+    if (resultado.estado != 'COMPLETED') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('El pago no se completó (estado: ${resultado.estado})'),
+        ),
+      );
+      return;
+    }
+    if (!context.mounted) return;
+    await context.read<AppProvider>().activarPremiumPeticion(
+      peticionId,
+      resultado.ordenId,
+    );
   }
 
   @override
@@ -31,8 +55,6 @@ class _PremiumScreenState extends State<PremiumScreen> {
       (p) => p.id == widget.peticion.id,
       orElse: () => widget.peticion,
     );
-
-    final tema = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Visibilidad Premium')),
@@ -66,31 +88,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
               color: Color(0xFFAD7A16),
               texto: '¡Tu publicación ya tiene Visibilidad Premium activa!',
             )
-          else if (actualizada.premiumSolicitada) ...[
-            const _EstadoSimple(
-              icono: Icons.hourglass_top,
-              color: Color(0xFFAD7A16),
-              texto: 'Tu solicitud está en revisión',
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Comprobante: ${actualizada.comprobantePago}',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                color: tema.textTheme.bodySmall?.color,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Center(
-              child: OutlinedButton(
-                onPressed: () => context.read<AppProvider>().aprobarPremiumDemo(
-                  actualizada.id,
-                ),
-                child: const Text('Simular aprobación (demo)'),
-              ),
-            ),
-          ] else if (actualizada.cerrada)
+          else if (actualizada.cerrada)
             _EstadoSimple(
               icono: Icons.info_outline,
               color: Colors.grey.shade500,
@@ -104,50 +102,33 @@ class _PremiumScreenState extends State<PremiumScreen> {
             const SizedBox(height: 12),
             const _Paso(
               numero: '1',
-              texto: 'Transfiere \$10.000 a la cuenta indicada por el equipo Chambapp.',
+              texto: 'Paga \$2.50 USD (equivalente sandbox a los \$10.000 COP) con PayPal.',
             ),
             const _Paso(
               numero: '2',
-              texto: 'Ingresa abajo la referencia de tu comprobante de pago.',
+              texto: 'PayPal confirma el pago automáticamente — no hace falta revisión manual.',
             ),
             const _Paso(
               numero: '3',
-              texto: 'El equipo revisa y aprueba tu solicitud — tu publicación queda destacada.',
+              texto: 'Tu publicación queda destacada al instante.',
             ),
             const SizedBox(height: 20),
-            const Text(
-              'Referencia del comprobante de pago',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _comprobanteController,
-              decoration: InputDecoration(
-                hintText: 'Ej: código de la transferencia',
-                filled: true,
-                fillColor: tema.cardColor,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
+            ElevatedButton.icon(
+              onPressed: _pagando ? null : () => _pagar(actualizada.id),
+              icon: _pagando
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.lock_outline, size: 18),
+              label: Text(
+                _pagando ? 'Procesando...' : 'Pagar con PayPal (sandbox)',
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                if (_comprobanteController.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Ingresa la referencia del comprobante'),
-                    ),
-                  );
-                  return;
-                }
-                context.read<AppProvider>().solicitarPremium(
-                  actualizada.id,
-                  _comprobanteController.text.trim(),
-                );
-              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFAD7A16),
                 foregroundColor: Colors.white,
@@ -155,10 +136,6 @@ class _PremiumScreenState extends State<PremiumScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-              ),
-              child: const Text(
-                'Solicitar Visibilidad Premium',
-                style: TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
           ],

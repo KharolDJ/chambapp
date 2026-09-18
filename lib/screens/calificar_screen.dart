@@ -120,7 +120,7 @@ class _CalificarScreenState extends State<CalificarScreen> {
                     onPressed: () => setState(() => _estrellas = valor),
                     icon: Icon(
                       valor <= _estrellas ? Icons.star : Icons.star_border,
-                      color: const Color(0xFFAD7A16),
+                      color: AppColors.doradoCalificacion,
                     ),
                   );
                 }),

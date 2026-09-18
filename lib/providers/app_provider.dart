@@ -170,36 +170,79 @@ class AppProvider extends ChangeNotifier {
     return null;
   }
 
-  Future<void> aprobarVerificacionIdentidadDemo() async {
-    final solicitud = miVerificacionIdentidad;
-    final actual = usuarioActual;
-    if (solicitud == null || actual == null || solicitud.aprobada) return;
+  // Solicitudes de verificación de identidad pendientes de revisión —
+  // cargadas bajo demanda solo cuando un administrador abre el panel de
+  // Administración, igual que [reportes].
+  final List<VerificacionIdentidad> verificacionesPendientes = [];
 
+  Future<void> cargarVerificacionesPendientes() async {
+    try {
+      final snapshot = await _db
+          .collection('verificacionesIdentidad')
+          .where('solicitada', isEqualTo: true)
+          .where('aprobada', isEqualTo: false)
+          .get();
+      verificacionesPendientes
+        ..clear()
+        ..addAll(
+          snapshot.docs.map(
+            (doc) => VerificacionIdentidad.fromFirestore(doc.data(), doc.id),
+          ),
+        );
+      notifyListeners();
+    } catch (_) {
+      // Sin conexión o sin permiso: se deja la lista como estaba.
+    }
+  }
+
+  /// Aprueba la solicitud de un tercero — a diferencia de la vieja
+  /// autoaprobación de demo, esta la ejecuta un administrador desde el
+  /// panel de Administración sobre la solicitud de otro usuario.
+  Future<void> aprobarVerificacionIdentidad(
+    VerificacionIdentidad solicitud,
+  ) async {
     try {
       await _db.collection('verificacionesIdentidad').doc(solicitud.id).update({
         'aprobada': true,
       });
-      await _db.collection('usuarios').doc(actual.id).update({
+      await _db.collection('usuarios').doc(solicitud.usuarioId).update({
         'perfilVerificado': true,
       });
     } catch (_) {
       return;
     }
-    miVerificacionIdentidad = VerificacionIdentidad(
-      id: solicitud.id,
-      usuarioId: solicitud.usuarioId,
-      numeroCedula: solicitud.numeroCedula,
-      fotoCedulaPath: solicitud.fotoCedulaPath,
-      solicitada: true,
-      aprobada: true,
-      solicitadaEn: solicitud.solicitadaEn,
-    );
-    actual.perfilVerificado = true;
+    verificacionesPendientes.removeWhere((v) => v.id == solicitud.id);
     notifyListeners();
     unawaited(
       _crearNotificacion(
-        paraUsuarioId: actual.id,
+        paraUsuarioId: solicitud.usuarioId,
         mensaje: 'Tu perfil fue verificado con tu cédula.',
+      ),
+    );
+  }
+
+  /// Rechaza la solicitud borrando el documento (en vez de marcar un campo
+  /// `rechazada`) para que el usuario pueda volver a solicitar la
+  /// verificación desde cero sin quedar bloqueado por el chequeo de
+  /// "solicitud en revisión" en [solicitarVerificacionIdentidad].
+  Future<void> rechazarVerificacionIdentidad(
+    VerificacionIdentidad solicitud,
+  ) async {
+    try {
+      await _db
+          .collection('verificacionesIdentidad')
+          .doc(solicitud.id)
+          .delete();
+    } catch (_) {
+      return;
+    }
+    verificacionesPendientes.removeWhere((v) => v.id == solicitud.id);
+    notifyListeners();
+    unawaited(
+      _crearNotificacion(
+        paraUsuarioId: solicitud.usuarioId,
+        mensaje:
+            'Tu verificación de identidad fue rechazada. Revisa que la foto de tu cédula sea legible y vuelve a intentarlo.',
       ),
     );
   }
@@ -1119,21 +1162,20 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> solicitarPremium(String peticionId, String comprobante) async {
+  /// Activa Visibilidad Premium sobre una petición apenas PayPal confirma
+  /// el pago (ver `PagoPaypalScreen`) — reemplaza el viejo par
+  /// `solicitarPremium` + `aprobarPremiumDemo` (comprobante de texto libre
+  /// + botón de autoaprobación) porque la pasarela ya es la verificación
+  /// real: no hace falta una revisión manual aparte.
+  Future<void> activarPremiumPeticion(
+    String peticionId,
+    String ordenPaypalId,
+  ) async {
     try {
       await _db.collection('peticiones').doc(peticionId).update({
         'premiumSolicitada': true,
-        'comprobantePago': comprobante,
-      });
-    } catch (_) {
-      // Silencioso, igual que el resto de escrituras de estado de petición.
-    }
-  }
-
-  Future<void> aprobarPremiumDemo(String peticionId) async {
-    try {
-      await _db.collection('peticiones').doc(peticionId).update({
         'premiumAprobada': true,
+        'comprobantePago': 'paypal:$ordenPaypalId',
       });
     } catch (_) {
       return;
@@ -1159,16 +1201,27 @@ class AppProvider extends ChangeNotifier {
     unawaited(_guardarEstado());
   }
 
-  Future<String?> solicitarPremiumTrabajador({
+  /// Activa el VIP de un oficio apenas PayPal confirma el pago — reemplaza
+  /// el viejo par `solicitarPremiumTrabajador` + `aprobarPremiumTrabajadorDemo`
+  /// por la misma razón que [activarPremiumPeticion]: la pasarela ya
+  /// verificó el pago, así que solicitud y aprobación quedan en una sola
+  /// escritura.
+  ///
+  /// Nota: el cupo se revisa antes de iniciar el pago Y otra vez aquí (por
+  /// si se llenó mientras la persona pagaba) — en ese caso de carrera el
+  /// dinero de sandbox ya se "cobró" pero el cupo no se activa. Para un
+  /// prototipo de tesis no se implementa reembolso automático; en
+  /// producción esto necesitaría un flujo de devolución.
+  Future<String?> activarPremiumTrabajador({
     required String oficio,
-    required String comprobante,
+    required String ordenPaypalId,
   }) async {
     final actual = usuarioActual;
     if (actual == null) {
       return 'Debes iniciar sesión para solicitar Visibilidad Premium.';
     }
     if (podioLleno(oficio)) {
-      return 'Los $_cupoMaximoVipPorOficio cupos VIP de "$oficio" ya están ocupados. Vuelve a intentar cuando se libere uno.';
+      return 'Los $_cupoMaximoVipPorOficio cupos VIP de "$oficio" ya están ocupados. Contacta soporte para tu reembolso.';
     }
     final yaTiene = premiumTrabajadores.any(
       (p) =>
@@ -1185,8 +1238,10 @@ class AppProvider extends ChangeNotifier {
       usuarioId: actual.id,
       oficio: oficio,
       solicitada: true,
-      comprobantePago: comprobante,
+      aprobada: true,
+      comprobantePago: 'paypal:$ordenPaypalId',
       solicitadaEn: DateTime.now(),
+      expiraEn: DateTime.now().add(const Duration(days: 30)),
       usuarioNombre: actual.nombre,
       usuarioFotoPath: actual.fotoPath,
       calificacionPromedio: actual.calificacionPromedio,
@@ -1198,39 +1253,15 @@ class AppProvider extends ChangeNotifier {
           .doc(doc.id)
           .set(doc.toFirestore());
     } catch (_) {
-      return 'No se pudo enviar la solicitud. Intenta de nuevo.';
-    }
-    return null;
-  }
-
-  Future<void> aprobarPremiumTrabajadorDemo(String id) async {
-    PremiumTrabajador? solicitud;
-    try {
-      solicitud = premiumTrabajadores.firstWhere((p) => p.id == id);
-    } catch (_) {
-      return;
-    }
-    // Chequeo de cupo repetido al momento de aprobar, no solo al solicitar
-    // — evita que un 4to cupo del mismo oficio quede activo si se aprueban
-    // solicitudes fuera de orden.
-    if (podioLleno(solicitud.oficio)) return;
-
-    final expiraEn = DateTime.now().add(const Duration(days: 30));
-    try {
-      await _db.collection('premiumTrabajador').doc(id).update({
-        'aprobada': true,
-        'expiraEn': expiraEn.toIso8601String(),
-      });
-    } catch (_) {
-      return;
+      return 'El pago se confirmó pero no se pudo activar tu Visibilidad Premium. Contacta soporte.';
     }
     unawaited(
       _crearNotificacion(
-        paraUsuarioId: solicitud.usuarioId,
-        mensaje:
-            'Tu Visibilidad Premium fue aprobada para "${solicitud.oficio}"',
+        paraUsuarioId: actual.id,
+        mensaje: 'Tu Visibilidad Premium fue activada para "$oficio"',
       ),
     );
+    return null;
   }
 
   bool yaCalifique({required String deUsuarioId, required String peticionId}) =>

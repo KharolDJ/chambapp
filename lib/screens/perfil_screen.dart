@@ -133,7 +133,11 @@ class _PerfilScreenState extends State<PerfilScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.star, size: 16, color: Color(0xFFAD7A16)),
+                    const Icon(
+                      Icons.star,
+                      size: 16,
+                      color: AppColors.doradoCalificacion,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       '${usuario.calificacionPromedio.toStringAsFixed(1)} (${usuario.numeroCalificaciones} calificaciones)',

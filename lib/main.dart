@@ -51,24 +51,10 @@ class ChambappApp extends StatelessWidget {
     final acento = esOscuro ? _acentoOscuro : _acentoClaro;
 
     final baseTextTheme = Theme.of(context).textTheme;
-    // Plus Jakarta Sans para cuerpo/botones/tarjetas, Outfit (geométrica) para
-    // títulos destacados — reemplaza el par Work Sans/Sora anterior por una
-    // pareja más sobria y corporativa.
-    final cuerpoTheme = GoogleFonts.plusJakartaSansTextTheme(baseTextTheme);
+    // Una sola familia (Inter) para toda la app — reemplaza el par
+    // Manrope/Inter anterior; ya no hace falta distinguir títulos de cuerpo.
+    final cuerpoTheme = GoogleFonts.interTextTheme(baseTextTheme);
     final textTheme = cuerpoTheme
-        .copyWith(
-          headlineLarge: GoogleFonts.outfit(
-            textStyle: cuerpoTheme.headlineLarge,
-          ),
-          headlineMedium: GoogleFonts.outfit(
-            textStyle: cuerpoTheme.headlineMedium,
-          ),
-          headlineSmall: GoogleFonts.outfit(
-            textStyle: cuerpoTheme.headlineSmall,
-          ),
-          titleLarge: GoogleFonts.outfit(textStyle: cuerpoTheme.titleLarge),
-          titleMedium: GoogleFonts.outfit(textStyle: cuerpoTheme.titleMedium),
-        )
         .apply(bodyColor: titulo, displayColor: titulo)
         .copyWith(
           bodyMedium: cuerpoTheme.bodyMedium?.copyWith(color: subtitulo),

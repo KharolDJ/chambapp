@@ -381,7 +381,7 @@ class _FeedScreenState extends State<FeedScreen> {
                           ),
                         ),
                         activo: _soloUrgentes,
-                        colorActivo: const Color(0xFFB54834),
+                        colorActivo: const Color(0xFFEF4444),
                         onTap: () =>
                             setState(() => _soloUrgentes = !_soloUrgentes),
                       ),

@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/reporte.dart';
+import '../models/verificacion_identidad.dart';
 import '../providers/app_provider.dart';
 
 const _ladrillo = Color(0xFFB54834);
+const _acento = Color(0xFF0A656D);
 
 class AdministracionScreen extends StatefulWidget {
   const AdministracionScreen({super.key});
@@ -28,6 +30,7 @@ class _AdministracionScreenState extends State<AdministracionScreen> {
         return;
       }
       context.read<AppProvider>().cargarReportes();
+      context.read<AppProvider>().cargarVerificacionesPendientes();
     });
   }
 
@@ -81,14 +84,40 @@ class _AdministracionScreenState extends State<AdministracionScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
+
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Administración'),
+          bottom: TabBar(
+            tabs: [
+              const Tab(text: 'Reportes'),
+              Tab(
+                text: provider.verificacionesPendientes.isEmpty
+                    ? 'Verificaciones'
+                    : 'Verificaciones (${provider.verificacionesPendientes.length})',
+              ),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            _reportesTab(provider),
+            _verificacionesTab(provider),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _reportesTab(AppProvider provider) {
     final reportes = [...provider.reportes]
       ..sort((a, b) => b.fecha.compareTo(a.fecha));
 
     final tema = Theme.of(context);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Administración — Reportes')),
-      body: reportes.isEmpty
+    return reportes.isEmpty
           ? Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -196,7 +225,140 @@ class _AdministracionScreenState extends State<AdministracionScreen> {
                   ),
                 );
               },
+            );
+  }
+
+  Widget _verificacionesTab(AppProvider provider) {
+    final tema = Theme.of(context);
+    final solicitudes = [...provider.verificacionesPendientes]
+      ..sort((a, b) => a.solicitadaEn.compareTo(b.solicitadaEn));
+
+    if (solicitudes.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.verified_outlined, size: 56, color: tema.dividerColor),
+              const SizedBox(height: 16),
+              Text(
+                'No hay solicitudes de verificación pendientes',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: tema.textTheme.bodySmall?.color,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: solicitudes.length,
+      itemBuilder: (context, i) => _tarjetaVerificacion(
+        provider,
+        tema,
+        solicitudes[i],
+      ),
+    );
+  }
+
+  Widget _tarjetaVerificacion(
+    AppProvider provider,
+    ThemeData tema,
+    VerificacionIdentidad solicitud,
+  ) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: tema.cardColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: tema.dividerColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(
+              alpha: tema.brightness == Brightness.dark ? 0.2 : 0.04,
             ),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 3,
+                ),
+                decoration: BoxDecoration(
+                  color: _acento.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'VERIFICACIÓN',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: _acento,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              Text(
+                _tiempoTranscurrido(solicitud.solicitadaEn),
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          _nombreAsync(provider, '', solicitud.usuarioId),
+          const SizedBox(height: 2),
+          Text(
+            'Cédula: ${solicitud.numeroCedula}',
+            style: TextStyle(
+              fontSize: 13,
+              color: Theme.of(context).textTheme.bodySmall?.color,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () =>
+                      provider.rechazarVerificacionIdentidad(solicitud),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: _ladrillo,
+                    side: const BorderSide(color: _ladrillo),
+                  ),
+                  child: const Text('Rechazar'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () =>
+                      provider.aprobarVerificacionIdentidad(solicitud),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _acento,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Aprobar'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

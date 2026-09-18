@@ -171,7 +171,7 @@ class _InteresadosScreenState extends State<InteresadosScreen> {
                             const Icon(
                               Icons.star,
                               size: 16,
-                              color: Color(0xFFAD7A16),
+                              color: AppColors.doradoCalificacion,
                             ),
                             const SizedBox(width: 4),
                             Text(

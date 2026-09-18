@@ -131,11 +131,7 @@ class _VerificacionIdentidadScreenState
                 else if (verificacion != null &&
                     verificacion.solicitada &&
                     !verificacion.aprobada)
-                  _EstadoEnRevision(
-                    onAprobarDemo: () => context
-                        .read<AppProvider>()
-                        .aprobarVerificacionIdentidadDemo(),
-                  )
+                  const _EstadoEnRevision()
                 else
                   _FormularioSolicitud(
                     cedulaController: _cedulaController,
@@ -229,31 +225,17 @@ class _EstadoVerificado extends StatelessWidget {
 }
 
 class _EstadoEnRevision extends StatelessWidget {
-  final VoidCallback onAprobarDemo;
-  const _EstadoEnRevision({required this.onAprobarDemo});
+  const _EstadoEnRevision();
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Column(
-        children: [
-          _Encabezado(
-            iconoAsset: 'assets/icon/reloj_arena.png',
-            color: const Color(0xFFAD7A16),
-            titulo: 'Tu solicitud está en revisión',
-            mensaje: 'Revisaremos la foto de tu cédula y activaremos la insignia de verificado en tu perfil.',
-          ),
-          const SizedBox(height: 20),
-          OutlinedButton(
-            onPressed: onAprobarDemo,
-            style: OutlinedButton.styleFrom(
-              foregroundColor: _acento,
-              side: const BorderSide(color: _acento),
-            ),
-            child: const Text('Simular aprobación (demo)'),
-          ),
-        ],
+      child: _Encabezado(
+        iconoAsset: 'assets/icon/reloj_arena.png',
+        color: const Color(0xFFAD7A16),
+        titulo: 'Tu solicitud está en revisión',
+        mensaje: 'Un administrador revisará la foto de tu cédula y activará la insignia de verificado en tu perfil.',
       ),
     );
   }

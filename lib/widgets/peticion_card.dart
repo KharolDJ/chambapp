@@ -175,19 +175,10 @@ class PeticionCard extends StatelessWidget {
                   child: Row(
                     children: [
                       if (peticion.premiumAprobada) ...[
-                        SizedBox(
-                          width: 13,
-                          height: 13,
-                          child: Image.asset(
-                            'assets/icon/estrella.png',
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                        const SizedBox(width: 5),
                         Text(
                           'Oferta destacada',
                           style: TextStyle(
-                            fontSize: 11,
+                            fontSize: 13,
                             fontWeight: FontWeight.bold,
                             color: esOscuro
                                 ? const Color(0xFFE0B84A)
@@ -209,14 +200,12 @@ class PeticionCard extends StatelessWidget {
                           ),
                         ),
                       if (peticion.urgente)
-                        Text(
+                        const Text(
                           'Se precisa urgentemente',
                           style: TextStyle(
-                            fontSize: 11,
+                            fontSize: 13,
                             fontWeight: FontWeight.bold,
-                            color: esOscuro
-                                ? const Color(0xFFE0785A)
-                                : const Color(0xFFB54834),
+                            color: Color(0xFFEF4444),
                             letterSpacing: 0.3,
                           ),
                         ),
@@ -262,15 +251,23 @@ class PeticionCard extends StatelessWidget {
                               const Icon(
                                 Icons.star,
                                 size: 13,
-                                color: Color(0xFFAD7A16),
+                                color: AppColors.doradoCalificacion,
                               ),
                               const SizedBox(width: 2),
                               Text(
                                 autor.calificacionPromedio.toStringAsFixed(1),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: Color(0xFFAD7A16),
+                                  // Solo el número cambia con el tema — el
+                                  // ícono de la estrella se queda dorado
+                                  // siempre. En oscuro, dorado sobre la
+                                  // tarjeta oscura pierde contraste; en
+                                  // claro se deja el mismo dorado de
+                                  // siempre.
+                                  color: esOscuro
+                                      ? Colors.white
+                                      : AppColors.doradoCalificacion,
                                 ),
                               ),
                             ],
@@ -292,7 +289,7 @@ class PeticionCard extends StatelessWidget {
                             _tiempoTranscurrido(),
                           ].join(' · '),
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 13,
                             color: colorSubtituloActivo,
                           ),
                         ),
@@ -329,8 +326,8 @@ class PeticionCard extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 14,
-                  height: 1.35,
+                  fontSize: 15.5,
+                  height: 1.3,
                   color: colorTituloActivo,
                 ),
               ),
@@ -359,7 +356,7 @@ class PeticionCard extends StatelessWidget {
                 if (peticion.premiumAprobada)
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+                    padding: const EdgeInsets.fromLTRB(8, 10, 8, 8),
                     decoration: BoxDecoration(
                       color: esOscuro
                           ? Colors.black.withValues(alpha: 0.25)
@@ -369,24 +366,12 @@ class PeticionCard extends StatelessWidget {
                         color: const Color(0xFFE0A93B).withValues(alpha: 0.35),
                       ),
                     ),
-                    child: Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: acciones!
-                          .map((a) => _botonAccion(a, colorTituloPremium))
-                          .toList(),
-                    ),
+                    child: _barraAcciones(acciones!, colorTituloPremium),
                   )
                 else ...[
                   Divider(height: 1, color: tema.dividerColor),
                   const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: acciones!
-                        .map((a) => _botonAccion(a, colorTitulo))
-                        .toList(),
-                  ),
+                  _barraAcciones(acciones!, colorTitulo),
                 ],
               ],
             ],
@@ -406,68 +391,74 @@ class PeticionCard extends StatelessWidget {
     );
   }
 
+  /// Fila única y homogénea para los botones de acción inferiores: cada
+  /// botón ocupa una fracción igual del ancho disponible (`Expanded`) en
+  /// vez de un `Wrap`, así nunca se apilan en una segunda línea ni rompen
+  /// la retícula de la tarjeta en pantallas angostas — el texto largo se
+  /// trunca con elipsis dentro de su propio botón en lugar de forzar un
+  /// salto de línea para toda la barra.
+  Widget _barraAcciones(List<AccionPeticion> acciones, Color colorPorDefecto) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        for (var i = 0; i < acciones.length; i++) ...[
+          if (i > 0) const SizedBox(width: 6),
+          Expanded(child: _botonAccion(acciones[i], colorPorDefecto)),
+        ],
+      ],
+    );
+  }
+
   Widget _iconoDeAccion(AccionPeticion accion, Color color) {
     if (accion.iconoAsset != null) {
       return SizedBox(
-        width: 20,
-        height: 20,
+        width: 16,
+        height: 16,
         child: Image.asset(accion.iconoAsset!, fit: BoxFit.contain),
       );
     }
-    return Icon(accion.icono, size: 20, color: color);
+    return Icon(accion.icono, size: 16, color: color);
   }
 
   Widget _botonAccion(AccionPeticion accion, Color colorPorDefecto) {
     final color = accion.color ?? colorPorDefecto;
-    if (accion.onTap == null) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _iconoDeAccion(accion, color),
-            const SizedBox(width: 6),
-            Text(
-              accion.texto,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
+    final esInsignia = accion.onTap == null;
+    final contenido = Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _iconoDeAccion(accion, color),
+        const SizedBox(width: 5),
+        Flexible(
+          child: Text(
+            accion.texto,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: color,
             ),
-          ],
+          ),
         ),
-      );
-    }
+      ],
+    );
+    final caja = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+      decoration: BoxDecoration(
+        color: esInsignia ? color.withValues(alpha: 0.1) : null,
+        border: esInsignia
+            ? null
+            : Border.all(color: color.withValues(alpha: 0.3)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: contenido,
+    );
+    if (esInsignia) return caja;
     return InkWell(
       onTap: accion.onTap,
       borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
-        decoration: BoxDecoration(
-          border: Border.all(color: color.withValues(alpha: 0.3)),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _iconoDeAccion(accion, color),
-            const SizedBox(width: 6),
-            Text(
-              accion.texto,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
-            ),
-          ],
-        ),
-      ),
+      child: caja,
     );
   }
 }

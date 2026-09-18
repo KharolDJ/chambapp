@@ -18,4 +18,12 @@ class AppColors {
   /// para mantener buen contraste sobre los fondos oscuros de la app (antes
   /// `#2BB893`).
   static const azulCelesteOscuro = Color(0xFF38BDF8);
+
+  /// Dorado de las estrellas de calificación (ícono y número), en claro y
+  /// oscuro — antes `#AD7A16` (mostaza oscura, se veía "dorado sucio"),
+  /// reemplazado por un ámbar más vivo. No se usa para el sistema de
+  /// Visibilidad Premium/Destacada (ese dorado sigue siendo `#AD7A16`,
+  /// definido localmente en cada pantalla — son sistemas visuales
+  /// distintos aunque compartan familia de color).
+  static const doradoCalificacion = Color(0xFFFFC107);
 }

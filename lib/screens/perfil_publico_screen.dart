@@ -241,7 +241,11 @@ class _CuerpoPerfil extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.star, size: 16, color: Color(0xFFAD7A16)),
+                  const Icon(
+                    Icons.star,
+                    size: 16,
+                    color: AppColors.doradoCalificacion,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     '${usuario.calificacionPromedio.toStringAsFixed(1)} (${usuario.numeroCalificaciones} calificaciones)',
@@ -436,7 +440,7 @@ class _CuerpoPerfil extends StatelessWidget {
                       (i) => Icon(
                         i < c.estrellas ? Icons.star : Icons.star_border,
                         size: 18,
-                        color: const Color(0xFFAD7A16),
+                        color: AppColors.doradoCalificacion,
                       ),
                     ),
                   ),
