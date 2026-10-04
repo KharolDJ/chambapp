@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/peticion.dart';
 import '../models/usuario.dart';
 import '../providers/app_provider.dart';
+import 'perfil_publico_screen.dart';
 import 'reportar_screen.dart';
 
 class InteresadosScreen extends StatefulWidget {
@@ -97,6 +98,13 @@ class _InteresadosScreenState extends State<InteresadosScreen> {
                 final usuario = actualizada.interesados[i];
                 final seleccionado =
                     actualizada.trabajadorSeleccionadoId == usuario.id;
+                final esOscuro = tema.brightness == Brightness.dark;
+                // Azul celeste en vez del dorado de antes — acento propio
+                // de esta pantalla, pedido explícitamente para reemplazar
+                // todo el dorado que tenía.
+                final acento = esOscuro
+                    ? AppColors.celesteCategoriaOscuro
+                    : AppColors.celesteCategoria;
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
                   padding: const EdgeInsets.all(14),
@@ -104,19 +112,15 @@ class _InteresadosScreenState extends State<InteresadosScreen> {
                     color: tema.cardColor,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: seleccionado
-                          ? AppColors.azulCeleste
-                          : tema.dividerColor,
+                      color: seleccionado ? acento : tema.dividerColor,
                       width: seleccionado ? 1.5 : 1,
                     ),
                     boxShadow: [
                       BoxShadow(
                         color: seleccionado
-                            ? AppColors.azulCeleste.withValues(alpha: 0.14)
+                            ? acento.withValues(alpha: 0.14)
                             : Colors.black.withValues(
-                                alpha: tema.brightness == Brightness.dark
-                                    ? 0.2
-                                    : 0.04,
+                                alpha: esOscuro ? 0.2 : 0.04,
                               ),
                         blurRadius: seleccionado ? 12 : 10,
                         offset: const Offset(0, 3),
@@ -129,12 +133,34 @@ class _InteresadosScreenState extends State<InteresadosScreen> {
                       Row(
                         children: [
                           Expanded(
-                            child: Text(
-                              usuario.nombre,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 15,
-                                color: tema.colorScheme.onSurface,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(6),
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => PerfilPublicoScreen(
+                                    usuarioId: usuario.id,
+                                  ),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      usuario.nombre,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 15,
+                                        color: tema.colorScheme.onSurface,
+                                      ),
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.chevron_right,
+                                    size: 18,
+                                    color: acento,
+                                  ),
+                                ],
                               ),
                             ),
                           ),
@@ -184,55 +210,68 @@ class _InteresadosScreenState extends State<InteresadosScreen> {
                           ],
                         )
                       else
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE3F2EC),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.auto_awesome,
-                                size: 12,
-                                color: AppColors.azulCeleste,
+                        // Sin caja ni sombreado — solo ícono y texto; la
+                        // línea sutil que separa cada persona ya la da el
+                        // borde de la tarjeta contenedora.
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.auto_awesome, size: 12, color: acento),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Nuevo en la plataforma',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: acento,
                               ),
-                              SizedBox(width: 4),
-                              Text(
-                                'Nuevo en la plataforma',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.azulCeleste,
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       const SizedBox(height: 10),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: () =>
-                              _contactarPorWhatsApp(context, usuario),
-                          icon: const Icon(Icons.chat, size: 18),
-                          label: Text(
-                            seleccionado
-                                ? 'Contactar de nuevo por WhatsApp'
-                                : 'Seleccionar y contactar por WhatsApp',
+                      Row(
+                        children: [
+                          OutlinedButton(
+                            onPressed: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    PerfilPublicoScreen(usuarioId: usuario.id),
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: acento,
+                              side: BorderSide(color: acento),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: const Text('Ver perfil'),
                           ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.azulCeleste,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () =>
+                                  _contactarPorWhatsApp(context, usuario),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: esOscuro
+                                    ? Colors.white
+                                    : AppColors.negroProfundo,
+                                foregroundColor: esOscuro
+                                    ? AppColors.negroProfundo
+                                    : Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              child: Text(
+                                seleccionado
+                                    ? 'Contactar de nuevo'
+                                    : 'Seleccionar y contactar',
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ),
                     ],
                   ),

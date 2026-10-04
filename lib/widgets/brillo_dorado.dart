@@ -24,7 +24,18 @@ class DesplazamientoDeslizante extends GradientTransform {
 /// se vería como un parche blanco fuera de lugar sobre el resto de la app en
 /// negro, así que la base tiene que ser oscura también, solo con el mismo
 /// reflejo dorado recorriéndola.
-LinearGradient fondoDoradoDeslizante(double? t, {bool esOscuro = false}) {
+///
+/// [baseBlanca] (solo tema claro) cambia la base crema por blanco puro,
+/// dejando el dorado únicamente en la franja de brillo: lo usan las fichas
+/// del empleador, donde se pidió fondo blanco para que el texto negro y los
+/// detalles dorados contrasten con más limpieza.
+LinearGradient fondoDoradoDeslizante(
+  double? t, {
+  bool esOscuro = false,
+  bool baseBlanca = false,
+}) {
+  const baseClara = Color(0xFFFFFDF6);
+  const blanco = Colors.white;
   return LinearGradient(
     begin: const Alignment(-1, -0.3),
     end: const Alignment(1, 0.3),
@@ -36,12 +47,12 @@ LinearGradient fondoDoradoDeslizante(double? t, {bool esOscuro = false}) {
             Color(0xFF1B1509),
             Color(0xFF1B1509),
           ]
-        : const [
-            Color(0xFFFFFDF6),
-            Color(0xFFFFFDF6),
-            Color(0xFFFFF0C4),
-            Color(0xFFFFFDF6),
-            Color(0xFFFFFDF6),
+        : [
+            baseBlanca ? blanco : baseClara,
+            baseBlanca ? blanco : baseClara,
+            const Color(0xFFFFF0C4),
+            baseBlanca ? blanco : baseClara,
+            baseBlanca ? blanco : baseClara,
           ],
     stops: const [0.0, 0.35, 0.5, 0.65, 1.0],
     transform: DesplazamientoDeslizante(porcentaje: -1.5 + 3.0 * (t ?? 0)),

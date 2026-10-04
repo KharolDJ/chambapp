@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -10,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../models/usuario.dart';
 import '../providers/app_provider.dart';
 import '../widgets/color_avatar.dart';
+import '../widgets/foto_image.dart';
 import '../widgets/peticion_card.dart';
 
 /// Perfil de solo lectura de otro usuario (empleador o trabajador),
@@ -85,7 +84,7 @@ class _PerfilPublicoScreenState extends State<PerfilPublicoScreen> {
                       ),
                     )
                   : const CircularProgressIndicator(
-                      color: AppColors.azulCeleste,
+                      color: AppColors.dorado,
                     ),
             )
           : _CuerpoPerfil(usuario: usuario, provider: provider),
@@ -153,18 +152,12 @@ class _CuerpoPerfil extends StatelessWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(error ?? 'Invitación enviada a ${trabajador.nombre}'),
-        backgroundColor: error == null ? AppColors.azulCeleste : null,
+        backgroundColor: error == null ? AppColors.dorado : null,
       ),
     );
   }
 
-  ImageProvider? _fotoSiExiste() {
-    final ruta = usuario.fotoPath;
-    if (ruta == null) return null;
-    final archivo = File(ruta);
-    if (!archivo.existsSync()) return null;
-    return FileImage(archivo);
-  }
+  ImageProvider? _fotoSiExiste() => proveedorFoto(usuario.fotoPath);
 
   @override
   Widget build(BuildContext context) {
@@ -189,157 +182,127 @@ class _CuerpoPerfil extends StatelessWidget {
         .toList();
 
     return ListView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       children: [
-        Column(
-          children: [
-            CircleAvatar(
-              radius: 45,
-              backgroundColor: colorAvatar.fondo,
-              backgroundImage: foto,
-              child: foto == null
-                  ? Text(
-                      usuario.nombre[0].toUpperCase(),
-                      style: TextStyle(
-                        color: colorAvatar.texto,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 34,
-                      ),
-                    )
-                  : null,
-            ),
-            const SizedBox(height: 14),
-            Text(
-              usuario.nombre,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            if (usuario.perfilVerificado)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      'assets/icon/verificado.png',
-                      width: 14,
-                      height: 14,
-                    ),
-                    const SizedBox(width: 4),
-                    const Text(
-                      'Perfil verificado',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.azulCeleste,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            const SizedBox(height: 6),
-            if (usuario.numeroCalificaciones > 0)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.star,
-                    size: 16,
-                    color: AppColors.doradoCalificacion,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${usuario.calificacionPromedio.toStringAsFixed(1)} (${usuario.numeroCalificaciones} calificaciones)',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: tema.textTheme.bodySmall?.color,
-                    ),
-                  ),
-                ],
-              )
-            else
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 26, horizontal: 20),
+          decoration: BoxDecoration(
+            color: tema.cardColor,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: tema.dividerColor),
+          ),
+          child: Column(
+            children: [
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE3F2EC),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.auto_awesome,
-                      size: 14,
-                      color: AppColors.azulCeleste,
-                    ),
-                    SizedBox(width: 4),
-                    Text(
-                      'Nuevo en la plataforma',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.azulCeleste,
+                  shape: BoxShape.circle,
+                  color: tema.cardColor,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(
+                        alpha: tema.brightness == Brightness.dark ? 0.3 : 0.08,
                       ),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-              ),
-            if (usuario.barrio != null && usuario.barrio!.trim().isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      'assets/icon/marcador_posicion.png',
-                      width: 14,
-                      height: 14,
-                    ),
-                    const SizedBox(width: 3),
-                    Text(
-                      '${usuario.barrio}, Bucaramanga',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: tema.textTheme.bodySmall?.color,
-                      ),
-                    ),
-                  ],
+                child: CircleAvatar(
+                  radius: 42,
+                  backgroundColor: colorAvatar.fondo,
+                  backgroundImage: foto,
+                  child: foto == null
+                      ? Text(
+                          usuario.nombre[0].toUpperCase(),
+                          style: TextStyle(
+                            color: colorAvatar.texto,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 30,
+                          ),
+                        )
+                      : null,
                 ),
               ),
-            if (usuario.oficios.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  'Oficios: ${usuario.oficios.join(', ')}',
+              const SizedBox(height: 14),
+              Text(
+                usuario.nombre,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              if (usuario.bio != null && usuario.bio!.trim().isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  usuario.bio!.trim(),
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 13,
-                    color: tema.textTheme.bodySmall?.color,
+                    fontSize: 14,
+                    height: 1.45,
+                    fontStyle: FontStyle.italic,
+                    color: tema.colorScheme.onSurface.withValues(alpha: 0.85),
                   ),
                 ),
+              ],
+              const SizedBox(height: 14),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  if (usuario.numeroCalificaciones > 0)
+                    _EtiquetaInfo(
+                      icono: Icons.star,
+                      texto:
+                          '${usuario.calificacionPromedio.toStringAsFixed(1)} (${usuario.numeroCalificaciones})',
+                      color: AppColors.doradoCalificacion,
+                    )
+                  else
+                    _EtiquetaInfo(
+                      icono: Icons.auto_awesome,
+                      texto: 'Nuevo en la plataforma',
+                      // Mismo celeste que en "Mi perfil" (#0284C7).
+                      color: AppColors.celesteCategoria,
+                    ),
+                  if (usuario.perfilVerificado)
+                    _EtiquetaInfo(
+                      iconoAsset: 'assets/icon/verificado.png',
+                      texto: 'Perfil verificado',
+                    ),
+                  if (usuario.barrio != null &&
+                      usuario.barrio!.trim().isNotEmpty)
+                    _EtiquetaInfo(
+                      iconoAsset: 'assets/icon/marcador_posicion.png',
+                      texto: '${usuario.barrio}, Bucaramanga',
+                    ),
+                  for (final oficio in usuario.oficios)
+                    _EtiquetaInfo(texto: oficio),
+                ],
               ),
-            if (provider.usuarioActual != null &&
-                provider.usuarioActual!.id != usuario.id &&
-                provider.rolActual == RolUsuario.empleador &&
-                provider.misPublicacionesInvitables.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 16),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () => _invitar(context, provider, usuario),
-                    icon: const Icon(Icons.send_outlined, size: 18),
-                    label: const Text('Invitar a mi publicación'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.azulCeleste,
-                      side: const BorderSide(color: AppColors.azulCeleste),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+              if (provider.usuarioActual != null &&
+                  provider.usuarioActual!.id != usuario.id &&
+                  provider.rolActual == RolUsuario.empleador &&
+                  provider.misPublicacionesInvitables.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _invitar(context, provider, usuario),
+                      icon: const Icon(Icons.send_outlined, size: 18),
+                      label: const Text('Invitar a mi publicación'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.dorado,
+                        side: const BorderSide(color: AppColors.dorado),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
         if (publicaciones.isNotEmpty) ...[
           const SizedBox(height: 24),
@@ -447,10 +410,10 @@ class _CuerpoPerfil extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     '— $nombreAutor',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.azulCeleste,
+                      color: tema.colorScheme.onSurface,
                     ),
                   ),
                   if (c.comentario != null &&
@@ -463,6 +426,53 @@ class _CuerpoPerfil extends StatelessWidget {
             );
           }),
       ],
+    );
+  }
+}
+
+// Diseño plano, igual que los chips de "Mi perfil": sin pastilla de fondo
+// ni tinte dorado — solo ícono y texto en gris neutro.
+class _EtiquetaInfo extends StatelessWidget {
+  final String? iconoAsset;
+  final IconData? icono;
+  final String texto;
+  // Sin color explícito todas las etiquetas (ubicación, oficios...) usan el
+  // mismo gris neutro que "Mi perfil", resuelto contra el tema.
+  final Color? color;
+  const _EtiquetaInfo({
+    this.iconoAsset,
+    this.icono,
+    required this.texto,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final oscuro = Theme.of(context).brightness == Brightness.dark;
+    final color = this.color ??
+        (oscuro ? const Color(0xFFA3A3A3) : const Color(0xFF6B6B6B));
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (iconoAsset != null) ...[
+            Image.asset(iconoAsset!, width: 12, height: 12),
+            const SizedBox(width: 4),
+          ] else if (icono != null) ...[
+            Icon(icono, size: 13, color: color),
+            const SizedBox(width: 4),
+          ],
+          Text(
+            texto,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

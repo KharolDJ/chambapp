@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
 import 'privacidad_screen.dart';
 
-const _acento = AppColors.azulCeleste;
+const _acento = AppColors.dorado;
 const _ladrillo = Color(0xFFB54834);
 
 class ConfiguracionScreen extends StatelessWidget {
@@ -64,48 +64,13 @@ class ConfiguracionScreen extends StatelessWidget {
           const _TituloSeccion('Apariencia'),
           _TarjetaSeccion(
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Tema',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: tema.colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    SegmentedButton<ThemeMode>(
-                      segments: const [
-                        ButtonSegment(
-                          value: ThemeMode.light,
-                          label: Text('Claro'),
-                          icon: Icon(Icons.light_mode_outlined, size: 16),
-                        ),
-                        ButtonSegment(
-                          value: ThemeMode.dark,
-                          label: Text('Oscuro'),
-                          icon: Icon(Icons.dark_mode_outlined, size: 16),
-                        ),
-                        ButtonSegment(
-                          value: ThemeMode.system,
-                          label: Text('Auto'),
-                          icon: Icon(Icons.brightness_auto_outlined, size: 16),
-                        ),
-                      ],
-                      selected: {provider.temaPreferido},
-                      onSelectionChanged: (seleccion) => context
-                          .read<AppProvider>()
-                          .actualizarTema(seleccion.first),
-                      style: SegmentedButton.styleFrom(
-                        selectedBackgroundColor: _acento,
-                        selectedForegroundColor: Colors.white,
-                      ),
-                    ),
-                  ],
+              _FilaSwitch(
+                icono: Icons.dark_mode_outlined,
+                titulo: 'Modo oscuro',
+                subtitulo: 'Activa el tema oscuro en toda la app',
+                valor: provider.temaPreferido == ThemeMode.dark,
+                onChanged: (v) => context.read<AppProvider>().actualizarTema(
+                  v ? ThemeMode.dark : ThemeMode.light,
                 ),
               ),
             ],
@@ -222,19 +187,24 @@ class _TarjetaSeccion extends StatelessWidget {
 }
 
 class _FilaSwitch extends StatelessWidget {
-  final String iconoAsset;
+  final String? iconoAsset;
+  final IconData? icono;
   final String titulo;
   final String subtitulo;
   final bool valor;
   final ValueChanged<bool> onChanged;
 
   const _FilaSwitch({
-    required this.iconoAsset,
+    this.iconoAsset,
+    this.icono,
     required this.titulo,
     required this.subtitulo,
     required this.valor,
     required this.onChanged,
-  });
+  }) : assert(
+         iconoAsset != null || icono != null,
+         'Debe proveer iconoAsset o icono',
+       );
 
   @override
   Widget build(BuildContext context) {
@@ -251,7 +221,17 @@ class _FilaSwitch extends StatelessWidget {
               color: tema.dividerColor.withValues(alpha: 0.4),
               shape: BoxShape.circle,
             ),
-            child: Image.asset(iconoAsset, fit: BoxFit.contain),
+            child: iconoAsset != null
+                ? ColorFiltered(
+                    // El PNG es de un solo trazo negro — sin teñir se
+                    // volvía invisible en modo oscuro (fondo casi negro).
+                    colorFilter: ColorFilter.mode(
+                      tema.colorScheme.onSurface,
+                      BlendMode.srcIn,
+                    ),
+                    child: Image.asset(iconoAsset!, fit: BoxFit.contain),
+                  )
+                : Icon(icono, size: 18, color: tema.colorScheme.onSurface),
           ),
           const SizedBox(width: 12),
           Expanded(

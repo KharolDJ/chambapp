@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
@@ -12,39 +10,58 @@ import '../providers/app_provider.dart';
 import '../screens/detalle_peticion_screen.dart';
 import 'brillo_dorado.dart';
 import 'color_avatar.dart';
+import 'foto_image.dart';
 
 /// Una acción del panel inferior de [PeticionCard]. Con [onTap] nulo se
 /// muestra como una insignia de estado (ej. "Ya calificaste") en vez de un
 /// botón — evita depender de un widget externo (como el Chip que usaba
-/// antes actividad_screen.dart) para ese caso.
+/// antes actividad_screen.dart) para ese caso. El ícono es opcional: sin
+/// [icono] ni [iconoAsset] el botón muestra solo el texto.
 class AccionPeticion {
   final IconData? icono;
   final String? iconoAsset;
   final String texto;
   final VoidCallback? onTap;
   final Color? color;
+  final EstiloAccion estilo;
   const AccionPeticion({
     this.icono,
     this.iconoAsset,
     required this.texto,
     this.onTap,
     this.color,
-  }) : assert(
-         icono != null || iconoAsset != null,
-         'Debe proveer icono o iconoAsset',
-       );
+    this.estilo = EstiloAccion.contorno,
+  });
+
+  bool get tieneIcono => icono != null || iconoAsset != null;
 }
+
+/// Apariencia de un botón de [AccionPeticion]:
+/// - [contorno]: borde fino del color de la acción (el diseño original).
+/// - [solido]: fondo negro y texto blanco (invertido en tema oscuro), como
+///   los demás botones principales de la app.
+/// - [solidoPremium]: la misma base negra, pero con texto y borde dorados
+///   para que "Premium" se distinga sin salirse de la línea en negro.
+enum EstiloAccion { contorno, solido, solidoPremium }
 
 class PeticionCard extends StatelessWidget {
   final Peticion peticion;
   final double? distanciaKm;
   final List<AccionPeticion>? acciones;
+  final Widget? piePersonalizado;
+  // Insignia de estado (ej. "Ya calificaste") anclada a la esquina
+  // superior derecha de la tarjeta — a diferencia de [acciones] o
+  // [piePersonalizado], no compite por espacio con el contenido central ni
+  // se ve como un botón más en la fila de acciones.
+  final Widget? insigniaEsquina;
 
   const PeticionCard({
     super.key,
     required this.peticion,
     this.distanciaKm,
     this.acciones,
+    this.piePersonalizado,
+    this.insigniaEsquina,
   });
 
   String _tiempoTranscurrido() {
@@ -80,9 +97,14 @@ class PeticionCard extends StatelessWidget {
         style: TextStyle(fontSize: 12, color: tema.textTheme.bodySmall?.color),
       );
     } else if (yaMeInteresa) {
+      // Mismo criterio que el resto de los estados: premium/destacado se
+      // queda dorado, las ofertas normales pasan a celeste (antes también
+      // caían en dorado, sin distinción real con las premium).
       final colorAplicaste = peticion.premiumAprobada
           ? (esOscuro ? const Color(0xFFE0B84A) : const Color(0xFFAD7A16))
-          : (esOscuro ? AppColors.azulCelesteOscuro : AppColors.azulCeleste);
+          : (esOscuro
+                ? AppColors.celesteCategoriaOscuro
+                : AppColors.celesteCategoria);
       estado = Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -110,18 +132,18 @@ class PeticionCard extends StatelessWidget {
         ? null
         : autoresCoincidentes.first;
 
-    // El fondo dorado (fondoDoradoDeslizante) SIEMPRE es crema pálido en
-    // claro o bronce casi negro en oscuro — nunca el fondo normal de la
-    // tarjeta — así que el texto sobre él necesita su propia pareja de
-    // colores por tema, distinta a la del resto de la tarjeta.
+    // En claro, la ficha urgente usa base blanca (baseBlanca) con el brillo
+    // y el anillo dorados como únicos acentos, así que el texto va en el
+    // mismo negro/gris de una tarjeta normal. En oscuro la base sigue siendo
+    // bronce casi negro, que necesita su propia pareja de colores cálidos.
     final colorTitulo = tema.colorScheme.onSurface;
     final colorSubtitulo = tema.textTheme.bodySmall?.color ?? Colors.grey;
     final colorTituloPremium = esOscuro
         ? const Color(0xFFF5E6BE)
-        : const Color(0xFF3A2A12);
+        : colorTitulo;
     final colorSubtituloPremium = esOscuro
         ? const Color(0xFFC9A968)
-        : const Color(0xFF7A5B2E);
+        : colorSubtitulo;
     final colorTituloActivo = peticion.premiumAprobada
         ? colorTituloPremium
         : colorTitulo;
@@ -144,7 +166,7 @@ class PeticionCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: peticion.premiumAprobada ? null : tema.cardColor,
           gradient: peticion.premiumAprobada
-              ? fondoDoradoDeslizante(t, esOscuro: esOscuro)
+              ? fondoDoradoDeslizante(t, esOscuro: esOscuro, baseBlanca: true)
               : null,
           borderRadius: BorderRadius.circular(
             peticion.premiumAprobada ? 14 : 16,
@@ -169,47 +191,21 @@ class PeticionCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (peticion.premiumAprobada || peticion.urgente)
+              // Una sola etiqueta para el único producto pago ("Urgente"),
+              // en el mismo dorado del diseño premium de la tarjeta.
+              if (peticion.esUrgente)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
-                  child: Row(
-                    children: [
-                      if (peticion.premiumAprobada) ...[
-                        Text(
-                          'Oferta destacada',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: esOscuro
-                                ? const Color(0xFFE0B84A)
-                                : const Color(0xFFAD7A16),
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                      ],
-                      if (peticion.premiumAprobada && peticion.urgente)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Container(
-                            width: 3,
-                            height: 3,
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade400,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                      if (peticion.urgente)
-                        const Text(
-                          'Se precisa urgentemente',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFFEF4444),
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                    ],
+                  child: Text(
+                    'Se precisa urgentemente',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: esOscuro
+                          ? const Color(0xFFE0B84A)
+                          : const Color(0xFFAD7A16),
+                      letterSpacing: 0.3,
+                    ),
                   ),
                 ),
               Row(
@@ -217,14 +213,17 @@ class PeticionCard extends StatelessWidget {
                   CircleAvatar(
                     radius: 18,
                     backgroundColor: colorAvatar.fondo,
-                    child: Text(
-                      peticion.autorNombre[0].toUpperCase(),
-                      style: TextStyle(
-                        color: colorAvatar.texto,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                    ),
+                    backgroundImage: proveedorFoto(autor?.fotoPath),
+                    child: autor?.fotoPath != null
+                        ? null
+                        : Text(
+                            peticion.autorNombre[0].toUpperCase(),
+                            style: TextStyle(
+                              color: colorAvatar.texto,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -311,8 +310,8 @@ class PeticionCard extends StatelessWidget {
                         : Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Image.file(
-                    File(peticion.fotoUrl!),
+                  child: imagenFoto(
+                    peticion.fotoUrl!,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) => Icon(
                       Icons.image_outlined,
@@ -341,8 +340,8 @@ class PeticionCard extends StatelessWidget {
                           child: _Etiqueta(
                             texto: peticion.categoria,
                             color: esOscuro
-                                ? AppColors.azulCelesteOscuro
-                                : AppColors.azulCeleste,
+                                ? AppColors.celesteCategoriaOscuro
+                                : AppColors.celesteCategoria,
                           ),
                         ),
                       ],
@@ -366,13 +365,23 @@ class PeticionCard extends StatelessWidget {
                         color: const Color(0xFFE0A93B).withValues(alpha: 0.35),
                       ),
                     ),
-                    child: _barraAcciones(acciones!, colorTituloPremium),
+                    child: _barraAcciones(
+                      acciones!,
+                      colorTituloPremium,
+                      esOscuro,
+                    ),
                   )
                 else ...[
                   Divider(height: 1, color: tema.dividerColor),
                   const SizedBox(height: 10),
-                  _barraAcciones(acciones!, colorTitulo),
+                  _barraAcciones(acciones!, colorTitulo, esOscuro),
                 ],
+              ],
+              if (piePersonalizado != null) ...[
+                const SizedBox(height: 12),
+                Divider(height: 1, color: tema.dividerColor),
+                const SizedBox(height: 10),
+                piePersonalizado!,
               ],
             ],
           ),
@@ -382,12 +391,19 @@ class PeticionCard extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      child: peticion.premiumAprobada
-          ? BrilloDoradoAnimado(
-              borderRadius: BorderRadius.circular(16),
-              builder: (context, t) => construirTarjeta(t),
-            )
-          : construirTarjeta(null),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          peticion.premiumAprobada
+              ? BrilloDoradoAnimado(
+                  borderRadius: BorderRadius.circular(16),
+                  builder: (context, t) => construirTarjeta(t),
+                )
+              : construirTarjeta(null),
+          if (insigniaEsquina != null)
+            Positioned(top: 14, right: 14, child: insigniaEsquina!),
+        ],
+      ),
     );
   }
 
@@ -397,13 +413,19 @@ class PeticionCard extends StatelessWidget {
   /// la retícula de la tarjeta en pantallas angostas — el texto largo se
   /// trunca con elipsis dentro de su propio botón en lugar de forzar un
   /// salto de línea para toda la barra.
-  Widget _barraAcciones(List<AccionPeticion> acciones, Color colorPorDefecto) {
+  Widget _barraAcciones(
+    List<AccionPeticion> acciones,
+    Color colorPorDefecto,
+    bool esOscuro,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         for (var i = 0; i < acciones.length; i++) ...[
           if (i > 0) const SizedBox(width: 6),
-          Expanded(child: _botonAccion(acciones[i], colorPorDefecto)),
+          Expanded(
+            child: _botonAccion(acciones[i], colorPorDefecto, esOscuro),
+          ),
         ],
       ],
     );
@@ -411,24 +433,40 @@ class PeticionCard extends StatelessWidget {
 
   Widget _iconoDeAccion(AccionPeticion accion, Color color) {
     if (accion.iconoAsset != null) {
+      // Los PNG de acción son de un solo trazo (negro o dorado sólido) —
+      // se tiñen del mismo color que el texto para que sigan el tema
+      // claro/oscuro en vez de quedar fijos en su color original (un
+      // ícono negro fijo sería invisible sobre una tarjeta en modo oscuro).
       return SizedBox(
         width: 16,
         height: 16,
-        child: Image.asset(accion.iconoAsset!, fit: BoxFit.contain),
+        child: ColorFiltered(
+          colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+          child: Image.asset(accion.iconoAsset!, fit: BoxFit.contain),
+        ),
       );
     }
     return Icon(accion.icono, size: 16, color: color);
   }
 
-  Widget _botonAccion(AccionPeticion accion, Color colorPorDefecto) {
+  Widget _botonAccion(
+    AccionPeticion accion,
+    Color colorPorDefecto,
+    bool esOscuro,
+  ) {
+    if (accion.estilo != EstiloAccion.contorno) {
+      return _botonSolido(accion, esOscuro);
+    }
     final color = accion.color ?? colorPorDefecto;
     final esInsignia = accion.onTap == null;
     final contenido = Row(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _iconoDeAccion(accion, color),
-        const SizedBox(width: 5),
+        if (accion.tieneIcono) ...[
+          _iconoDeAccion(accion, color),
+          const SizedBox(width: 5),
+        ],
         Flexible(
           child: Text(
             accion.texto,
@@ -461,6 +499,58 @@ class PeticionCard extends StatelessWidget {
       child: caja,
     );
   }
+
+  Widget _botonSolido(AccionPeticion accion, bool esOscuro) {
+    final esPremium = accion.estilo == EstiloAccion.solidoPremium;
+    final fondo = esOscuro ? Colors.white : AppColors.negroProfundo;
+    final Color colorTexto;
+    if (esPremium) {
+      // Dorado brillante sobre negro (#E0B84A se veía apagado/ocre) /
+      // dorado de marca sobre blanco: los dos pares con buen contraste
+      // para texto pequeño en negrita.
+      colorTexto = esOscuro ? AppColors.dorado : const Color(0xFFF7C948);
+    } else {
+      colorTexto = esOscuro ? AppColors.negroProfundo : Colors.white;
+    }
+    return Material(
+      color: fondo,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: esPremium
+            ? BorderSide(color: colorTexto.withValues(alpha: 0.7))
+            : BorderSide.none,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: accion.onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 9),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (accion.tieneIcono) ...[
+                _iconoDeAccion(accion, colorTexto),
+                const SizedBox(width: 5),
+              ],
+              Flexible(
+                child: Text(
+                  accion.texto,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: colorTexto,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _Etiqueta extends StatelessWidget {
@@ -470,9 +560,23 @@ class _Etiqueta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      texto,
-      style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w600),
+    // Antes era texto suelto de 10px sin fondo — se leía chico y perdido
+    // junto al resto de la tarjeta. Ahora es una píldora como el resto de
+    // las etiquetas de categoría de la app.
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        texto,
+        style: TextStyle(
+          fontSize: 12,
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }

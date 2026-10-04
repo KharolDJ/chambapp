@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
@@ -9,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../models/peticion.dart';
 import '../providers/app_provider.dart';
 import '../widgets/color_avatar.dart';
+import '../widgets/foto_image.dart';
 import 'login_screen.dart';
 import 'perfil_publico_screen.dart';
 import 'reportar_screen.dart';
@@ -29,6 +28,14 @@ class DetallePeticionScreen extends StatelessWidget {
     if (diff.inHours < 24) return 'hace ${diff.inHours} h';
     return 'hace ${diff.inDays} d';
   }
+
+  // Esta pantalla es un StatelessWidget que recibe la petición congelada al
+  // momento de navegar a ella — sin esto, marcar/quitar interés (o
+  // cualquier otro cambio en vivo) nunca se reflejaba aquí hasta salir y
+  // volver a entrar, porque `peticion` seguía siendo ese snapshot viejo
+  // aunque el provider ya tuviera el dato actualizado.
+  Peticion _peticionViva(AppProvider provider) => provider.peticiones
+      .firstWhere((p) => p.id == peticion.id, orElse: () => peticion);
 
   String? _textoDistancia() {
     if (distanciaKm == null) return null;
@@ -59,17 +66,21 @@ class DetallePeticionScreen extends StatelessWidget {
       );
       return;
     }
+    final peticion = _peticionViva(providerActualizado);
     final yaEstaba = peticion.interesados.any(
       (u) => u.id == providerActualizado.usuarioActual!.id,
     );
     providerActualizado.marcarInteres(peticion.id);
     if (!context.mounted) return;
+    // Un solo estilo sólido para los dos mensajes — antes uno era gris y
+    // el otro dorado, ahora ambos negro con texto blanco.
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           yaEstaba ? 'Quitaste tu interés en esta petición' : 'Marcaste interés — si el empleador te selecciona, te va a escribir por WhatsApp',
+          style: const TextStyle(color: Colors.white),
         ),
-        backgroundColor: yaEstaba ? Color(0xFF666666) : AppColors.azulCeleste,
+        backgroundColor: AppColors.negroProfundo,
       ),
     );
   }
@@ -95,6 +106,10 @@ class DetallePeticionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
+    // Sombra intencional del campo `peticion` con la versión en vivo — de
+    // aquí para abajo, cada `peticion.algo` ya lee el dato actualizado del
+    // provider en vez del snapshot congelado del constructor.
+    final peticion = _peticionViva(provider);
     final esTrabajador = provider.rolActual == RolUsuario.trabajador;
     final yaAplico =
         provider.usuarioActual != null &&
@@ -104,6 +119,16 @@ class DetallePeticionScreen extends StatelessWidget {
         peticion.trabajadorSeleccionadoId == provider.usuarioActual!.id;
     final distanciaTexto = _textoDistancia();
     final colorAvatar = colorAvatarPara(peticion.autorId);
+    // Búsqueda null-safe (no firstWhere): igual que en peticion_card.dart,
+    // el autor puede no estar todavía en el snapshot local si su cuenta es
+    // muy reciente, o si nadie ha iniciado sesión (todosLosUsuarios solo se
+    // sincroniza con sesión activa).
+    final autoresCoincidentes = provider.todosLosUsuarios.where(
+      (u) => u.id == peticion.autorId,
+    );
+    final autor = autoresCoincidentes.isEmpty
+        ? null
+        : autoresCoincidentes.first;
 
     final tema = Theme.of(context);
     final esOscuro = tema.brightness == Brightness.dark;
@@ -142,14 +167,17 @@ class DetallePeticionScreen extends StatelessWidget {
                       CircleAvatar(
                         radius: 22,
                         backgroundColor: colorAvatar.fondo,
-                        child: Text(
-                          peticion.autorNombre[0].toUpperCase(),
-                          style: TextStyle(
-                            color: colorAvatar.texto,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
+                        backgroundImage: proveedorFoto(autor?.fotoPath),
+                        child: autor?.fotoPath != null
+                            ? null
+                            : Text(
+                                peticion.autorNombre[0].toUpperCase(),
+                                style: TextStyle(
+                                  color: colorAvatar.texto,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -169,11 +197,35 @@ class DetallePeticionScreen extends StatelessWidget {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 4),
-                                Icon(
-                                  Icons.chevron_right,
-                                  size: 16,
-                                  color: Colors.grey.shade500,
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.celesteCategoria
+                                        .withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        'Ver perfil',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.celesteCategoria,
+                                        ),
+                                      ),
+                                      const Icon(
+                                        Icons.chevron_right,
+                                        size: 14,
+                                        color: AppColors.celesteCategoria,
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
@@ -198,13 +250,20 @@ class DetallePeticionScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  if (peticion.urgente) ...[
-                    _Etiqueta(texto: 'Urgente', color: const Color(0xFFB54834)),
+                  if (peticion.esUrgente) ...[
+                    _Etiqueta(
+                      texto: 'Urgente',
+                      color: esOscuro
+                          ? const Color(0xFFE0B84A)
+                          : const Color(0xFFAD7A16),
+                    ),
                     const SizedBox(width: 6),
                   ],
                   _Etiqueta(
                     texto: peticion.categoria,
-                    color: AppColors.azulCeleste,
+                    color: esOscuro
+                        ? AppColors.celesteCategoriaOscuro
+                        : AppColors.celesteCategoria,
                   ),
                 ],
               ),
@@ -221,8 +280,8 @@ class DetallePeticionScreen extends StatelessWidget {
                         : Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Image.file(
-                    File(peticion.fotoUrl!),
+                  child: imagenFoto(
+                    peticion.fotoUrl!,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) => Icon(
                       Icons.image_outlined,
@@ -241,48 +300,149 @@ class DetallePeticionScreen extends StatelessWidget {
               ),
               const SizedBox(height: 32),
               if (esTrabajador)
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: fuiSeleccionado
-                        ? null
-                        : () => _tocarAplicar(context),
-                    icon: Icon(
-                      fuiSeleccionado
-                          ? Icons.verified
-                          : (yaAplico
-                                ? Icons.check_circle
-                                : Icons.send_outlined),
-                    ),
-                    label: Text(
-                      fuiSeleccionado
-                          ? '¡Fuiste seleccionado para este trabajo!'
-                          : (yaAplico
-                                ? 'Ya aplicaste — toca para quitar tu interés'
-                                : 'Aplicar'),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: fuiSeleccionado
-                          ? AppColors.azulCeleste
-                          : (yaAplico
-                                ? tema.dividerColor
-                                : AppColors.azulCeleste),
-                      foregroundColor: yaAplico && !fuiSeleccionado
-                          ? tema.colorScheme.onSurface
-                          : Colors.white,
-                      disabledBackgroundColor: AppColors.azulCeleste,
-                      disabledForegroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
+                _BotonInteres(
+                  fuiSeleccionado: fuiSeleccionado,
+                  yaAplico: yaAplico,
+                  onTap: () => _tocarAplicar(context),
                 ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Botón de aplicar/quitar interés, con el corazón animándose al tocar.
+/// `fuiSeleccionado` es un estado terminal (ya no se puede deshacer) así
+/// que se queda como botón sólido negro/blanco deshabilitado; entre
+/// "Aplicar" y "Ya aplicaste" sí hay ida y vuelta, por eso viven en un
+/// solo widget con estado propio: así el corazón puede animarse en vez de
+/// saltar de un diseño a otro.
+class _BotonInteres extends StatefulWidget {
+  final bool fuiSeleccionado;
+  final bool yaAplico;
+  final VoidCallback onTap;
+  const _BotonInteres({
+    required this.fuiSeleccionado,
+    required this.yaAplico,
+    required this.onTap,
+  });
+
+  @override
+  State<_BotonInteres> createState() => _BotonInteresState();
+}
+
+class _BotonInteresState extends State<_BotonInteres>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 280),
+    value: widget.yaAplico ? 1 : 0,
+  );
+
+  @override
+  void didUpdateWidget(covariant _BotonInteres oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.yaAplico == oldWidget.yaAplico) return;
+    if (widget.yaAplico) {
+      _controller.forward();
+    } else {
+      // Al quitar el interés vuelve directo al botón negro de "Aplicar" —
+      // no se pidió una animación de "vaciado", solo que el cambio sea
+      // instantáneo y reactivo.
+      _controller.value = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _tocar() {
+    // Feedback optimista: el corazón empieza a llenarse apenas se toca,
+    // sin esperar el viaje de ida y vuelta a Firestore que hace onTap.
+    if (!widget.yaAplico) _controller.forward();
+    widget.onTap();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    final esOscuro = tema.brightness == Brightness.dark;
+
+    if (widget.fuiSeleccionado) {
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: null,
+          icon: const Icon(Icons.verified),
+          label: const Text('¡Fuiste seleccionado para este trabajo!'),
+          style: ElevatedButton.styleFrom(
+            disabledBackgroundColor: esOscuro
+                ? Colors.white
+                : AppColors.negroProfundo,
+            disabledForegroundColor: esOscuro
+                ? AppColors.negroProfundo
+                : Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final colorBotonNegro = esOscuro ? Colors.white : AppColors.negroProfundo;
+    final colorTextoNegro = esOscuro ? AppColors.negroProfundo : Colors.white;
+
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        final t = _controller.value;
+        // El botón conserva siempre su fondo negro y texto blanco
+        // (invertidos en tema oscuro); lo único que cambia al aplicar es
+        // el corazón, que pasa de contorno a relleno con un pequeño "pop"
+        // de escala (sube hasta 1.3x a mitad de la animación y vuelve).
+        final escalaCorazon = 1 + 0.3 * (t < 0.5 ? t * 2 : (1 - t) * 2);
+        return Material(
+          color: colorBotonNegro,
+          borderRadius: BorderRadius.circular(12),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: _tocar,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Transform.scale(
+                    scale: escalaCorazon,
+                    child: Icon(
+                      t > 0.05 ? Icons.favorite : Icons.favorite_border,
+                      color: colorTextoNegro,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      t > 0.5 ? 'Ya aplicaste' : 'Aplicar',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: colorTextoNegro,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -295,7 +455,7 @@ class _Etiqueta extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(8),
@@ -303,7 +463,7 @@ class _Etiqueta extends StatelessWidget {
       child: Text(
         texto,
         style: TextStyle(
-          fontSize: 10,
+          fontSize: 12,
           color: color,
           fontWeight: FontWeight.w600,
         ),

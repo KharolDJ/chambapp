@@ -1,27 +1,37 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 
 import 'package:provider/provider.dart';
 
+import '../models/usuario.dart';
 import '../providers/app_provider.dart';
+import '../widgets/cabecera_oscura.dart';
 import '../widgets/color_avatar.dart';
+import '../widgets/foto_image.dart';
+import '../widgets/login_form.dart';
 import 'administracion_screen.dart';
 import 'configuracion_screen.dart';
 import 'editar_perfil_screen.dart';
-import 'login_screen.dart';
 import 'mis_calificaciones_screen.dart';
 import 'premium_trabajador_screen.dart';
 import 'role_selector_screen.dart';
 import 'verificacion_identidad_screen.dart';
 
-Widget _iconoMenu(String nombre) => SizedBox(
-  width: 24,
-  height: 24,
-  child: Image.asset('assets/icon/$nombre.png', fit: BoxFit.contain),
-);
+// Tono neutral para chips de estado que no deben leerse como "de marca"
+// (rol, documento registrado) — a diferencia de los chips de atributo
+// (barrio, oficios), que van en negro, para distinguir "quién
+// es" de "qué hace/dónde está". Antes #64748B, un gris con matiz azulado
+// (slate) — ahora un gris neutro sin ese sesgo.
+const _grisNeutro = Color(0xFF6B6B6B);
+// Versión clara del mismo gris para tema oscuro (el #6B6B6B casi no se lee
+// sobre fondo casi negro).
+const _grisNeutroOscuro = Color(0xFFA3A3A3);
+
+// Excepción explícita y puntual al negro/dorado: "Nuevo en la plataforma"
+// pidió expresamente un azul elegante propio, no el gris de estado ni el
+// dorado de marca — es la única insignia que usa este tono en toda la app.
+const _azulNuevo = Color(0xFF0284C7);
 
 class PerfilScreen extends StatefulWidget {
   const PerfilScreen({super.key});
@@ -51,373 +61,412 @@ class _PerfilScreenState extends State<PerfilScreen> {
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
     final usuario = provider.usuarioActual;
-    final colorAvatar = usuario != null ? colorAvatarPara(usuario.id) : null;
+
+    // Invitado (sin sesión): la pestaña "Perfil" ES la pantalla de acceso —
+    // se muestra el formulario de login de una vez, nada de texto
+    // promocional ni de un botón que lleve a otra pantalla.
+    if (usuario == null) {
+      return Scaffold(
+        appBar: cabeceraOscura('Mi perfil'),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: LoginForm(),
+          ),
+        ),
+      );
+    }
+
+    final colorAvatar = colorAvatarPara(usuario.id);
     final verificacionEnRevision =
-        usuario != null &&
         !usuario.perfilVerificado &&
         (provider.miVerificacionIdentidad?.solicitada ?? false) &&
         !(provider.miVerificacionIdentidad?.aprobada ?? false);
 
     final tema = Theme.of(context);
+    final esOscuro = tema.brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Mi perfil')),
+      appBar: cabeceraOscura('Mi perfil'),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(20),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (usuario != null && !provider.correoVerificado)
-              const _AvisoCorreoSinVerificar(),
-            CircleAvatar(
-              radius: 45,
-              backgroundColor: colorAvatar?.fondo ?? const Color(0xFFE1F5EE),
-              backgroundImage: usuario?.fotoPath != null
-                  ? FileImage(File(usuario!.fotoPath!))
-                  : null,
-              child: usuario?.fotoPath != null
-                  ? null
-                  : (usuario != null
-                        ? Text(
-                            usuario.nombre[0].toUpperCase(),
-                            style: TextStyle(
-                              color: colorAvatar!.texto,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 34,
-                            ),
-                          )
-                        : const Icon(
-                            Icons.person,
-                            size: 50,
-                            color: AppColors.azulCeleste,
-                          )),
+            if (!provider.correoVerificado) const _AvisoCorreoSinVerificar(),
+            _TarjetaEncabezado(
+              usuario: usuario,
+              rolActual: provider.rolActual,
+              colorAvatar: colorAvatar,
+              verificacionEnRevision: verificacionEnRevision,
+              esOscuro: esOscuro,
             ),
-            const SizedBox(height: 14),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(
-                  child: Text(
-                    usuario?.nombre ?? 'Aún no te has registrado',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+            if (usuario.bio != null && usuario.bio!.trim().isNotEmpty) ...[
+              const SizedBox(height: 14),
+              _TarjetaSobreMi(bio: usuario.bio!.trim()),
+            ],
+            const SizedBox(height: 20),
+            const _EtiquetaSeccion('CUENTA'),
+            _TarjetaMenu(
+              items: [
+                _ItemMenu(
+                  titulo: 'Mis calificaciones',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const MisCalificacionesScreen(),
                     ),
                   ),
                 ),
-                if (usuario?.perfilVerificado ?? false) ...[
-                  const SizedBox(width: 4),
-                  Image.asset(
-                    'assets/icon/verificado.png',
-                    width: 18,
-                    height: 18,
+                _ItemMenu(
+                  titulo: 'Editar perfil',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const EditarPerfilScreen(),
+                    ),
                   ),
-                ] else if (verificacionEnRevision) ...[
-                  const SizedBox(width: 4),
-                  Image.asset(
-                    'assets/icon/reloj_arena.png',
-                    width: 16,
-                    height: 16,
+                ),
+                _ItemMenu(
+                  titulo: 'Perfil verificado',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const VerificacionIdentidadScreen(),
+                    ),
                   ),
-                ],
+                ),
               ],
             ),
-            Text(
-              provider.rolActual == RolUsuario.empleador
-                  ? 'Empleador'
-                  : 'Trabajador',
-              style: TextStyle(color: tema.textTheme.bodySmall?.color),
-            ),
-            if (usuario != null) ...[
-              const SizedBox(height: 6),
-              if (usuario.numeroCalificaciones > 0)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.star,
-                      size: 16,
-                      color: AppColors.doradoCalificacion,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${usuario.calificacionPromedio.toStringAsFixed(1)} (${usuario.numeroCalificaciones} calificaciones)',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: tema.textTheme.bodySmall?.color,
+            if (provider.rolActual == RolUsuario.trabajador &&
+                usuario.oficios.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              const _EtiquetaSeccion('COMO TRABAJADOR'),
+              _TarjetaMenu(
+                items: [
+                  _ItemMenu(
+                    titulo: 'Visibilidad Premium',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const PremiumTrabajadorScreen(),
                       ),
                     ),
-                  ],
-                )
-              else
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
                   ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE3F2EC),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.auto_awesome,
-                        size: 14,
-                        color: AppColors.azulCeleste,
-                      ),
-                      SizedBox(width: 4),
-                      Text(
-                        'Nuevo en la plataforma',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.azulCeleste,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              if (usuario.perfilVerificado)
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Image.asset(
-                        'assets/icon/verificado.png',
-                        width: 14,
-                        height: 14,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Perfil verificado',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.azulCeleste,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              else if (verificacionEnRevision)
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Image.asset(
-                        'assets/icon/reloj_arena.png',
-                        width: 13,
-                        height: 13,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Solicitud de verificación en revisión',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFFAD7A16),
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              else if (usuario.cedula != null &&
-                  usuario.cedula!.trim().isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.badge_outlined,
-                        size: 13,
-                        color: tema.textTheme.bodySmall?.color,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Documento registrado',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: tema.textTheme.bodySmall?.color,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              if (usuario.barrio != null && usuario.barrio!.trim().isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Image.asset(
-                        'assets/icon/marcador_posicion.png',
-                        width: 13,
-                        height: 13,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${usuario.barrio}, Bucaramanga',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: tema.textTheme.bodySmall?.color,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              if (usuario.oficios.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    'Oficios: ${usuario.oficios.join(', ')}',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: tema.textTheme.bodySmall?.color,
-                    ),
-                  ),
-                ),
-            ] else ...[
-              const SizedBox(height: 12),
-              ElevatedButton.icon(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                ),
-                icon: const Icon(Icons.login),
-                label: const Text('Iniciar sesión o registrarme'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.azulCeleste,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
+                ],
               ),
             ],
-            const SizedBox(height: 24),
-            const Divider(),
-            ListTile(
-              leading: _iconoMenu('estrella'),
-              title: const Text('Mis calificaciones'),
-              enabled: usuario != null,
-              onTap: usuario == null
-                  ? null
-                  : () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const MisCalificacionesScreen(),
-                      ),
+            const SizedBox(height: 16),
+            const _EtiquetaSeccion('GENERAL'),
+            _TarjetaMenu(
+              items: [
+                _ItemMenu(
+                  titulo: 'Cambiar de modo (Empleador/Trabajador)',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const RoleSelectorScreen(),
                     ),
-            ),
-            ListTile(
-              leading: _iconoMenu('lapiz'),
-              title: const Text('Editar perfil'),
-              enabled: usuario != null,
-              onTap: usuario == null
-                  ? null
-                  : () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const EditarPerfilScreen(),
-                      ),
-                    ),
-            ),
-            if (provider.rolActual == RolUsuario.trabajador && usuario != null)
-              ListTile(
-                leading: usuario.perfilVerificado
-                    ? Image.asset(
-                        'assets/icon/verificado.png',
-                        width: 24,
-                        height: 24,
-                      )
-                    : verificacionEnRevision
-                    ? Image.asset(
-                        'assets/icon/reloj_arena.png',
-                        width: 24,
-                        height: 24,
-                      )
-                    : const Icon(Icons.verified_outlined),
-                title: const Text('Perfil verificado'),
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const VerificacionIdentidadScreen(),
                   ),
                 ),
-              ),
-            if (provider.rolActual == RolUsuario.trabajador &&
-                usuario != null &&
-                usuario.oficios.isNotEmpty)
-              ListTile(
-                leading: Image.asset(
-                  'assets/icon/podio.png',
-                  width: 24,
-                  height: 24,
-                ),
-                title: const Text('Visibilidad Premium'),
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const PremiumTrabajadorScreen(),
+                _ItemMenu(
+                  titulo: 'Configuración',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ConfiguracionScreen(),
+                    ),
                   ),
                 ),
-              ),
-            ListTile(
-              leading: _iconoMenu('intercambiar'),
-              title: const Text('Cambiar de modo (Empleador/Trabajador)'),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const RoleSelectorScreen()),
-              ),
-            ),
-            ListTile(
-              leading: _iconoMenu('configuracion'),
-              title: const Text('Configuración'),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ConfiguracionScreen()),
-              ),
+              ],
             ),
             if (provider.esAdmin) ...[
-              const SizedBox(height: 8),
-              const Divider(),
-              Padding(
-                padding: const EdgeInsets.only(top: 8, bottom: 4),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'HERRAMIENTAS DEL EQUIPO',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
-                      color: Colors.grey.shade500,
+              const SizedBox(height: 16),
+              const _EtiquetaSeccion('HERRAMIENTAS DEL EQUIPO'),
+              _TarjetaMenu(
+                items: [
+                  _ItemMenu(
+                    titulo: 'Administración (reportes)',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const AdministracionScreen(),
+                      ),
                     ),
                   ),
-                ),
-              ),
-              ListTile(
-                leading: const Icon(Icons.shield_outlined),
-                title: const Text('Administración (reportes)'),
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const AdministracionScreen(),
-                  ),
-                ),
+                ],
               ),
             ],
           ],
         ),
       ),
+    );
+  }
+}
+
+class _EtiquetaSeccion extends StatelessWidget {
+  final String texto;
+  const _EtiquetaSeccion(this.texto);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Text(
+        texto,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 0.6,
+          color: Colors.grey.shade500,
+        ),
+      ),
+    );
+  }
+}
+
+class _TarjetaEncabezado extends StatelessWidget {
+  final Usuario usuario;
+  final RolUsuario? rolActual;
+  final ColorAvatar? colorAvatar;
+  final bool verificacionEnRevision;
+  final bool esOscuro;
+
+  const _TarjetaEncabezado({
+    required this.usuario,
+    required this.rolActual,
+    required this.colorAvatar,
+    required this.verificacionEnRevision,
+    required this.esOscuro,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    final provider = context.watch<AppProvider>();
+
+    // Diseño plano: nada de caja de fondo ni sombras — solo una línea
+    // sutil abajo que separa este bloque del menú de cuenta, igual de
+    // discreta que la que ya usan las tarjetas de menú.
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 26, horizontal: 20),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: tema.dividerColor)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: tema.dividerColor, width: 1.5),
+            ),
+            child: CircleAvatar(
+              radius: 42,
+              backgroundColor: colorAvatar?.fondo ?? const Color(0xFFE1F5EE),
+              backgroundImage: proveedorFoto(usuario.fotoPath),
+              child: usuario.fotoPath != null
+                  ? null
+                  : Text(
+                      usuario.nombre[0].toUpperCase(),
+                      style: TextStyle(
+                        color: colorAvatar!.texto,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 30,
+                      ),
+                    ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  usuario.nombre,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              if (usuario.perfilVerificado) ...[
+                const SizedBox(width: 4),
+                Image.asset(
+                  'assets/icon/verificado.png',
+                  width: 18,
+                  height: 18,
+                ),
+              ] else if (verificacionEnRevision) ...[
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.hourglass_empty,
+                  size: 16,
+                  // Antes negroProfundo fijo — invisible en modo oscuro
+                  // sobre fondo casi negro. onSurface ya es blanco/negro
+                  // según el tema.
+                  color: tema.colorScheme.onSurface,
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 14,
+            runSpacing: 10,
+            children: [
+              _Chip(
+                texto: rolActual == RolUsuario.empleador
+                    ? 'Empleador'
+                    : 'Trabajador',
+              ),
+              if (usuario.numeroCalificaciones > 0)
+                _Chip(
+                  icono: Icons.star,
+                  texto:
+                      '${usuario.calificacionPromedio.toStringAsFixed(1)} (${usuario.numeroCalificaciones})',
+                  color: AppColors.doradoCalificacion,
+                )
+              else
+                _Chip(
+                  icono: Icons.auto_awesome,
+                  texto: 'Nuevo en la plataforma',
+                  color: _azulNuevo,
+                ),
+              if (usuario.perfilVerificado)
+                _Chip(
+                  iconoAsset: 'assets/icon/verificado.png',
+                  texto: 'Perfil verificado',
+                )
+              else if (verificacionEnRevision)
+                _Chip(
+                  icono: Icons.hourglass_empty,
+                  texto: 'Verificación en revisión',
+                )
+              else if (usuario.cedula != null &&
+                  usuario.cedula!.trim().isNotEmpty)
+                _Chip(
+                  icono: Icons.badge_outlined,
+                  texto: 'Documento registrado',
+                ),
+              if (provider.esAdmin)
+                _Chip(
+                  icono: Icons.admin_panel_settings_outlined,
+                  texto: 'Administrador',
+                ),
+              if (usuario.barrio != null && usuario.barrio!.trim().isNotEmpty)
+                _Chip(
+                  iconoAsset: 'assets/icon/marcador_posicion.png',
+                  texto: '${usuario.barrio}, Bucaramanga',
+                ),
+              for (final oficio in usuario.oficios) _Chip(texto: oficio),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Diseño plano: sin caja ni fondo de color — solo ícono y texto, para que
+// esta fila de atributos se lea liviana en vez de una fila de pastillas.
+// La mayoría de los íconos son Material outlined (trazo fino, se pueden
+// teñir con [color]); ubicación y verificado son los dos PNG a color que
+// se pidió reintegrar tal cual — no se tiñen, se muestran con su arte
+// original.
+class _Chip extends StatelessWidget {
+  final IconData? icono;
+  final String? iconoAsset;
+  final String texto;
+  // Sin color explícito todas las etiquetas (rol, ubicación, oficios...)
+  // usan el mismo gris neutro, resuelto contra el tema para modo oscuro.
+  final Color? color;
+  const _Chip({this.icono, this.iconoAsset, required this.texto, this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final oscuro = Theme.of(context).brightness == Brightness.dark;
+    final color = this.color ?? (oscuro ? _grisNeutroOscuro : _grisNeutro);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (iconoAsset != null) ...[
+          Image.asset(iconoAsset!, width: 14, height: 14),
+          const SizedBox(width: 4),
+        ] else if (icono != null) ...[
+          Icon(icono, size: 14, color: color),
+          const SizedBox(width: 4),
+        ],
+        Text(
+          texto,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// Deliberadamente sin ícono, etiqueta ni tarjeta con borde — un bloque de
+// texto simple se siente como una descripción de la persona, no como un
+// campo de formulario rotulado.
+class _TarjetaSobreMi extends StatelessWidget {
+  final String bio;
+  const _TarjetaSobreMi({required this.bio});
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Text(
+        bio,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 14,
+          height: 1.45,
+          fontStyle: FontStyle.italic,
+          color: tema.colorScheme.onSurface.withValues(alpha: 0.85),
+        ),
+      ),
+    );
+  }
+}
+
+class _ItemMenu {
+  final String titulo;
+  final VoidCallback onTap;
+  const _ItemMenu({required this.titulo, required this.onTap});
+}
+
+// Diseño plano: sin caja, sin fondo ni borde alrededor del grupo — solo
+// líneas finas entre cada opción, apoyado en la etiqueta de sección de
+// arriba ("CUENTA", "GENERAL"...) para agrupar visualmente.
+class _TarjetaMenu extends StatelessWidget {
+  final List<_ItemMenu> items;
+  const _TarjetaMenu({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    return Column(
+      children: [
+        for (var i = 0; i < items.length; i++) ...[
+          if (i > 0) Divider(height: 1, color: tema.dividerColor),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(items[i].titulo),
+            trailing: const Icon(Icons.chevron_right, size: 20),
+            onTap: items[i].onTap,
+          ),
+        ],
+      ],
     );
   }
 }

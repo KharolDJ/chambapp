@@ -11,8 +11,10 @@ import 'package:provider/provider.dart';
 
 import '../models/peticion.dart';
 import '../providers/app_provider.dart';
+import '../services/cloudinary_service.dart';
+import '../widgets/foto_image.dart';
+import 'login_screen.dart';
 
-const _acento = AppColors.azulCeleste;
 const _calidoClaro = Color(0xFFF5F5F7);
 const _calidoOscuro = Color(0xFF20242B);
 
@@ -38,6 +40,15 @@ class PublicarScreen extends StatefulWidget {
 class _PublicarScreenState extends State<PublicarScreen> {
   static const _descripcionMinima = 20;
 
+  // Oficios donde "urgente" suele ser literal (tubería rota, sin luz,
+  // puerta trabada) — cuando la categoría elegida es una de estas, se
+  // resalta el aviso de que la etiqueta Urgente se puede comprar después.
+  static const _categoriasEmergencia = {
+    'Plomería',
+    'Electricidad',
+    'Cerrajería',
+  };
+
   static const Map<String, String> _iconosCategoria = {
     'Plomería': 'assets/icon/plomeria.png',
     'Electricidad': 'assets/icon/electricidad.png',
@@ -55,8 +66,8 @@ class _PublicarScreenState extends State<PublicarScreen> {
   final _descripcionController = TextEditingController();
   final _barrioController = TextEditingController();
   String _categoria = 'Plomería';
-  bool _urgente = false;
   String? _fotoPath;
+  bool _subiendoFoto = false;
   bool _publicando = false;
 
   double? _lat;
@@ -134,14 +145,41 @@ class _PublicarScreenState extends State<PublicarScreen> {
       imageQuality: 80,
     );
     if (archivo == null) return;
-    setState(() => _fotoPath = archivo.path);
+    setState(() => _subiendoFoto = true);
+    try {
+      final url = await CloudinaryService.subirFoto(File(archivo.path));
+      if (!mounted) return;
+      setState(() {
+        _fotoPath = url;
+        _subiendoFoto = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _subiendoFoto = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se pudo subir la foto. Intenta de nuevo.'),
+        ),
+      );
+    }
   }
 
   Future<void> _publicar() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final usuarioActual = context.read<AppProvider>().usuarioActual;
-    if (usuarioActual == null) return;
+    var usuarioActual = context.read<AppProvider>().usuarioActual;
+    if (usuarioActual == null) {
+      // No debería pasar (el FAB que abre esta pantalla ya exige sesión),
+      // pero si por algún otro camino se llega aquí sin usuario, mandamos a
+      // login en vez de dejar el botón "Publicar" sin hacer nada.
+      final autenticado = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+      if (!mounted || autenticado != true) return;
+      usuarioActual = context.read<AppProvider>().usuarioActual;
+      if (usuarioActual == null) return;
+    }
 
     setState(() => _publicando = true);
     await context.read<AppProvider>().publicarPeticion(
@@ -152,7 +190,6 @@ class _PublicarScreenState extends State<PublicarScreen> {
         barrio: _barrioController.text.trim(),
         descripcion: _descripcionController.text.trim(),
         categoria: _categoria,
-        urgente: _urgente,
         creadaEn: DateTime.now(),
         fotoUrl: _fotoPath,
         lat: _lat,
@@ -198,49 +235,22 @@ class _PublicarScreenState extends State<PublicarScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 46,
-                    height: 46,
-                    decoration: BoxDecoration(
-                      color: _acento.withValues(alpha: 0.12),
-                      shape: BoxShape.circle,
+              Text(
+                'Cuéntanos qué necesitas',
+                style: (tema.textTheme.titleLarge ?? const TextStyle())
+                    .copyWith(
+                      fontSize: 19,
+                      fontWeight: FontWeight.bold,
+                      color: tema.colorScheme.onSurface,
                     ),
-                    child: const Icon(
-                      Icons.post_add_rounded,
-                      color: _acento,
-                      size: 22,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Cuéntanos qué necesitas',
-                          style:
-                              (tema.textTheme.titleLarge ?? const TextStyle())
-                                  .copyWith(
-                                    fontSize: 19,
-                                    fontWeight: FontWeight.bold,
-                                    color: tema.colorScheme.onSurface,
-                                  ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Entre más claro seas, más rápido te van a contactar',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: tema.textTheme.bodySmall?.color,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Entre más claro seas, más rápido te van a contactar',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: tema.textTheme.bodySmall?.color,
+                ),
               ),
               const SizedBox(height: 22),
               Container(
@@ -263,7 +273,9 @@ class _PublicarScreenState extends State<PublicarScreen> {
                           color: campoFill,
                           borderRadius: BorderRadius.circular(18),
                         ),
-                        child: _fotoPath == null
+                        child: _subiendoFoto
+                            ? const Center(child: CircularProgressIndicator())
+                            : _fotoPath == null
                             ? Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
@@ -288,10 +300,7 @@ class _PublicarScreenState extends State<PublicarScreen> {
                             : Stack(
                                 fit: StackFit.expand,
                                 children: [
-                                  Image.file(
-                                    File(_fotoPath!),
-                                    fit: BoxFit.cover,
-                                  ),
+                                  imagenFoto(_fotoPath!, fit: BoxFit.cover),
                                   Positioned(
                                     top: 8,
                                     right: 8,
@@ -369,12 +378,17 @@ class _PublicarScreenState extends State<PublicarScreen> {
                               vertical: 10,
                             ),
                             decoration: BoxDecoration(
-                              color: activo ? _acento : campoFill,
+                              // Blanco al seleccionar (no el dorado de
+                              // antes) — misma línea limpia que los
+                              // filtros de "Cerca de ti".
+                              color: activo ? Colors.white : campoFill,
                               borderRadius: BorderRadius.circular(22),
                               boxShadow: activo
                                   ? [
                                       BoxShadow(
-                                        color: _acento.withValues(alpha: 0.28),
+                                        color: Colors.black.withValues(
+                                          alpha: 0.15,
+                                        ),
                                         blurRadius: 12,
                                         offset: const Offset(0, 4),
                                       ),
@@ -399,7 +413,7 @@ class _PublicarScreenState extends State<PublicarScreen> {
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
                                     color: activo
-                                        ? Colors.white
+                                        ? AppColors.negroProfundo
                                         : tema.colorScheme.onSurface,
                                   ),
                                 ),
@@ -410,21 +424,53 @@ class _PublicarScreenState extends State<PublicarScreen> {
                       }).toList(),
                     ),
                     const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      decoration: BoxDecoration(
-                        color: campoFill,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: SwitchListTile(
-                        value: _urgente,
-                        onChanged: (v) => setState(() => _urgente = v),
-                        title: const Text('Marcar como urgente'),
-                        activeThumbColor: const Color(0xFFB54834),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                        ),
-                      ),
+                    // "Urgente" es un beneficio pago de Visibilidad Premium
+                    // (propuesta F-DC-124: "Urgentes y Podio"), así que aquí
+                    // solo se informa dónde activarlo, no se regala.
+                    Builder(
+                      builder: (context) {
+                        final emergencia =
+                            _categoriasEmergencia.contains(_categoria);
+                        return Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: campoFill,
+                            borderRadius: BorderRadius.circular(16),
+                            border: emergencia
+                                ? Border.all(
+                                    color: const Color(0xFFB54834)
+                                        .withValues(alpha: 0.4),
+                                  )
+                                : null,
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(
+                                Icons.bolt,
+                                size: 18,
+                                color: Color(0xFFB54834),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  emergencia
+                                      ? '$_categoria suele ser una emergencia. Después de publicar puedes activar la etiqueta "Urgente" (\$10.000) desde Actividad → Premium.'
+                                      : '¿Es urgente? Después de publicar puedes activar la etiqueta "Urgente" (\$10.000) desde Actividad → Premium.',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    height: 1.35,
+                                    color: emergencia
+                                        ? const Color(0xFFB54834)
+                                        : tema.colorScheme.onSurface
+                                            .withValues(alpha: 0.7),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
                     const SizedBox(height: 18),
                     Row(
@@ -461,22 +507,27 @@ class _PublicarScreenState extends State<PublicarScreen> {
               ElevatedButton(
                 onPressed: _publicando ? null : _publicar,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _acento,
-                  foregroundColor: Colors.white,
+                  backgroundColor: esOscuro
+                      ? Colors.white
+                      : AppColors.negroProfundo,
+                  foregroundColor: esOscuro
+                      ? AppColors.negroProfundo
+                      : Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 18),
                   elevation: 4,
-                  shadowColor: _acento.withValues(alpha: 0.4),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(18),
                   ),
                 ),
                 child: _publicando
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: esOscuro
+                              ? AppColors.negroProfundo
+                              : Colors.white,
                         ),
                       )
                     : const Text(

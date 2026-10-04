@@ -1,0 +1,7 @@
+{
+  // La extensión de Java (Red Hat) importaba android/ como proyecto Gradle y
+  // abría decenas de daemons con su propio JRE, dejando el PC sin memoria y
+  // haciendo fallar `flutter run`. Para Flutter no se necesita.
+  "java.import.gradle.enabled": false,
+  "java.configuration.updateBuildConfiguration": "disabled"
+}

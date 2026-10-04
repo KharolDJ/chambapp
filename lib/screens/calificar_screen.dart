@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 
 import '../models/calificacion.dart';
 import '../providers/app_provider.dart';
+import '../widgets/color_avatar.dart';
+import '../widgets/foto_image.dart';
 
 class CalificarScreen extends StatefulWidget {
   final String paraUsuarioId;
@@ -27,6 +29,7 @@ class CalificarScreen extends StatefulWidget {
 class _CalificarScreenState extends State<CalificarScreen> {
   int _estrellas = 5;
   final _comentarioController = TextEditingController();
+  bool _enviando = false;
 
   @override
   void dispose() {
@@ -34,11 +37,12 @@ class _CalificarScreenState extends State<CalificarScreen> {
     super.dispose();
   }
 
-  void _enviar(BuildContext context) {
+  Future<void> _enviar(BuildContext context) async {
     final usuarioActual = context.read<AppProvider>().usuarioActual;
     if (usuarioActual == null) return;
 
-    context.read<AppProvider>().calificarUsuario(
+    setState(() => _enviando = true);
+    final exito = await context.read<AppProvider>().calificarUsuario(
       Calificacion(
         id: FirebaseFirestore.instance.collection('calificaciones').doc().id,
         deUsuarioId: usuarioActual.id,
@@ -51,12 +55,33 @@ class _CalificarScreenState extends State<CalificarScreen> {
         peticionId: widget.peticionId,
       ),
     );
+    if (!context.mounted) return;
+    if (!exito) {
+      setState(() => _enviando = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se pudo enviar la calificación. Intenta de nuevo.'),
+        ),
+      );
+      return;
+    }
     Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     final tema = Theme.of(context);
+    final provider = context.watch<AppProvider>();
+    // Búsqueda null-safe (no firstWhere): igual que en otras pantallas, la
+    // persona puede no estar todavía en el snapshot local si su cuenta es
+    // muy reciente — en ese caso se cae al avatar de iniciales sin foto.
+    final coincidencias = provider.todosLosUsuarios.where(
+      (u) => u.id == widget.paraUsuarioId,
+    );
+    final fotoPath = coincidencias.isEmpty
+        ? null
+        : coincidencias.first.fotoPath;
+    final colorAvatar = colorAvatarPara(widget.paraUsuarioId);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Calificar')),
@@ -68,18 +93,22 @@ class _CalificarScreenState extends State<CalificarScreen> {
             Center(
               child: Column(
                 children: [
-                  Container(
-                    width: 64,
-                    height: 64,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFE1F5EE),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.person,
-                      size: 32,
-                      color: AppColors.azulCeleste,
-                    ),
+                  CircleAvatar(
+                    radius: 32,
+                    backgroundColor: colorAvatar.fondo,
+                    backgroundImage: proveedorFoto(fotoPath),
+                    child: fotoPath != null
+                        ? null
+                        : Text(
+                            widget.paraNombre.isNotEmpty
+                                ? widget.paraNombre[0].toUpperCase()
+                                : '?',
+                            style: TextStyle(
+                              color: colorAvatar.texto,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 26,
+                            ),
+                          ),
                   ),
                   const SizedBox(height: 12),
                   Text(
@@ -130,31 +159,63 @@ class _CalificarScreenState extends State<CalificarScreen> {
             TextField(
               controller: _comentarioController,
               maxLines: 3,
+              style: TextStyle(color: tema.colorScheme.onSurface),
               decoration: InputDecoration(
                 labelText: 'Comentario (opcional)',
                 filled: true,
                 fillColor: tema.cardColor,
+                contentPadding: const EdgeInsets.all(14),
+                // Antes sin borde en ningún estado — el campo se perdía
+                // contra el fondo (blanco sobre blanco en tema claro). Un
+                // borde sutil siempre visible, y el celeste de acento solo
+                // al enfocar.
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
+                  borderSide: BorderSide(color: tema.dividerColor),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: tema.dividerColor),
+                ),
+                focusedBorder: const OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(12)),
+                  borderSide: BorderSide(
+                    color: AppColors.celesteCategoria,
+                    width: 1.5,
+                  ),
                 ),
               ),
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: () => _enviar(context),
+              onPressed: _enviando ? null : () => _enviar(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.azulCeleste,
-                foregroundColor: Colors.white,
+                backgroundColor: tema.brightness == Brightness.dark
+                    ? Colors.white
+                    : AppColors.negroProfundo,
+                foregroundColor: tema.brightness == Brightness.dark
+                    ? AppColors.negroProfundo
+                    : Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text(
-                'Enviar calificación',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
+              child: _enviando
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: tema.brightness == Brightness.dark
+                            ? AppColors.negroProfundo
+                            : Colors.white,
+                      ),
+                    )
+                  : const Text(
+                      'Enviar calificación',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
             ),
           ],
         ),

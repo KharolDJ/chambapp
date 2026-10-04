@@ -21,6 +21,14 @@ class Peticion {
   String? comprobantePago;
   bool archivada;
 
+  /// "Urgente" es el único producto de Visibilidad Premium sobre una
+  /// publicación (propuesta F-DC-124: "Urgentes y Podio"; $10.000): da la
+  /// etiqueta, el primer lugar del feed, el filtro "Urgente" y el diseño
+  /// dorado. Se deriva solo del pago aprobado — el campo [urgente] quedó
+  /// como dato heredado (antes se marcaba gratis al publicar) y ya no
+  /// decide nada en la interfaz.
+  bool get esUrgente => premiumAprobada;
+
   Peticion({
     required this.id,
     required this.autorId,

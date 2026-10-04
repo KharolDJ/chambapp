@@ -27,8 +27,15 @@ class MisCalificacionesScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Mis calificaciones')),
       body: Column(
         children: [
-          Padding(
+          Container(
+            width: double.infinity,
             padding: const EdgeInsets.all(20),
+            // Línea sutil abajo en vez de la caja dorada que tenía el
+            // estado "nuevo en la plataforma" — separa este resumen de la
+            // lista sin sombrear nada.
+            decoration: BoxDecoration(
+              border: Border(bottom: BorderSide(color: tema.dividerColor)),
+            ),
             child: (usuario != null && usuario.numeroCalificaciones > 0)
                 ? Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -49,34 +56,24 @@ class MisCalificacionesScreen extends StatelessWidget {
                       ),
                     ],
                   )
-                : Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE3F2EC),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.auto_awesome,
-                          size: 16,
-                          color: AppColors.azulCeleste,
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.auto_awesome,
+                        size: 16,
+                        color: AppColors.celesteCategoria,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Nuevo en la plataforma',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.celesteCategoria,
                         ),
-                        SizedBox(width: 6),
-                        Text(
-                          'Nuevo en la plataforma',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.azulCeleste,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
           ),
           Expanded(
@@ -154,7 +151,7 @@ class MisCalificacionesScreen extends StatelessWidget {
                               style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.azulCeleste,
+                                color: AppColors.dorado,
                               ),
                             ),
                             if (c.comentario != null &&

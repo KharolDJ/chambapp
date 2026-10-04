@@ -4,9 +4,11 @@ import 'package:provider/provider.dart';
 import '../models/reporte.dart';
 import '../models/verificacion_identidad.dart';
 import '../providers/app_provider.dart';
+import '../theme/app_colors.dart';
+import '../widgets/foto_image.dart';
 
 const _ladrillo = Color(0xFFB54834);
-const _acento = Color(0xFF0A656D);
+const _acento = AppColors.dorado;
 
 class AdministracionScreen extends StatefulWidget {
   const AdministracionScreen({super.key});
@@ -329,6 +331,22 @@ class _AdministracionScreenState extends State<AdministracionScreen> {
               color: Theme.of(context).textTheme.bodySmall?.color,
             ),
           ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: imagenFoto(
+              solicitud.fotoCedulaPath,
+              fit: BoxFit.cover,
+              height: 160,
+              width: double.infinity,
+              errorBuilder: (context, error, stackTrace) => Container(
+                height: 160,
+                color: Colors.grey.shade200,
+                alignment: Alignment.center,
+                child: Icon(Icons.badge_outlined, color: Colors.grey.shade500),
+              ),
+            ),
+          ),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -349,8 +367,12 @@ class _AdministracionScreenState extends State<AdministracionScreen> {
                   onPressed: () =>
                       provider.aprobarVerificacionIdentidad(solicitud),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _acento,
-                    foregroundColor: Colors.white,
+                    backgroundColor: tema.brightness == Brightness.dark
+                        ? Colors.white
+                        : AppColors.negroProfundo,
+                    foregroundColor: tema.brightness == Brightness.dark
+                        ? AppColors.negroProfundo
+                        : Colors.white,
                   ),
                   child: const Text('Aprobar'),
                 ),

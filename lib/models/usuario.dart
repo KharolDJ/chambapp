@@ -10,6 +10,10 @@ class Usuario {
   bool perfilVerificado;
   double calificacionPromedio;
   int numeroCalificaciones;
+  // Texto libre opcional para que la persona describa su experiencia y
+  // habilidades en su propio perfil — sin taxonomía estructurada, para no
+  // sobre-diseñar algo que solo hacía falta como espacio de contexto.
+  String? bio;
 
   Usuario({
     required this.id,
@@ -23,6 +27,7 @@ class Usuario {
     this.perfilVerificado = false,
     this.calificacionPromedio = 0,
     this.numeroCalificaciones = 0,
+    this.bio,
   }) : oficios = oficios ?? [];
 
   Map<String, dynamic> toJson() => {
@@ -37,6 +42,7 @@ class Usuario {
     'perfilVerificado': perfilVerificado,
     'calificacionPromedio': calificacionPromedio,
     'numeroCalificaciones': numeroCalificaciones,
+    'bio': bio,
   };
 
   factory Usuario.fromJson(Map<String, dynamic> json) {
@@ -65,6 +71,7 @@ class Usuario {
           (json['calificacionPromedio'] as num?)?.toDouble() ?? 0,
       numeroCalificaciones:
           (json['numeroCalificaciones'] as num?)?.toInt() ?? 0,
+      bio: json['bio'] as String?,
     );
   }
 }

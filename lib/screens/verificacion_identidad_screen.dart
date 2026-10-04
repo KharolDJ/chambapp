@@ -8,8 +8,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/app_provider.dart';
+import '../services/cloudinary_service.dart';
+import '../widgets/foto_image.dart';
 
-const _acento = AppColors.azulCeleste;
+const _acento = AppColors.dorado;
 
 class VerificacionIdentidadScreen extends StatefulWidget {
   const VerificacionIdentidadScreen({super.key});
@@ -23,6 +25,7 @@ class _VerificacionIdentidadScreenState
     extends State<VerificacionIdentidadScreen> {
   final _cedulaController = TextEditingController();
   String? _fotoCedulaPath;
+  bool _subiendoFoto = false;
   bool _cargando = true;
   bool _enviando = false;
 
@@ -73,7 +76,23 @@ class _VerificacionIdentidadScreenState
       imageQuality: 85,
     );
     if (archivo == null) return;
-    setState(() => _fotoCedulaPath = archivo.path);
+    setState(() => _subiendoFoto = true);
+    try {
+      final url = await CloudinaryService.subirFoto(File(archivo.path));
+      if (!mounted) return;
+      setState(() {
+        _fotoCedulaPath = url;
+        _subiendoFoto = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _subiendoFoto = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se pudo subir la foto. Intenta de nuevo.'),
+        ),
+      );
+    }
   }
 
   Future<void> _enviarSolicitud() async {
@@ -127,7 +146,9 @@ class _VerificacionIdentidadScreenState
               padding: const EdgeInsets.all(20),
               children: [
                 if (usuario.perfilVerificado)
-                  _EstadoVerificado()
+                  _EstadoVerificado(esAdmin: provider.esAdmin)
+                else if (provider.esAdmin)
+                  const _EstadoAdminPendiente()
                 else if (verificacion != null &&
                     verificacion.solicitada &&
                     !verificacion.aprobada)
@@ -136,6 +157,7 @@ class _VerificacionIdentidadScreenState
                   _FormularioSolicitud(
                     cedulaController: _cedulaController,
                     fotoCedulaPath: _fotoCedulaPath,
+                    subiendoFoto: _subiendoFoto,
                     enviando: _enviando,
                     onElegirFoto: _elegirFotoCedula,
                     onEnviar: _enviarSolicitud,
@@ -210,15 +232,45 @@ class _Encabezado extends StatelessWidget {
 }
 
 class _EstadoVerificado extends StatelessWidget {
+  final bool esAdmin;
+  const _EstadoVerificado({this.esAdmin = false});
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 24),
       child: _Encabezado(
-        icono: Icons.verified,
-        color: _acento,
+        // La misma insignia azul que usan perfil_screen.dart y
+        // perfil_publico_screen.dart — antes era un ícono Material teñido
+        // de acento, distinto al resto de la app.
+        iconoAsset: 'assets/icon/verificado.png',
+        color: AppColors.celesteCategoria,
         titulo: '¡Tu perfil está verificado!',
-        mensaje: 'Los empleadores ven la insignia de verificado en tu perfil público.',
+        mensaje: esAdmin
+            ? 'Las cuentas de administración quedan verificadas automáticamente — no necesitas solicitarlo.'
+            : 'Quienes vean tu perfil público notan la insignia de verificado.',
+      ),
+    );
+  }
+}
+
+// Cubre el instante entre iniciar sesión como admin y que termine de
+// guardarse `perfilVerificado: true` en Firestore (ver
+// AppProvider._asegurarPerfilVerificadoAdmin) — evita que, si esa escritura
+// tarda o falla por red, un administrador vea el formulario de solicitud
+// normal, que no tendría sentido pedirle (nadie más puede aprobarla).
+class _EstadoAdminPendiente extends StatelessWidget {
+  const _EstadoAdminPendiente();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 24),
+      child: _Encabezado(
+        icono: Icons.verified_outlined,
+        color: _acento,
+        titulo: 'Tu cuenta de administrador se está verificando',
+        mensaje: 'Esto es automático — no necesitas hacer nada. Si sigue así después de reabrir la app, revisa tu conexión.',
       ),
     );
   }
@@ -244,6 +296,7 @@ class _EstadoEnRevision extends StatelessWidget {
 class _FormularioSolicitud extends StatelessWidget {
   final TextEditingController cedulaController;
   final String? fotoCedulaPath;
+  final bool subiendoFoto;
   final bool enviando;
   final VoidCallback onElegirFoto;
   final VoidCallback onEnviar;
@@ -251,6 +304,7 @@ class _FormularioSolicitud extends StatelessWidget {
   const _FormularioSolicitud({
     required this.cedulaController,
     required this.fotoCedulaPath,
+    required this.subiendoFoto,
     required this.enviando,
     required this.onElegirFoto,
     required this.onEnviar,
@@ -266,7 +320,7 @@ class _FormularioSolicitud extends StatelessWidget {
           icono: Icons.verified_outlined,
           color: _acento,
           titulo: 'Verifica tu identidad',
-          mensaje: 'Sube una foto de tu cédula para que tu perfil muestre la insignia de "Perfil verificado" ante los empleadores.',
+          mensaje: 'Sube una foto de tu cédula para que tu perfil muestre la insignia de "Perfil verificado".',
         ),
         const SizedBox(height: 24),
         TextField(
@@ -292,7 +346,9 @@ class _FormularioSolicitud extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: tema.dividerColor),
             ),
-            child: fotoCedulaPath == null
+            child: subiendoFoto
+                ? const Center(child: CircularProgressIndicator())
+                : fotoCedulaPath == null
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -313,8 +369,8 @@ class _FormularioSolicitud extends StatelessWidget {
                   )
                 : ClipRRect(
                     borderRadius: BorderRadius.circular(14),
-                    child: Image.file(
-                      File(fotoCedulaPath!),
+                    child: imagenFoto(
+                      fotoCedulaPath!,
                       fit: BoxFit.cover,
                       width: double.infinity,
                     ),
@@ -325,8 +381,12 @@ class _FormularioSolicitud extends StatelessWidget {
         ElevatedButton(
           onPressed: enviando ? null : onEnviar,
           style: ElevatedButton.styleFrom(
-            backgroundColor: _acento,
-            foregroundColor: Colors.white,
+            backgroundColor: tema.brightness == Brightness.dark
+                ? Colors.white
+                : AppColors.negroProfundo,
+            foregroundColor: tema.brightness == Brightness.dark
+                ? AppColors.negroProfundo
+                : Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 14),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),

@@ -8,11 +8,17 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/app_provider.dart';
+import '../services/cloudinary_service.dart';
 import '../widgets/color_avatar.dart';
+import '../widgets/foto_image.dart';
 import 'login_screen.dart';
 
-const _acento = AppColors.azulCeleste;
-const _mostazaTexto = Color(0xFFAD7A16);
+// Celeste en vez de dorado — pedido explícito para limpiar los acentos
+// dorados del formulario de registro (barra de progreso, bordes de campo
+// enfocados, chips de oficio y el enlace "¿Ya tienes cuenta?"). Un solo
+// valor fijo porque este celeste ya tiene buen contraste sobre blanco y
+// sobre negro profundo.
+const _acento = AppColors.celesteCategoria;
 
 enum _TipoPaso { nombre, correo, oficios, datosFinales }
 
@@ -35,6 +41,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   final List<String> _oficiosSeleccionados = [];
   String? _fotoPath;
+  bool _subiendoFoto = false;
 
   int _paso = 0;
   late final bool _esTrabajador;
@@ -129,7 +136,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
       imageQuality: 80,
     );
     if (archivo == null) return;
-    setState(() => _fotoPath = archivo.path);
+    setState(() => _subiendoFoto = true);
+    try {
+      final url = await CloudinaryService.subirFoto(File(archivo.path));
+      if (!mounted) return;
+      setState(() {
+        _fotoPath = url;
+        _subiendoFoto = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _subiendoFoto = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se pudo subir la foto. Intenta de nuevo.'),
+        ),
+      );
+    }
   }
 
   void _atras() {
@@ -240,6 +263,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final pasos = _pasos;
     final tipo = pasos[_paso];
     final esUltimoPaso = _paso == pasos.length - 1;
+    final esOscuro = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -255,22 +279,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               ClipRRect(
                 borderRadius: BorderRadius.circular(4),
                 child: LinearProgressIndicator(
                   value: (_paso + 1) / pasos.length,
                   minHeight: 6,
-                  backgroundColor: const Color(0xFFE1F5EE),
+                  // Antes un verde-menta residual del branding viejo, que
+                  // ya chocaba con el celeste del relleno.
+                  backgroundColor: Theme.of(context).dividerColor,
                   color: _acento,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Paso ${_paso + 1} de ${pasos.length}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Theme.of(context).textTheme.bodySmall?.color,
                 ),
               ),
               const SizedBox(height: 24),
@@ -296,74 +314,67 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _enviando ? null : _atras,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: _acento,
-                        side: const BorderSide(color: _acento),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      icon: const Icon(Icons.arrow_back, size: 18),
-                      label: const Text(
-                        'Atrás',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
+              ElevatedButton.icon(
+                onPressed: _enviando ? null : _siguiente,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: esOscuro
+                      ? Colors.white
+                      : AppColors.negroProfundo,
+                  foregroundColor: esOscuro
+                      ? AppColors.negroProfundo
+                      : Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 2,
-                    child: ElevatedButton.icon(
-                      onPressed: _enviando ? null : _siguiente,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _acento,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                ),
+                icon: _enviando
+                    ? SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: esOscuro
+                              ? AppColors.negroProfundo
+                              : Colors.white,
                         ),
+                      )
+                    : Icon(
+                        esUltimoPaso ? Icons.check : Icons.arrow_forward,
+                        size: 16,
                       ),
-                      icon: _enviando
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : Icon(
-                              esUltimoPaso ? Icons.check : Icons.arrow_forward,
-                              size: 18,
-                            ),
-                      label: Text(
-                        esUltimoPaso ? 'Registrarme' : 'Continuar',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                label: Text(
+                  esUltimoPaso ? 'Registrarme' : 'Continuar',
+                  style: const TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w600,
                   ),
-                ],
+                ),
               ),
+              if (_paso > 0) ...[
+                const SizedBox(height: 4),
+                Center(
+                  child: TextButton.icon(
+                    onPressed: _enviando ? null : _atras,
+                    icon: const Icon(Icons.arrow_back, size: 14),
+                    label: const Text('Atrás', style: TextStyle(fontSize: 13)),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.color,
+                    ),
+                  ),
+                ),
+              ],
               if (_paso == 0) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
                 Center(
                   child: TextButton(
                     onPressed: _irALogin,
                     child: const Text(
                       '¿Ya tienes cuenta? Inicia sesión',
-                      style: TextStyle(color: _mostazaTexto),
+                      style: TextStyle(color: _acento),
                     ),
                   ),
                 ),
@@ -403,7 +414,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               autofocus: true,
               decoration: _decoracion(
                 'Nombre completo',
-                'assets/icon/nav_perfil.png',
+                null,
                 error: _errorNombre,
               ),
               onChanged: (_) {
@@ -446,7 +457,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 if (_errorCorreo != null) setState(() => _errorCorreo = null);
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 22),
             TextField(
               controller: _passwordController,
               obscureText: true,
@@ -552,7 +563,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Tu celular y una foto de perfil (opcional).',
+              'Así podrán ubicarte y contactarte cuando aplique a algo.',
               style: TextStyle(
                 color: Theme.of(context).textTheme.bodySmall?.color,
               ),
@@ -572,9 +583,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         return CircleAvatar(
                           radius: 55,
                           backgroundColor: colorAvatar.fondo,
-                          backgroundImage: _fotoPath != null
-                              ? FileImage(File(_fotoPath!))
-                              : null,
+                          backgroundImage: proveedorFoto(_fotoPath),
                           child: _fotoPath != null
                               ? null
                               : Text(
@@ -590,20 +599,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         );
                       },
                     ),
+                    if (_subiendoFoto)
+                      const Positioned.fill(
+                        child: CircleAvatar(
+                          radius: 55,
+                          backgroundColor: Colors.black38,
+                          child: CircularProgressIndicator(color: Colors.white),
+                        ),
+                      ),
                     Positioned(
                       bottom: 0,
                       right: 0,
                       child: Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: _acento,
+                          // Blanco en vez del dorado de antes — el borde
+                          // pasa a un gris suave porque un borde blanco
+                          // sobre relleno blanco ya no se vería.
+                          color: Colors.white,
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
+                          border: Border.all(
+                            color: Colors.grey.shade300,
+                            width: 2,
+                          ),
                         ),
                         child: const Icon(
                           Icons.camera_alt,
                           size: 18,
-                          color: Colors.white,
+                          color: AppColors.negroProfundo,
                         ),
                       ),
                     ),
@@ -611,37 +634,50 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 10),
+            Center(
+              child: Text(
+                _fotoPath != null
+                    ? 'Se ve mucho mejor con tu cara, ¡gracias!'
+                    : 'Muestra tu rostro: da más confianza que un ícono',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  color: Theme.of(context).textTheme.bodySmall?.color,
+                ),
+              ),
+            ),
+            const SizedBox(height: 30),
             TextField(
               controller: _celularController,
               keyboardType: TextInputType.phone,
               decoration: _decoracion(
                 'Número de celular',
                 'assets/icon/telefono.png',
-                helper: 'Solo se usa para contactarte por WhatsApp, nunca se muestra públicamente',
+                helper: 'Para contactarte por WhatsApp. No es público.',
                 error: _errorCelular,
               ),
               onChanged: (_) {
                 if (_errorCelular != null) setState(() => _errorCelular = null);
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 22),
             TextField(
               controller: _barrioController,
               decoration: _decoracion(
                 'Barrio / zona (opcional)',
                 'assets/icon/marcador_posicion.png',
-                helper: 'Ayuda a mostrar trabajos y trabajadores cerca de ti',
+                helper: 'Para mostrarte trabajos cerca de ti',
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 22),
             TextField(
               controller: _cedulaController,
               keyboardType: TextInputType.number,
               decoration: _decoracion(
                 'Documento de identidad (opcional)',
                 'assets/icon/documento_identidad.png',
-                helper: 'Ayuda a generar más confianza en tu perfil',
+                helper: 'Opcional. Sube tu documento más adelante para obtener la insignia de perfil verificado y generar más confianza.',
               ),
             ),
           ],
@@ -659,20 +695,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return InputDecoration(
       labelText: label,
       helperText: error == null ? helper : null,
+      helperMaxLines: 3,
       errorText: error,
-      prefixIcon: Padding(
-        padding: const EdgeInsets.only(right: 8),
-        child: SizedBox(
-          width: 18,
-          height: 18,
-          child: iconoAsset != null
-              ? Image.asset(iconoAsset, fit: BoxFit.contain)
-              : Icon(icono, size: 18, color: Colors.grey.shade600),
-        ),
-      ),
+      // Sin ícono en absoluto cuando no se provee ninguno de los dos (ej.
+      // "Nombre completo") — antes quedaba un hueco vacío reservado para
+      // un ícono que ya no está.
+      prefixIcon: (iconoAsset == null && icono == null)
+          ? null
+          : Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: SizedBox(
+                width: 18,
+                height: 18,
+                child: iconoAsset != null
+                    ? Image.asset(iconoAsset, fit: BoxFit.contain)
+                    : Icon(icono, size: 18, color: Colors.grey.shade600),
+              ),
+            ),
       prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
-      isDense: true,
-      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+      contentPadding: const EdgeInsets.symmetric(vertical: 18),
       border: UnderlineInputBorder(
         borderSide: BorderSide(color: Theme.of(context).dividerColor),
       ),

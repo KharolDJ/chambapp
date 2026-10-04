@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/app_provider.dart';
 
-const _acento = AppColors.azulCeleste;
+const _acento = AppColors.dorado;
 const _ladrillo = Color(0xFFB54834);
 
 class ReportarScreen extends StatefulWidget {
@@ -63,7 +63,10 @@ class _ReportarScreenState extends State<ReportarScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Gracias, revisaremos tu reporte'),
+        content: Text(
+          'Gracias, revisaremos tu reporte',
+          style: TextStyle(color: AppColors.negroProfundo),
+        ),
         backgroundColor: _acento,
       ),
     );

@@ -6,6 +6,14 @@ class Notificacion {
   final String? peticionId;
   bool leida;
 
+  /// A qué rol (`'empleador'` o `'trabajador'`, el `.name` de
+  /// `RolUsuario`) le corresponde esta notificación — una misma cuenta
+  /// puede usar ambos roles, y sin este campo las notificaciones de un
+  /// rol se filtraban hacia el otro. `null` es a propósito: notificaciones
+  /// creadas antes de este campo (o eventos que de verdad aplican a
+  /// cualquier rol) siguen mostrándose en ambos en vez de desaparecer.
+  final String? rolDestino;
+
   Notificacion({
     required this.id,
     required this.paraUsuarioId,
@@ -13,6 +21,7 @@ class Notificacion {
     required this.fecha,
     this.peticionId,
     this.leida = false,
+    this.rolDestino,
   });
 
   Map<String, dynamic> toJson() => {
@@ -22,6 +31,7 @@ class Notificacion {
     'fecha': fecha.toIso8601String(),
     'peticionId': peticionId,
     'leida': leida,
+    'rolDestino': rolDestino,
   };
 
   factory Notificacion.fromJson(Map<String, dynamic> json) => Notificacion(
@@ -31,6 +41,7 @@ class Notificacion {
     fecha: DateTime.parse(json['fecha'] as String),
     peticionId: json['peticionId'] as String?,
     leida: json['leida'] as bool? ?? false,
+    rolDestino: json['rolDestino'] as String?,
   );
 
   /// Serializa para guardar como documento de Firestore (colección
@@ -42,6 +53,7 @@ class Notificacion {
     'fecha': fecha.toIso8601String(),
     'peticionId': peticionId,
     'leida': leida,
+    'rolDestino': rolDestino,
   };
 
   factory Notificacion.fromFirestore(Map<String, dynamic> data, String id) =>
@@ -52,5 +64,6 @@ class Notificacion {
         fecha: DateTime.parse(data['fecha'] as String),
         peticionId: data['peticionId'] as String?,
         leida: data['leida'] as bool? ?? false,
+        rolDestino: data['rolDestino'] as String?,
       );
 }

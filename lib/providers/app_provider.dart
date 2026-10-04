@@ -54,6 +54,30 @@ class AppProvider extends ChangeNotifier {
     return correo != null && _correosAdmin.contains(correo);
   }
 
+  /// Las cuentas de [_correosAdmin] son de confianza por definición — una
+  /// lista fija en el código, no algo que un usuario pueda auto-otorgarse
+  /// desde la app — así que se marcan verificadas automáticamente en vez
+  /// de pasar por el mismo formulario de solicitud + revisión que
+  /// cualquier otra cuenta. Obligar a un admin a solicitar su propia
+  /// verificación sería circular: nadie más que él mismo podría aprobarla.
+  /// Se llama cada vez que `usuarioActual` se resuelve desde Firestore
+  /// (login, registro, restaurar sesión) para autocorregir si el campo
+  /// todavía no estaba en `true`.
+  Future<void> _asegurarPerfilVerificadoAdmin() async {
+    final actual = usuarioActual;
+    if (actual == null) return;
+    if (!_correosAdmin.contains(actual.correo.trim().toLowerCase())) return;
+    if (actual.perfilVerificado) return;
+    actual.perfilVerificado = true;
+    try {
+      await _db.collection('usuarios').doc(actual.id).update({
+        'perfilVerificado': true,
+      });
+    } catch (_) {
+      // Se reintenta solo la próxima vez que inicie sesión o abra la app.
+    }
+  }
+
   // El estado de verificación vive en el objeto de Firebase Auth
   // (`currentUser.emailVerified`), no en el documento de Firestore — y no
   // se actualiza solo, así que hay que refrescarlo explícitamente
@@ -530,6 +554,7 @@ class AppProvider extends ChangeNotifier {
       final doc = await _db.collection('usuarios').doc(actual.uid).get();
       if (doc.exists) {
         usuarioActual = Usuario.fromJson(doc.data()!);
+        await _asegurarPerfilVerificadoAdmin();
       }
       // Refresca el estado de verificación al abrir la app, por si se
       // confirmó el correo desde el buzón en una sesión anterior.
@@ -697,6 +722,7 @@ class AppProvider extends ChangeNotifier {
     required String paraUsuarioId,
     required String mensaje,
     String? peticionId,
+    String? rolDestino,
   }) async {
     final notif = Notificacion(
       id: _db.collection('notificaciones').doc().id,
@@ -704,6 +730,7 @@ class AppProvider extends ChangeNotifier {
       mensaje: mensaje,
       fecha: DateTime.now(),
       peticionId: peticionId,
+      rolDestino: rolDestino,
     );
     try {
       await _db
@@ -772,6 +799,7 @@ class AppProvider extends ChangeNotifier {
       );
       await _db.collection('usuarios').doc(uid).set(nuevoUsuario.toJson());
       usuarioActual = nuevoUsuario;
+      await _asegurarPerfilVerificadoAdmin();
       unawaited(_escucharNotificaciones(uid));
       unawaited(_escucharUsuarios(uid));
       notifyListeners();
@@ -801,6 +829,7 @@ class AppProvider extends ChangeNotifier {
         return 'No encontramos tu perfil. Contacta soporte.';
       }
       usuarioActual = Usuario.fromJson(doc.data()!);
+      await _asegurarPerfilVerificadoAdmin();
       unawaited(_escucharNotificaciones(credencial.user!.uid));
       unawaited(_escucharUsuarios(credencial.user!.uid));
       notifyListeners();
@@ -820,6 +849,7 @@ class AppProvider extends ChangeNotifier {
     String? fotoPath,
     String? cedula,
     String? barrio,
+    String? bio,
   }) async {
     final actual = usuarioActual;
     if (actual == null) return;
@@ -829,6 +859,7 @@ class AppProvider extends ChangeNotifier {
     if (fotoPath != null) actual.fotoPath = fotoPath;
     if (cedula != null) actual.cedula = cedula;
     if (barrio != null) actual.barrio = barrio;
+    if (bio != null) actual.bio = bio;
     notifyListeners();
     unawaited(_guardarEstado());
     try {
@@ -995,6 +1026,7 @@ class AppProvider extends ChangeNotifier {
           mensaje:
               '${usuario.nombre} se interesó en tu publicación "${_truncar(peticion.descripcion)}"',
           peticionId: peticion.id,
+          rolDestino: 'empleador',
         ),
       );
       unawaited(_guardarEstado());
@@ -1022,6 +1054,7 @@ class AppProvider extends ChangeNotifier {
           mensaje:
               'El empleador vio tu perfil en "${_truncar(peticion.descripcion)}"',
           peticionId: peticion.id,
+          rolDestino: 'trabajador',
         ),
       );
     }
@@ -1064,13 +1097,29 @@ class AppProvider extends ChangeNotifier {
           mensaje:
               '¡Fuiste seleccionado para "${_truncar(peticion.descripcion)}"! El empleador te contactará por WhatsApp',
           peticionId: peticionId,
+          rolDestino: 'trabajador',
         ),
       );
     }
     unawaited(_guardarEstado());
   }
 
+  /// Cierra la petición — simétrico: lo puede iniciar cualquiera de los dos
+  /// lados (antes solo el empleador podía "Finalizar"). Quien cierra no se
+  /// notifica a sí mismo; se avisa a la otra parte para que sepa que ya
+  /// puede calificar.
   Future<void> cerrarPeticion(String peticionId) async {
+    final actual = usuarioActual;
+    if (actual == null) return;
+
+    Peticion? peticion;
+    try {
+      peticion = peticiones.firstWhere((p) => p.id == peticionId);
+    } catch (_) {
+      peticion = null;
+    }
+    if (peticion == null || peticion.cerrada) return;
+
     try {
       await _db.collection('peticiones').doc(peticionId).update({
         'cerrada': true,
@@ -1078,6 +1127,23 @@ class AppProvider extends ChangeNotifier {
     } catch (_) {
       // Silencioso: el listener reflejará el estado real en cuanto se
       // reconecte, si la escritura llegó a aplicarse.
+      return;
+    }
+
+    final cierraElEmpleador = actual.id == peticion.autorId;
+    final paraUsuarioId = cierraElEmpleador
+        ? peticion.trabajadorSeleccionadoId
+        : peticion.autorId;
+    if (paraUsuarioId != null) {
+      unawaited(
+        _crearNotificacion(
+          paraUsuarioId: paraUsuarioId,
+          mensaje:
+              '"${_truncar(peticion.descripcion)}" fue marcado como finalizado — ya puedes calificar',
+          peticionId: peticionId,
+          rolDestino: cierraElEmpleador ? 'trabajador' : 'empleador',
+        ),
+      );
     }
   }
 
@@ -1095,7 +1161,11 @@ class AppProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> calificarUsuario(Calificacion calificacion) async {
+  /// Devuelve `true` si la calificación quedó guardada en Firestore, o
+  /// `false` si falló (permisos, red, etc.) — antes el error se tragaba en
+  /// silencio y la pantalla de Calificar se cerraba igual, dando la
+  /// impresión de que se había enviado aunque nunca se guardó nada.
+  Future<bool> calificarUsuario(Calificacion calificacion) async {
     final calificacionRef = _db
         .collection('calificaciones')
         .doc(calificacion.id);
@@ -1130,8 +1200,34 @@ class AppProvider extends ChangeNotifier {
           'numeroCalificaciones': totalCalificaciones,
         });
       });
-    } catch (_) {
-      return;
+    } catch (e) {
+      debugPrint('calificarUsuario: fallo al guardar -> $e');
+      return false;
+    }
+
+    // La calificación es bidireccional (empleador y trabajador se
+    // califican entre sí), así que el rol al que le corresponde el aviso
+    // depende de en cuál de los dos roles quedó calificada esa persona en
+    // *esta* petición — se resuelve comparando contra autorId (empleador)
+    // y trabajadorSeleccionadoId (trabajador) de la petición asociada.
+    String? rolDestinoCalificacion;
+    if (calificacion.peticionId != null) {
+      Peticion? peticionDeLaCalificacion;
+      try {
+        peticionDeLaCalificacion = peticiones.firstWhere(
+          (p) => p.id == calificacion.peticionId,
+        );
+      } catch (_) {
+        peticionDeLaCalificacion = null;
+      }
+      if (peticionDeLaCalificacion != null) {
+        if (calificacion.paraUsuarioId == peticionDeLaCalificacion.autorId) {
+          rolDestinoCalificacion = 'empleador';
+        } else if (calificacion.paraUsuarioId ==
+            peticionDeLaCalificacion.trabajadorSeleccionadoId) {
+          rolDestinoCalificacion = 'trabajador';
+        }
+      }
     }
 
     unawaited(
@@ -1139,6 +1235,7 @@ class AppProvider extends ChangeNotifier {
         paraUsuarioId: calificacion.paraUsuarioId,
         mensaje:
             'Recibiste una calificación de ${calificacion.estrellas} estrellas',
+        rolDestino: rolDestinoCalificacion,
       ),
     );
     unawaited(_guardarEstado());
@@ -1160,22 +1257,25 @@ class AppProvider extends ChangeNotifier {
       usuarioActual!.numeroCalificaciones = totalCalificaciones;
     }
     notifyListeners();
+    return true;
   }
 
-  /// Activa Visibilidad Premium sobre una petición apenas PayPal confirma
-  /// el pago (ver `PagoPaypalScreen`) — reemplaza el viejo par
+  /// Activa "Urgente" (el único producto de Visibilidad Premium sobre una
+  /// publicación, ver [Peticion.esUrgente]) apenas Wompi confirma el pago
+  /// (ver `PagoWompiScreen`) — reemplaza el viejo par
   /// `solicitarPremium` + `aprobarPremiumDemo` (comprobante de texto libre
   /// + botón de autoaprobación) porque la pasarela ya es la verificación
   /// real: no hace falta una revisión manual aparte.
   Future<void> activarPremiumPeticion(
     String peticionId,
-    String ordenPaypalId,
+    String transaccionWompiId,
   ) async {
     try {
       await _db.collection('peticiones').doc(peticionId).update({
         'premiumSolicitada': true,
         'premiumAprobada': true,
-        'comprobantePago': 'paypal:$ordenPaypalId',
+        'urgente': true,
+        'comprobantePago': 'wompi:$transaccionWompiId',
       });
     } catch (_) {
       return;
@@ -1193,15 +1293,16 @@ class AppProvider extends ChangeNotifier {
         _crearNotificacion(
           paraUsuarioId: peticion.autorId,
           mensaje:
-              'Tu Visibilidad Premium fue aprobada para "${_truncar(peticion.descripcion)}"',
+              'Tu publicación "${_truncar(peticion.descripcion)}" ya está marcada como Urgente',
           peticionId: peticionId,
+          rolDestino: 'empleador',
         ),
       );
     }
     unawaited(_guardarEstado());
   }
 
-  /// Activa el VIP de un oficio apenas PayPal confirma el pago — reemplaza
+  /// Activa el VIP de un oficio apenas Wompi confirma el pago — reemplaza
   /// el viejo par `solicitarPremiumTrabajador` + `aprobarPremiumTrabajadorDemo`
   /// por la misma razón que [activarPremiumPeticion]: la pasarela ya
   /// verificó el pago, así que solicitud y aprobación quedan en una sola
@@ -1214,7 +1315,7 @@ class AppProvider extends ChangeNotifier {
   /// producción esto necesitaría un flujo de devolución.
   Future<String?> activarPremiumTrabajador({
     required String oficio,
-    required String ordenPaypalId,
+    required String transaccionWompiId,
   }) async {
     final actual = usuarioActual;
     if (actual == null) {
@@ -1239,7 +1340,7 @@ class AppProvider extends ChangeNotifier {
       oficio: oficio,
       solicitada: true,
       aprobada: true,
-      comprobantePago: 'paypal:$ordenPaypalId',
+      comprobantePago: 'wompi:$transaccionWompiId',
       solicitadaEn: DateTime.now(),
       expiraEn: DateTime.now().add(const Duration(days: 30)),
       usuarioNombre: actual.nombre,
@@ -1259,6 +1360,7 @@ class AppProvider extends ChangeNotifier {
       _crearNotificacion(
         paraUsuarioId: actual.id,
         mensaje: 'Tu Visibilidad Premium fue activada para "$oficio"',
+        rolDestino: 'trabajador',
       ),
     );
     return null;
@@ -1315,6 +1417,7 @@ class AppProvider extends ChangeNotifier {
         mensaje:
             '${actual.nombre} te invitó a aplicar a "${_truncar(peticion.descripcion)}"',
         peticionId: peticionId,
+        rolDestino: 'trabajador',
       ),
     );
     return null;
@@ -1325,8 +1428,15 @@ class AppProvider extends ChangeNotifier {
       .toList();
 
   List<Notificacion> get misNotificaciones {
+    // rolDestino == null cubre notificaciones creadas antes de este campo
+    // (o eventos que de verdad aplican a cualquier rol) — se siguen
+    // mostrando en ambos modos en vez de desaparecer.
     final propias = notificaciones
-        .where((n) => n.paraUsuarioId == usuarioActual?.id)
+        .where(
+          (n) =>
+              n.paraUsuarioId == usuarioActual?.id &&
+              (n.rolDestino == null || n.rolDestino == rolActual?.name),
+        )
         .toList();
     propias.sort((a, b) => b.fecha.compareTo(a.fecha));
     return propias;

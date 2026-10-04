@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 
-const _acento = AppColors.azulCeleste;
+const _acento = AppColors.dorado;
 
 class PrivacidadScreen extends StatelessWidget {
   const PrivacidadScreen({super.key});

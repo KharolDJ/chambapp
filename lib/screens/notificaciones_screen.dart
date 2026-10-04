@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/notificacion.dart';
 import '../models/peticion.dart';
 import '../providers/app_provider.dart';
+import '../widgets/cabecera_oscura.dart';
 import 'detalle_peticion_screen.dart';
 
 class NotificacionesScreen extends StatefulWidget {
@@ -65,7 +66,7 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
     final tema = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Notificaciones')),
+      appBar: cabeceraOscura('Notificaciones'),
       body: lista.isEmpty
           ? Center(
               child: Column(

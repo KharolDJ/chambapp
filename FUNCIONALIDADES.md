@@ -33,9 +33,11 @@ del trabajo de grado.
 - Cada publicación es una tarjeta blanca con sombra suave (esquinas redondeadas), separadas por
   margen entre sí — **no** un timeline continuo (se probó ese estilo el 2026-09-13 y se revirtió
   a pedido explícito). Actualizado 2026-09-14: se eliminaron los badges flotantes en las esquinas
-  (chocaban con el borde dorado animado de Premium); ahora "Oferta destacada" (si tiene
-  Visibilidad Premium aprobada) y/o "Se precisa urgentemente" (si es urgente) aparecen como texto
-  simple en flujo normal, arriba del encabezado — sin recuadros ni superposición con los bordes.
+  (chocaban con el borde dorado animado de Premium); ahora "Se precisa urgentemente" (solo si
+  la publicación compró "Urgente", sección 9) aparece en dorado como texto simple en flujo
+  normal, arriba del encabezado — sin recuadros ni superposición con los bordes. (Hasta
+  2026-09-23 existían por separado "Oferta destacada" y una etiqueta roja "Urgente" gratuita;
+  se unificaron.)
   Encabezado: avatar + nombre, con la calificación en estrellas y la insignia de "Perfil
   verificado" (si aplica) en la misma línea junto al nombre, y barrio/distancia/tiempo
   transcurrido como subtítulo debajo. Foto (si tiene) con esquinas redondeadas. Categoría como
@@ -50,11 +52,13 @@ del trabajo de grado.
   Recomendados"** arriba de las publicaciones (ver sección 10).
 - **Radio de búsqueda configurable** (1 a 50 km, o "Sin límite") desde Configuración.
 - Al tocar una publicación se abre el **detalle completo** (descripción sin cortar, foto
-  grande, etiquetas de "Urgente"/categoría, nombre del empleador tocable — ver sección 7), y
-  ahí — solo si el rol es trabajador — aparece el botón **"Aplicar"**.
-- Las publicaciones con Visibilidad Premium aprobada conservan su bloque distintivo (fondo y
-  borde dorado animado, ícono de estrella, con un margen pequeño para no romper la sensación de
-  timeline continuo) y aparecen primero en el orden del feed. Las tarjetas también se
+  grande, etiqueta dorada "Urgente" si aplica, categoría, nombre del empleador tocable — ver
+  sección 7), y ahí — solo si el rol es trabajador — aparece el botón **"Aplicar"** (negro;
+  al aplicar el corazón se llena de blanco y el texto cambia a "Ya aplicaste", sin cambiar el
+  fondo del botón — 2026-09-23).
+- Las publicaciones "Urgente" (Visibilidad Premium pagada) conservan su bloque distintivo
+  (base blanca con franja de brillo, anillo dorado animado y sombra dorada) y aparecen primero
+  en el orden del feed; también son las únicas que muestra el filtro "Urgente". Las tarjetas también se
   escalan suavemente según su posición en el scroll (más grandes cerca del centro del
   viewport).
 - **Tema oscuro:** la app sigue el modo del sistema operativo (`ThemeMode.system`); todos los
@@ -80,8 +84,12 @@ del trabajo de grado.
 
 - Botón "+" central (solo visible para empleadores; requiere correo verificado — ver
   sección 1).
-- Formulario: descripción, barrio, categoría, marcar como "Urgente", y **foto real**
-  (tomar con la cámara o elegir de galería) de la situación.
+- Formulario: descripción, barrio, categoría y **foto real** (tomar con la cámara o elegir de
+  galería) de la situación.
+- Ya **no** hay interruptor "Urgente" (quitado 2026-09-23): "Urgente" es un producto pago de
+  Visibilidad Premium (sección 9). En su lugar, un aviso indica que se puede activar después
+  desde Actividad → Premium; si la categoría suele ser una emergencia (Plomería, Electricidad,
+  Cerrajería) el aviso se resalta.
 
 ## 5. Aplicar y seguimiento de la aplicación (trabajador)
 
@@ -123,18 +131,31 @@ del trabajo de grado.
 
 ## 9. Visibilidad Premium — empleador
 
-- Desde una publicación propia, se puede solicitar destacarla por $10.000 (pago único),
-  dejando una referencia del comprobante de pago.
-- Queda "en revisión" hasta aprobarse (botón "Simular aprobación (demo)" porque todavía no
-  hay pasarela de pagos real).
-- Una vez aprobada, la publicación se resalta en el feed y aparece primero en el orden.
+- **Un solo producto: "Urgente", $10.000 (pago único)** — unificado 2026-09-23 (antes había
+  "Destacar" y una etiqueta "Urgente" gratuita que hacían casi lo mismo). Coincide con la
+  propuesta F-DC-124 ("Urgentes y Podio": Urgente = empleador, Podio = trabajador).
+- Se compra desde **Actividad → Mis publicaciones → botón "Premium"** con **Wompi Sandbox**
+  (Web Checkout: tarjeta, Nequi o PSE; reemplazó a PayPal el 2026-09-29 por pedido del
+  director). Se activa automáticamente cuando Wompi confirma el pago como `APPROVED` y la
+  referencia y el monto de la transacción coinciden con los que abrió la app (sin revisión
+  manual ni botón de "Simular aprobación", que ya no existe). El id de la transacción queda
+  como comprobante (`comprobantePago: "wompi:<id>"`).
+- Datos de prueba de Wompi: tarjeta aprobada `4242 4242 4242 4242` (cualquier fecha futura y
+  CVC), rechazada `4111 1111 1111 1111`; Nequi aprobado `3991111111`.
+- Da: etiqueta dorada "Se precisa urgentemente", primer lugar en el feed, aparición en el
+  filtro "Urgente" y el diseño dorado de la tarjeta.
+- Técnico: el flag pagado es `premiumAprobada` (expuesto como `Peticion.esUrgente`); el campo
+  `urgente` quedó heredado y no decide nada en la interfaz.
 - No se puede solicitar sobre una publicación ya finalizada.
+- En Actividad, los botones de la publicación (Interesados, Premium, Archivar) van sin ícono,
+  en negro con texto blanco; "Premium" con texto y borde dorado brillante.
 
 ## 10. Visibilidad Premium — trabajador y Podio de Recomendados
 
 - Desde Perfil (solo trabajadores con al menos un oficio), se puede solicitar Visibilidad
-  Premium **por oficio** — $10.000, pago único, mismo flujo de comprobante + "Simular
-  aprobación (demo)" que el empleador.
+  Premium **por oficio** — $10.000, pago único, con el mismo pago por Wompi Sandbox y
+  activación automática que el empleador. El botón "Ver mi puesto en {oficio}" es negro con
+  texto blanco, sin ícono.
 - **Rotación estilo Airbnb/Mercado Pago** (cambiado 2026-09-14 — antes eran 3 cupos fijos por
   30 días para las mismas 3 personas, lo cual dejaba al 4º+ trabajador sin ninguna posibilidad
   real de aparecer). Ahora cada oficio admite hasta **10 "VIP" activos** a la vez (con vigencia
@@ -151,8 +172,9 @@ del trabajo de grado.
 
 - Desde Perfil (solo trabajadores), se puede solicitar la verificación de identidad: número de
   cédula + **foto real de la cédula** (cámara o galería).
-- Queda "en revisión" hasta aprobarse (botón "Simular aprobación (demo)", mismo patrón que
-  Visibilidad Premium — todavía no hay revisión manual real de un administrador).
+- Queda "en revisión" hasta que un **administrador** la aprueba o rechaza desde el panel de
+  Administración (pestaña "Verificaciones"). El antiguo botón "Simular aprobación (demo)" ya
+  no existe.
 - Una vez aprobada, el perfil muestra la insignia **"Perfil verificado"** (ícono de check) tanto
   en el perfil propio como en el perfil público que ven los empleadores — es la señal de
   confianza que responde al objetivo específico 3 de la tesis ("perfiles verificados"), más allá
@@ -196,22 +218,25 @@ del trabajo de grado.
 
 ## 15. Identidad visual
 
-- Paleta: **azul celeste `#0284C7`** (claro) / `#38BDF8` (oscuro) — color de marca, antes
-  petróleo `#0F6E56` (cambiado 2026-09-14, ver `lib/theme/app_colors.dart` — único lugar donde
-  se define, todas las pantallas lo importan de ahí en vez de repetir el hex), mostaza
-  `#D9A441`/`#AD7A16`/`#FAEEDA`, ladrillo `#B54834` (etiqueta "Urgente"), papel `#FAF7F0`
-  (fondo), grafito `#26312D` (texto). La primera entrada de la paleta de avatares (menta/verde
-  `#0F6E56`) se dejó igual a propósito — es solo una de 8 variantes de color para distinguir
-  avatares, no el acento interactivo de marca.
-- Tipografía: Sora (títulos) + Work Sans (cuerpo).
+- Paleta (actualizada 2026-09-23, ver `lib/theme/app_colors.dart` y `lib/main.dart`): marca en
+  **negro y dorado** — dorado `#AD7A16` (claro) / `#D4AF37` (oscuro), botones principales negro
+  sólido con texto blanco (invertidos en oscuro). El **celeste `#0284C7`** (`#7DD3FC` en
+  oscuro) quedó solo para etiquetas de categoría y estados de ofertas normales. Estrellas de
+  calificación `#D9A441`. Historial: petróleo `#0F6E56` → celeste (2026-09-14) → negro y dorado.
+- Texto blanco sobre fondos de color: insignia "Ya calificaste" (blanco sobre celeste en ofertas
+  normales, sobre dorado `#AD7A16` en urgentes) y números de los pasos en la pantalla Premium.
+- Perfil público: etiquetas (barrio, oficios, verificado) en negro plano, sin pastilla dorada.
+- Tipografía: **Inter** (vía `google_fonts`) en toda la app — reemplazó a Sora + Work Sans.
 - **Tema oscuro** (reimplementado 2026-09-14; hubo un primer intento el 2026-09-13 que se
   revirtió junto con el rediseño de timeline de esa sesión). Selector manual Claro/Oscuro/
   Automático en Configuración (sección 14) — "Automático" usa `ThemeMode.system`. Fondo
   `#121417`, superficies `#1B1F22`, texto `#F2F3F5`/`#9AA3AB` (secundario), divisores `#2A2E33`,
-  acento verde aclarado `#2BB893`
-  (en vez del petróleo `#0F6E56` del claro, para mantener buen contraste).
+  acento dorado aclarado `#D4AF37` (en vez del `#AD7A16` del claro, para mantener buen
+  contraste).
 - **El fondo dorado deslizante de Visibilidad Premium (`fondoDoradoDeslizante`) también se
-  adapta**: en claro sigue siendo crema/pergamino pálido; en oscuro pasa a un bronce casi negro
+  adapta**: en claro es crema/pergamino pálido en las tarjetas del Podio del trabajador y
+  **blanco** en las publicaciones "Urgente" del empleador (parámetro `baseBlanca`, 2026-09-23,
+  para que el texto negro y el dorado contrasten más); en oscuro pasa a un bronce casi negro
   (`#1B1509`→`#4A3712`) para no verse como un parche blanco fuera de lugar sobre el resto de la
   app en negro. El texto sobre las tarjetas Premium (nombre, descripción, "Activa hasta...", "Ver
   interesados") también cambia de par de colores según el tema — antes era un café fijo pensado

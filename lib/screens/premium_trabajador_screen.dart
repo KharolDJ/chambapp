@@ -1,28 +1,30 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
+
 import 'package:provider/provider.dart';
 
 import '../models/premium_trabajador.dart';
 import '../providers/app_provider.dart';
 import '../widgets/brillo_dorado.dart';
-import 'pago_paypal_screen.dart';
+import 'pago_wompi_screen.dart';
 
 class PremiumTrabajadorScreen extends StatelessWidget {
   const PremiumTrabajadorScreen({super.key});
 
   Future<void> _pagarYActivar(BuildContext context, String oficio) async {
-    final resultado = await Navigator.push<ResultadoPagoPaypal>(
+    final resultado = await Navigator.push<ResultadoPagoWompi>(
       context,
       MaterialPageRoute(
-        builder: (_) => const PagoPaypalScreen(
-          montoUsd: '2.50',
-          descripcion: 'Visibilidad Premium Chambapp (sandbox)',
+        builder: (_) => const PagoWompiScreen(
+          montoCentavos: 1000000, // $10.000 COP
+          producto: 'podio',
         ),
       ),
     );
     if (resultado == null) return; // cancelado
     if (!context.mounted) return;
-    if (resultado.estado != 'COMPLETED') {
+    if (resultado.estado != 'APPROVED') {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('El pago no se completó (estado: ${resultado.estado})'),
@@ -32,7 +34,7 @@ class PremiumTrabajadorScreen extends StatelessWidget {
     }
     final error = await context.read<AppProvider>().activarPremiumTrabajador(
       oficio: oficio,
-      ordenPaypalId: resultado.ordenId,
+      transaccionWompiId: resultado.transaccionId,
     );
     if (!context.mounted) return;
     if (error != null) {
@@ -183,23 +185,32 @@ class PremiumTrabajadorScreen extends StatelessWidget {
                           const SizedBox(height: 8),
                           SizedBox(
                             width: double.infinity,
-                            child: OutlinedButton.icon(
+                            // Botón limpio: negro sólido, texto blanco, sin
+                            // ícono. Va sobre el fondo dorado de la tarjeta
+                            // activa, así que el negro se lee también en
+                            // tema oscuro.
+                            child: ElevatedButton(
                               onPressed: () {
                                 context.read<AppProvider>().irAlPodioDe(oficio);
                                 Navigator.of(context)
                                     .popUntil((route) => route.isFirst);
                               },
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: const Color(0xFFAD7A16),
-                                side: const BorderSide(
-                                  color: Color(0xFFAD7A16),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.negroProfundo,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                              icon: const Icon(
-                                Icons.visibility_outlined,
-                                size: 16,
+                              child: Text(
+                                'Ver mi puesto en $oficio',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                              label: Text('Ver mi puesto en $oficio'),
                             ),
                           ),
                         ] else if (provider.podioLleno(oficio)) ...[
@@ -235,7 +246,7 @@ class PremiumTrabajadorScreen extends StatelessWidget {
                               ),
                               icon: const Icon(Icons.lock_outline, size: 16),
                               label: const Text(
-                                'Pagar con PayPal (sandbox)',
+                                'Pagar con Wompi (pruebas)',
                               ),
                             ),
                           ),
@@ -270,6 +281,7 @@ class PremiumTrabajadorScreen extends StatelessWidget {
     required String textoBoton,
     required VoidCallback onVerPodio,
   }) {
+    final esOscuro = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -311,20 +323,24 @@ class PremiumTrabajadorScreen extends StatelessWidget {
               const SizedBox(height: 22),
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton.icon(
+                child: ElevatedButton(
                   onPressed: () {
                     Navigator.of(context).pop();
                     onVerPodio();
                   },
-                  icon: const Icon(Icons.visibility_outlined, size: 18),
-                  label: Text(textoBoton),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFAD7A16),
-                    foregroundColor: Colors.white,
+                    backgroundColor:
+                        esOscuro ? Colors.white : AppColors.negroProfundo,
+                    foregroundColor:
+                        esOscuro ? AppColors.negroProfundo : Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
+                  ),
+                  child: Text(
+                    textoBoton,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
               ),

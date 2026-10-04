@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 
@@ -11,10 +11,18 @@ import '../models/peticion.dart';
 import '../models/premium_trabajador.dart';
 import '../models/usuario.dart';
 import '../providers/app_provider.dart';
+import '../widgets/brillo_dorado.dart';
 import '../widgets/color_avatar.dart';
+import '../widgets/foto_image.dart';
 import '../widgets/peticion_card.dart';
 import 'login_screen.dart';
 import 'perfil_publico_screen.dart';
+
+// Cabecera del feed (título, búsqueda y filtros) en negro profundo fijo —
+// no depende del tema claro/oscuro, es la identidad visual de esta zona
+// puntual, pedida explícitamente en negro con texto claro encima.
+const _fondoCabecera = AppColors.negroProfundo;
+const _fillBusqueda = Color(0xFF1C1C1C);
 
 enum OrdenFeed { cercania, recientes }
 
@@ -156,7 +164,7 @@ class _FeedScreenState extends State<FeedScreen> {
                     : '${km.toStringAsFixed(0)} km',
               ),
               trailing: activo
-                  ? const Icon(Icons.check, color: AppColors.azulCeleste)
+                  ? const Icon(Icons.check, color: AppColors.dorado)
                   : null,
               onTap: () {
                 context.read<AppProvider>().actualizarRadioBusqueda(km);
@@ -174,36 +182,49 @@ class _FeedScreenState extends State<FeedScreen> {
     required bool activo,
     required Color colorActivo,
     required VoidCallback onTap,
-    Widget? icono,
+    bool desplegable = false,
   }) {
+    // El texto ya no puede ser blanco fijo cuando está activo: el dorado de
+    // marca es una superficie clara (blanco ilegible encima), mientras que
+    // el rojo de "Urgente" sigue siendo oscuro (blanco sí funciona ahí) —
+    // se decide por luminancia en vez de asumir un solo fondo posible.
+    // Inactivo siempre en blanco: esta píldora vive sobre el fondo negro
+    // fijo de la cabecera, no sobre el fondo de página del tema.
+    final colorTexto = activo
+        ? (colorActivo.computeLuminance() > 0.5
+              ? AppColors.negroProfundo
+              : Colors.white)
+        : Colors.white;
     return Padding(
-      padding: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.only(right: 10),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
           decoration: BoxDecoration(
-            color: activo ? colorActivo : Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: activo ? colorActivo : Theme.of(context).dividerColor,
-            ),
+            color: activo ? colorActivo : Colors.white.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(24),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (icono != null) ...[icono, const SizedBox(width: 4)],
               Text(
                 label,
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: activo
-                      ? Colors.white
-                      : Theme.of(context).colorScheme.onSurface,
+                  color: colorTexto,
                 ),
               ),
+              if (desplegable) ...[
+                const SizedBox(width: 2),
+                Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  size: 16,
+                  color: colorTexto.withValues(alpha: activo ? 1 : 0.6),
+                ),
+              ],
             ],
           ),
         ),
@@ -237,7 +258,7 @@ class _FeedScreenState extends State<FeedScreen> {
               .toList();
 
     if (_soloUrgentes) {
-      lista = lista.where((p) => p.urgente).toList();
+      lista = lista.where((p) => p.esUrgente).toList();
     }
 
     if (_busqueda.trim().isNotEmpty) {
@@ -259,14 +280,12 @@ class _FeedScreenState extends State<FeedScreen> {
       }).toList();
     }
 
-    // Premium primero, luego urgente, luego el criterio elegido (cercanía o
-    // recientes). Se aplica siempre, haya o no ubicación disponible.
+    // Urgentes (Visibilidad Premium pagada) primero, luego el criterio
+    // elegido (cercanía o recientes). Se aplica siempre, haya o no
+    // ubicación disponible.
     lista.sort((a, b) {
-      if (a.premiumAprobada != b.premiumAprobada) {
-        return a.premiumAprobada ? -1 : 1;
-      }
-      if (a.urgente != b.urgente) {
-        return a.urgente ? -1 : 1;
+      if (a.esUrgente != b.esUrgente) {
+        return a.esUrgente ? -1 : 1;
       }
       if (_ordenPor == OrdenFeed.cercania && _posicionActual != null) {
         final da = _distanciaKm(a);
@@ -297,7 +316,18 @@ class _FeedScreenState extends State<FeedScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cerca de ti'),
+        title: const Text(
+          'Cerca de ti',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: _fondoCabecera,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        titleSpacing: 20,
         actions: [
           if (provider.usuarioActual == null)
             IconButton(
@@ -313,10 +343,13 @@ class _FeedScreenState extends State<FeedScreen> {
       body: Column(
         children: [
           if (cargandoUbicacion)
-            const LinearProgressIndicator(
-              minHeight: 3,
-              color: AppColors.azulCeleste,
-              backgroundColor: Color(0xFFE1F5EE),
+            Container(
+              color: _fondoCabecera,
+              child: const LinearProgressIndicator(
+                minHeight: 3,
+                color: AppColors.dorado,
+                backgroundColor: Colors.white24,
+              ),
             ),
           if (_avisoUbicacion != null)
             Container(
@@ -329,26 +362,47 @@ class _FeedScreenState extends State<FeedScreen> {
               ),
             ),
           Container(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              color: _fondoCabecera,
+              // Esquinas inferiores redondeadas: suaviza la transición del
+              // bloque negro hacia el contenido claro de abajo (las
+              // superiores quedan a escuadra, contra el borde de pantalla).
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(24),
+                bottomRight: Radius.circular(24),
+              ),
+            ),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 TextField(
                   controller: _busquedaController,
+                  style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    hintText: 'Buscar por barrio, categoría o descripción...',
-                    prefixIcon: const Icon(Icons.search, size: 20),
+                    hintText: 'Buscar...',
+                    hintStyle: const TextStyle(color: Colors.white54),
+                    prefixIcon: const Icon(
+                      Icons.search,
+                      size: 20,
+                      color: Colors.white70,
+                    ),
                     suffixIcon: _busqueda.isEmpty
                         ? null
                         : IconButton(
-                            icon: const Icon(Icons.close, size: 18),
+                            icon: const Icon(
+                              Icons.close,
+                              size: 18,
+                              color: Colors.white70,
+                            ),
                             onPressed: () {
                               _busquedaController.clear();
                               setState(() => _busqueda = '');
                             },
                           ),
                     filled: true,
-                    fillColor: tema.cardColor,
+                    fillColor: _fillBusqueda,
                     contentPadding: const EdgeInsets.symmetric(vertical: 10),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -364,24 +418,20 @@ class _FeedScreenState extends State<FeedScreen> {
                     children: [
                       _chip(
                         label: _categoriaFiltro == null
-                            ? 'Categoría ▾'
-                            : '$_categoriaFiltro ▾',
+                            ? 'Categoría'
+                            : _categoriaFiltro!,
                         activo: _categoriaFiltro != null,
-                        colorActivo: AppColors.azulCeleste,
+                        // Blanco con texto negro (vía _chip, por luminancia)
+                        // en vez del dorado anterior — se pidió así
+                        // explícitamente para el estado seleccionado.
+                        colorActivo: Colors.white,
+                        desplegable: true,
                         onTap: () => _mostrarFiltro(context, categorias),
                       ),
                       _chip(
                         label: 'Urgente',
-                        icono: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: Image.asset(
-                            'assets/icon/urgente.png',
-                            fit: BoxFit.contain,
-                          ),
-                        ),
                         activo: _soloUrgentes,
-                        colorActivo: const Color(0xFFEF4444),
+                        colorActivo: const Color(0xFFB54834),
                         onTap: () =>
                             setState(() => _soloUrgentes = !_soloUrgentes),
                       ),
@@ -389,38 +439,17 @@ class _FeedScreenState extends State<FeedScreen> {
                         label: _ordenPor == OrdenFeed.cercania
                             ? 'Cercanía'
                             : 'Recientes',
-                        icono: _ordenPor == OrdenFeed.cercania
-                            ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: Image.asset(
-                                  'assets/icon/cercania.png',
-                                  fit: BoxFit.contain,
-                                ),
-                              )
-                            : Icon(
-                                Icons.access_time,
-                                size: 15,
-                                color: tema.textTheme.bodySmall?.color,
-                              ),
                         activo: false,
-                        colorActivo: AppColors.azulCeleste,
+                        colorActivo: Colors.white,
                         onTap: _alternarOrden,
                       ),
                       _chip(
                         label: provider.radioBusquedaKm.isInfinite
-                            ? 'Toda la ciudad ▾'
-                            : '${provider.radioBusquedaKm.toStringAsFixed(0)} km ▾',
-                        icono: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: Image.asset(
-                            'assets/icon/toda_la_ciudad.png',
-                            fit: BoxFit.contain,
-                          ),
-                        ),
+                            ? 'Toda la ciudad'
+                            : '${provider.radioBusquedaKm.toStringAsFixed(0)} km',
                         activo: false,
-                        colorActivo: AppColors.azulCeleste,
+                        colorActivo: Colors.white,
+                        desplegable: true,
                         onTap: () => _mostrarRadio(context),
                       ),
                     ],
@@ -429,6 +458,9 @@ class _FeedScreenState extends State<FeedScreen> {
               ],
             ),
           ),
+          // Aire entre la cabecera oscura y lo que sigue (Destacados o el
+          // feed) — antes tocaban directo y chocaban visualmente.
+          const SizedBox(height: 14),
           Expanded(
             child: CustomScrollView(
               key: _listaKey,
@@ -449,7 +481,7 @@ class _FeedScreenState extends State<FeedScreen> {
                     esEmpleador &&
                     categoriasConPodio.isNotEmpty)
                   SliverToBoxAdapter(
-                    child: _CarruselPodios(
+                    child: _DestacadosRotativos(
                       categorias: categoriasConPodio,
                       provider: provider,
                       onSeleccionar: (categoria) =>
@@ -590,13 +622,7 @@ class _FranjaPersonas extends StatelessWidget {
   final List<Usuario> personas;
   const _FranjaPersonas({required this.personas});
 
-  ImageProvider? _fotoSiExiste(Usuario u) {
-    final ruta = u.fotoPath;
-    if (ruta == null) return null;
-    final archivo = File(ruta);
-    if (!archivo.existsSync()) return null;
-    return FileImage(archivo);
-  }
+  ImageProvider? _fotoSiExiste(Usuario u) => proveedorFoto(u.fotoPath);
 
   @override
   Widget build(BuildContext context) {
@@ -686,167 +712,111 @@ class _FranjaPersonas extends StatelessWidget {
   }
 }
 
-/// Carrusel de categorías con Podio activo, visible en el feed general (sin
-/// filtro de categoría) para el empleador — vitrina de "quién está
-/// destacado ahora" sin obligar a filtrar manualmente primero. Tocar una
-/// tarjeta aplica el filtro de esa categoría, igual que si se hubiera
-/// elegido desde el chip "Categoría".
-class _CarruselPodios extends StatelessWidget {
+/// Vitrina de "quién está destacado ahora" en el feed general (sin filtro
+/// de categoría) para el empleador. En vez de amontonar todas las
+/// categorías en cuadritos pequeños, muestra una sola categoría a la vez
+/// con el mismo diseño limpio de [_FranjaPodio] y va rotando sola cada
+/// pocos segundos — así cada persona destacada tiene espacio real en vez
+/// de competir por un cuadrito diminuto. Tocar el encabezado aplica el
+/// filtro de esa categoría, igual que si se hubiera elegido desde el chip
+/// "Categoría"; tocar un avatar va directo a ese perfil.
+class _DestacadosRotativos extends StatefulWidget {
   final List<String> categorias;
   final AppProvider provider;
   final ValueChanged<String> onSeleccionar;
-  const _CarruselPodios({
+  const _DestacadosRotativos({
     required this.categorias,
     required this.provider,
     required this.onSeleccionar,
   });
 
-  ImageProvider? _fotoSiExiste(String? ruta) {
-    if (ruta == null) return null;
-    final archivo = File(ruta);
-    if (!archivo.existsSync()) return null;
-    return FileImage(archivo);
+  @override
+  State<_DestacadosRotativos> createState() => _DestacadosRotativosState();
+}
+
+class _DestacadosRotativosState extends State<_DestacadosRotativos> {
+  int _indice = 0;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _iniciarRotacion();
+  }
+
+  void _iniciarRotacion() {
+    _timer?.cancel();
+    if (widget.categorias.length <= 1) return;
+    // Antes 16s — "un poco más pausado" según lo confirmado.
+    _timer = Timer.periodic(const Duration(seconds: 20), (_) {
+      if (!mounted) return;
+      setState(() => _indice = (_indice + 1) % widget.categorias.length);
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _DestacadosRotativos oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.categorias.length != oldWidget.categorias.length) {
+      _indice = 0;
+      _iniciarRotacion();
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.only(left: 16, bottom: 8),
+    final categoria = widget.categorias[_indice % widget.categorias.length];
+    final podio = widget.provider.podioPara(categoria);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 400),
+          transitionBuilder: (child, animacion) => FadeTransition(
+            opacity: animacion,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0.04, 0),
+                end: Offset.zero,
+              ).animate(animacion),
+              child: child,
+            ),
+          ),
+          child: _FranjaPodio(
+            key: ValueKey(categoria),
+            categoria: categoria,
+            podio: podio,
+            onCategoriaTap: () => widget.onSeleccionar(categoria),
+          ),
+        ),
+        if (widget.categorias.length > 1)
+          Padding(
+            padding: const EdgeInsets.only(left: 16, bottom: 12),
             child: Row(
               children: [
-                Icon(
-                  Icons.emoji_events,
-                  size: 15,
-                  color: AppColors.azulCeleste,
-                ),
-                SizedBox(width: 6),
-                Text(
-                  'DESTACADOS POR CATEGORÍA',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                    color: AppColors.azulCeleste,
+                for (var i = 0; i < widget.categorias.length; i++)
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    margin: const EdgeInsets.only(right: 5),
+                    width: i == _indice ? 14 : 5,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: i == _indice
+                          ? AppColors.dorado
+                          : Theme.of(context).dividerColor,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
                   ),
-                ),
               ],
             ),
           ),
-          SizedBox(
-            height: 118,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: categorias.length,
-              itemBuilder: (context, i) {
-                final categoria = categorias[i];
-                final podio = provider.podioPara(categoria);
-                return Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(16),
-                    onTap: () => onSeleccionar(categoria),
-                    child: Container(
-                      width: 168,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardColor,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: AppColors.azulCeleste,
-                          width: 1.2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.azulCeleste.withValues(alpha: 0.1),
-                            blurRadius: 10,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            categoria,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                          ),
-                          const Spacer(),
-                          SizedBox(
-                            height: 32,
-                            child: Stack(
-                              children: [
-                                for (var j = 0; j < podio.length; j++)
-                                  Positioned(
-                                    left: j * 20.0,
-                                    child: CircleAvatar(
-                                      radius: 16,
-                                      backgroundColor: Theme.of(context)
-                                          .cardColor,
-                                      child: Builder(
-                                        builder: (context) {
-                                          final foto = _fotoSiExiste(
-                                            podio[j].usuarioFotoPath,
-                                          );
-                                          final colorAvatar = colorAvatarPara(
-                                            podio[j].usuarioId,
-                                          );
-                                          return CircleAvatar(
-                                            radius: 14,
-                                            backgroundColor: colorAvatar.fondo,
-                                            backgroundImage: foto,
-                                            child: foto == null
-                                                ? Text(
-                                                    podio[j].usuarioNombre[0]
-                                                        .toUpperCase(),
-                                                    style: TextStyle(
-                                                      color: colorAvatar.texto,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontSize: 11,
-                                                    ),
-                                                  )
-                                                : null,
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            '${provider.vipActivosPara(categoria).length} VIP en rotación',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.color,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
+      ],
     );
   }
 }
@@ -859,144 +829,185 @@ class _CarruselPodios extends StatelessWidget {
 class _FranjaPodio extends StatelessWidget {
   final String categoria;
   final List<PremiumTrabajador> podio;
-  const _FranjaPodio({required this.categoria, required this.podio});
+  final VoidCallback? onCategoriaTap;
+  const _FranjaPodio({
+    super.key,
+    required this.categoria,
+    required this.podio,
+    this.onCategoriaTap,
+  });
 
-  ImageProvider? _fotoSiExiste(String? ruta) {
-    if (ruta == null) return null;
-    final archivo = File(ruta);
-    if (!archivo.existsSync()) return null;
-    return FileImage(archivo);
-  }
+  ImageProvider? _fotoSiExiste(String? ruta) => proveedorFoto(ruta);
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+    final provider = context.watch<AppProvider>();
+    final tema = Theme.of(context);
+    // Mismo anillo dorado animado que ya usan las tarjetas y perfiles
+    // Premium aprobados (ver brillo_dorado.dart) — unifica esta franja con
+    // esa identidad visual en vez de un borde estático aparte.
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
+      child: BrilloDoradoAnimado(
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.azulCeleste, width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.azulCeleste.withValues(alpha: 0.12),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
+        builder: (context, t) => Container(
+          decoration: BoxDecoration(
+            color: tema.cardColor,
+            borderRadius: BorderRadius.circular(14),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(
-                Icons.emoji_events,
-                size: 15,
-                color: Color(0xFFAD7A16),
+              InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: onCategoriaTap,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Destacados en $categoria',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.2,
+                          color: Color(0xFFAD7A16),
+                        ),
+                      ),
+                    ),
+                    if (onCategoriaTap != null)
+                      const Icon(
+                        Icons.chevron_right,
+                        size: 16,
+                        color: Color(0xFFAD7A16),
+                      ),
+                  ],
+                ),
               ),
-              const SizedBox(width: 5),
-              Expanded(
-                child: Text(
-                  'PODIO DE RECOMENDADOS · ${categoria.toUpperCase()}',
-                  style: const TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.4,
-                    color: Color(0xFFAD7A16),
-                  ),
+              const SizedBox(height: 10),
+              SizedBox(
+                height: 104,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: podio.length,
+                  itemBuilder: (context, i) {
+                    final p = podio[i];
+                    // [PremiumTrabajador] guarda una foto de perfil de
+                    // calificación tomados al momento de activar Premium — si
+                    // la persona no tenía foto o calificaciones todavía en ese
+                    // momento, ese snapshot se queda así por los 30 días
+                    // siguientes aunque actualice su perfil real. Se prefieren
+                    // los datos en vivo de [todosLosUsuarios] cuando existen, y
+                    // solo se cae al snapshot si esa persona no está cargada
+                    // (ej. navegando sin sesión).
+                    final coincidencias = provider.todosLosUsuarios.where(
+                      (u) => u.id == p.usuarioId,
+                    );
+                    final usuarioEnVivo = coincidencias.isEmpty
+                        ? null
+                        : coincidencias.first;
+                    final nombre = usuarioEnVivo?.nombre ?? p.usuarioNombre;
+                    final foto = _fotoSiExiste(
+                      usuarioEnVivo?.fotoPath ?? p.usuarioFotoPath,
+                    );
+                    final calificacionPromedio =
+                        usuarioEnVivo?.calificacionPromedio ??
+                        p.calificacionPromedio;
+                    final numeroCalificaciones =
+                        usuarioEnVivo?.numeroCalificaciones ??
+                        p.numeroCalificaciones;
+                    final colorAvatar = colorAvatarPara(p.usuarioId);
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 16),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                PerfilPublicoScreen(usuarioId: p.usuarioId),
+                          ),
+                        ),
+                        child: SizedBox(
+                          width: 80,
+                          child: Column(
+                            children: [
+                              Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  CircleAvatar(
+                                    radius: 30,
+                                    backgroundColor: colorAvatar.fondo,
+                                    backgroundImage: foto,
+                                    child: foto == null
+                                        ? Text(
+                                            nombre[0].toUpperCase(),
+                                            style: TextStyle(
+                                              color: colorAvatar.texto,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 20,
+                                            ),
+                                          )
+                                        : null,
+                                  ),
+                                  Positioned(
+                                    bottom: -2,
+                                    right: -2,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(3),
+                                      // Excepción explícita: la estrella de
+                                      // perfil destacado conserva su estilo
+                                      // dorado + blanco de siempre, sin el
+                                      // ajuste de contraste negro-sobre-dorado
+                                      // que sí se aplica al resto de la app.
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFFAD7A16),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.star,
+                                        size: 10,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                nombre,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface,
+                                ),
+                              ),
+                              if (numeroCalificaciones > 0)
+                                Text(
+                                  '★ ${calificacionPromedio.toStringAsFixed(1)}',
+                                  style: const TextStyle(
+                                    fontSize: 10.5,
+                                    color: Color(0xFFAD7A16),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 90,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: podio.length,
-              itemBuilder: (context, i) {
-                final p = podio[i];
-                final foto = _fotoSiExiste(p.usuarioFotoPath);
-                final colorAvatar = colorAvatarPara(p.usuarioId);
-                return Padding(
-                  padding: const EdgeInsets.only(right: 14),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            PerfilPublicoScreen(usuarioId: p.usuarioId),
-                      ),
-                    ),
-                    child: SizedBox(
-                      width: 72,
-                      child: Column(
-                        children: [
-                          Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(2),
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: AppColors.azulCeleste,
-                                ),
-                                child: CircleAvatar(
-                                  radius: 24,
-                                  backgroundColor: colorAvatar.fondo,
-                                  backgroundImage: foto,
-                                  child: foto == null
-                                      ? Text(
-                                          p.usuarioNombre[0].toUpperCase(),
-                                          style: TextStyle(
-                                            color: colorAvatar.texto,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 17,
-                                          ),
-                                        )
-                                      : null,
-                                ),
-                              ),
-                              Positioned(
-                                bottom: -2,
-                                right: -2,
-                                child: Container(
-                                  padding: const EdgeInsets.all(3),
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFAD7A16),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.star,
-                                    size: 9,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 5),
-                          Text(
-                            p.usuarioNombre,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
