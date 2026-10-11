@@ -117,6 +117,14 @@ class DetallePeticionScreen extends StatelessWidget {
     final fuiSeleccionado =
         provider.usuarioActual != null &&
         peticion.trabajadorSeleccionadoId == provider.usuarioActual!.id;
+    // El botón de aplicar no aparece en la propia publicación, ni en una
+    // que ya terminó o en la que ya eligieron a alguien — salvo para quien
+    // ya había aplicado, que sigue viendo su estado.
+    final esMia = provider.usuarioActual?.id == peticion.autorId;
+    final admiteAplicar =
+        !peticion.cerrada && peticion.trabajadorSeleccionadoId == null;
+    final mostrarBotonInteres =
+        esTrabajador && !esMia && (admiteAplicar || yaAplico);
     final distanciaTexto = _textoDistancia();
     final colorAvatar = colorAvatarPara(peticion.autorId);
     // Búsqueda null-safe (no firstWhere): igual que en peticion_card.dart,
@@ -299,11 +307,19 @@ class DetallePeticionScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 32),
-              if (esTrabajador)
+              if (mostrarBotonInteres)
                 _BotonInteres(
                   fuiSeleccionado: fuiSeleccionado,
                   yaAplico: yaAplico,
                   onTap: () => _tocarAplicar(context),
+                )
+              else if (esTrabajador && !esMia)
+                Text(
+                  'Esta publicación ya no recibe aplicaciones.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: tema.textTheme.bodySmall?.color,
+                  ),
                 ),
             ],
           ),

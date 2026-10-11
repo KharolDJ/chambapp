@@ -58,11 +58,13 @@ class Peticion {
   /// tarjeta en la pantalla de Interesados — a cambio, la calificación
   /// mostrada ahí puede quedar levemente desactualizada si cambia después
   /// de que esa persona aplicó a esta petición específica (trade-off
-  /// aceptado para el prototipo).
+  /// aceptado para el prototipo). El celular NO se copia aquí: las
+  /// publicaciones las puede leer cualquiera, incluso sin cuenta, así que
+  /// el número se consulta en el perfil solo al contactar (ver
+  /// `AppProvider.celularDe`).
   static Map<String, dynamic> interesadoAMapa(Usuario u) => {
     'id': u.id,
     'nombre': u.nombre,
-    'celular': u.celular,
     'oficios': u.oficios,
     'calificacionPromedio': u.calificacionPromedio,
     'numeroCalificaciones': u.numeroCalificaciones,

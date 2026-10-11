@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/peticion.dart';
 import '../models/usuario.dart';
 import '../providers/app_provider.dart';
+import '../utils/formatos.dart';
 import 'perfil_publico_screen.dart';
 import 'reportar_screen.dart';
 
@@ -33,14 +34,23 @@ class _InteresadosScreenState extends State<InteresadosScreen> {
     BuildContext context,
     Usuario usuario,
   ) async {
-    await context.read<AppProvider>().seleccionarTrabajador(
-      widget.peticion.id,
-      usuario.id,
-    );
+    final provider = context.read<AppProvider>();
+    final celular = await provider.celularDe(usuario.id);
+    if (!context.mounted) return;
+    if (celular == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'No se pudo obtener el número de esta persona. Intenta de nuevo.',
+          ),
+        ),
+      );
+      return;
+    }
+    await provider.seleccionarTrabajador(widget.peticion.id, usuario.id);
     if (!context.mounted) return;
 
-    final numero = usuario.celular.replaceAll(RegExp(r'\D'), '');
-    final uri = Uri.parse('https://wa.me/57$numero');
+    final uri = Uri.parse('https://wa.me/${numeroWhatsApp(celular)}');
 
     final abierto = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!context.mounted) return;

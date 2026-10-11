@@ -235,8 +235,10 @@ class _FeedScreenState extends State<FeedScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
+    // El feed solo muestra trabajos abiertos: los finalizados siguen en
+    // Actividad (para calificar), pero ya no reciben aplicaciones.
     final categorias = provider.peticiones
-        .where((p) => !p.archivada)
+        .where((p) => !p.archivada && !p.cerrada)
         .map((p) => p.categoria)
         .toSet()
         .toList();
@@ -250,7 +252,9 @@ class _FeedScreenState extends State<FeedScreen> {
       });
     }
 
-    final peticionesVisibles = provider.peticiones.where((p) => !p.archivada);
+    final peticionesVisibles = provider.peticiones.where(
+      (p) => !p.archivada && !p.cerrada,
+    );
     var lista = _categoriaFiltro == null
         ? [...peticionesVisibles]
         : peticionesVisibles

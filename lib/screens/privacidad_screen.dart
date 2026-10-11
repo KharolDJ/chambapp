@@ -31,42 +31,72 @@ class PrivacidadScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
+              // Mismo contenido que la política del informe final
+              // (Apéndice B): si cambia una, hay que cambiar la otra.
+              _seccion(
+                context,
+                Icons.storefront_outlined,
+                'Responsable',
+                'CHAMBAPP, establecimiento de comercio con matrícula n.º 738403 de la Cámara de '
+                    'Comercio de Bucaramanga, de propiedad de Kharol Juliana Calderón Barrera. '
+                    'Correo de contacto: kharolcalderon@gmail.com.',
+              ),
               _seccion(
                 context,
                 Icons.folder_shared_outlined,
                 'Qué datos recogemos',
-                'Tu nombre, correo electrónico, número de celular, tu oficio (si eres trabajador), '
-                    'y tu ubicación aproximada — nunca exacta — para poder ordenar el feed por cercanía.',
+                'Tu nombre, correo electrónico, número de celular, barrio, tus oficios (si eres '
+                    'trabajador), una foto de perfil opcional, el número y la foto de tu cédula (solo '
+                    'si pides la verificación de identidad) y la ubicación de tu celular, solo si das '
+                    'el permiso.',
               ),
               _seccion(
                 context,
                 Icons.fact_check_outlined,
                 'Para qué los usamos',
-                'Para verificar tu identidad, mostrar tu perfil a otros usuarios de la app, y permitir '
-                    'que un empleador te contacte por WhatsApp si te selecciona para un trabajo.',
+                'Para crear tu cuenta, verificar tu identidad, mostrar tu perfil y tus calificaciones a '
+                    'otros usuarios, ordenar las publicaciones por cercanía, permitir que un empleador '
+                    'te contacte por WhatsApp si te selecciona y procesar los pagos de Visibilidad '
+                    'Premium con Wompi, que maneja los datos de pago bajo su propia política.',
               ),
               _seccion(
                 context,
                 Icons.visibility_off_outlined,
-                'Lo que nunca se muestra públicamente',
-                'Tu número de celular nunca aparece visible para otras personas dentro de la app. Solo '
-                    'se usa para abrir WhatsApp cuando un empleador te selecciona.',
+                'Datos de acceso restringido',
+                'La foto de tu cédula solo la revisa un administrador para darte la insignia de perfil '
+                    'verificado. Tu celular no aparece en la app: solo se usa para abrir WhatsApp cuando '
+                    'un empleador te selecciona. Tu ubicación solo se usa en tu celular para calcular '
+                    'distancias y nunca se muestra; la de tus publicaciones se guarda aproximada '
+                    '(unos 100 metros), sin tu dirección exacta.',
+              ),
+              _seccion(
+                context,
+                Icons.verified_user_outlined,
+                'Tu autorización y tus derechos',
+                'Al registrarte autorizas el uso de tus datos para estas finalidades, y puedes '
+                    'retirar esa autorización cuando quieras. Puedes conocer, actualizar y corregir tus '
+                    'datos, pedir que se borren y presentar quejas ante la Superintendencia de Industria '
+                    'y Comercio. Desde Configuración puedes editar tu perfil o eliminar tu cuenta.',
+              ),
+              _seccion(
+                context,
+                Icons.mail_outline,
+                'Consultas y reclamos',
+                'Escríbenos al correo de contacto. Las consultas se responden en máximo diez días '
+                    'hábiles y los reclamos en máximo quince, como dice la Ley 1581 de 2012.',
+              ),
+              _seccion(
+                context,
+                Icons.cloud_outlined,
+                'Dónde se guardan',
+                'Tus datos se guardan en Firebase (Google Cloud), con reglas que controlan qué puede '
+                    'ver y modificar cada usuario, y las fotos se guardan en Cloudinary.',
               ),
               _seccion(
                 context,
                 Icons.gavel_outlined,
                 'Marco legal',
-                'El manejo de tus datos personales sigue los lineamientos de la Ley 1581 de 2012 '
-                    '(Habeas Data) de Colombia.',
-              ),
-              _seccion(
-                context,
-                Icons.cloud_outlined,
-                'Sobre esta versión (prototipo)',
-                'Tus datos (perfil, publicaciones, calificaciones y notificaciones) se guardan en '
-                    'Firebase, la plataforma en la nube de Google, y se sincronizan entre tus '
-                    'dispositivos. Tu celular y tu cédula solo son visibles para ti y no se muestran '
-                    'públicamente a otros usuarios.',
+                'Ley 1581 de 2012 (Habeas Data) y Decreto 1377 de 2013 de Colombia.',
               ),
             ],
           ),

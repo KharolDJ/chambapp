@@ -124,8 +124,8 @@ class AppProvider extends ChangeNotifier {
 
   // Verificación de identidad (cédula) del usuario con sesión activa. A
   // diferencia de [premiumTrabajadores], no se escucha en tiempo real para
-  // todo el mundo: contiene la ruta local de la foto de la cédula, un dato
-  // más sensible que el resto del perfil, así que solo se consulta bajo
+  // todo el mundo: contiene el enlace (Cloudinary) de la foto de la cédula,
+  // un dato más sensible que el resto del perfil, así que solo se consulta bajo
   // demanda para el propio usuario (ver [cargarMiVerificacionIdentidad]).
   VerificacionIdentidad? miVerificacionIdentidad;
 
@@ -996,7 +996,15 @@ class AppProvider extends ChangeNotifier {
     } catch (_) {
       return;
     }
+    // Nadie puede aplicar a su propia publicación (bastaba con cambiar el
+    // rol a trabajador), ni a una que ya terminó o en la que ya eligieron a
+    // alguien. Retirar un interés previo sí se permite.
+    if (peticion.autorId == usuario.id) return;
     final yaInteresado = peticion.interesados.any((u) => u.id == usuario.id);
+    if (!yaInteresado &&
+        (peticion.cerrada || peticion.trabajadorSeleccionadoId != null)) {
+      return;
+    }
     if (yaInteresado && peticion.trabajadorSeleccionadoId == usuario.id) {
       // Ya fue seleccionado por el empleador para este trabajo: no puede
       // retirar su interés (dejaría a trabajadorSeleccionadoId apuntando a
@@ -1069,6 +1077,19 @@ class AppProvider extends ChangeNotifier {
       // falla, se puede volver a marcar como visto en un próximo intento.
     }
     unawaited(_guardarEstado());
+  }
+
+  /// Celular de [usuarioId], leído de su perfil solo en el momento de
+  /// contactarlo — ya no se copia dentro de cada publicación, que cualquiera
+  /// puede leer. Devuelve `null` si no se pudo obtener.
+  Future<String?> celularDe(String usuarioId) async {
+    try {
+      final doc = await _db.collection('usuarios').doc(usuarioId).get();
+      final celular = doc.data()?['celular'] as String?;
+      return (celular == null || celular.trim().isEmpty) ? null : celular;
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> seleccionarTrabajador(
@@ -1266,7 +1287,11 @@ class AppProvider extends ChangeNotifier {
   /// `solicitarPremium` + `aprobarPremiumDemo` (comprobante de texto libre
   /// + botón de autoaprobación) porque la pasarela ya es la verificación
   /// real: no hace falta una revisión manual aparte.
-  Future<void> activarPremiumPeticion(
+  ///
+  /// Devuelve `null` si quedó activo, o un mensaje de error si el pago se
+  /// aprobó pero la escritura falló — antes se tragaba en silencio y la
+  /// persona quedaba con el pago hecho y sin Urgente ni aviso alguno.
+  Future<String?> activarPremiumPeticion(
     String peticionId,
     String transaccionWompiId,
   ) async {
@@ -1278,7 +1303,8 @@ class AppProvider extends ChangeNotifier {
         'comprobantePago': 'wompi:$transaccionWompiId',
       });
     } catch (_) {
-      return;
+      return 'El pago se confirmó pero no se pudo activar "Urgente". '
+          'Contacta soporte con el código $transaccionWompiId.';
     }
     // La escritura ya se aplicó; si la petición desapareció del snapshot
     // local justo después, solo se omite la notificación (no crítico).
@@ -1300,6 +1326,7 @@ class AppProvider extends ChangeNotifier {
       );
     }
     unawaited(_guardarEstado());
+    return null;
   }
 
   /// Activa el VIP de un oficio apenas Wompi confirma el pago — reemplaza

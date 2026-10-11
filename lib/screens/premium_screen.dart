@@ -39,17 +39,17 @@ class _PremiumScreenState extends State<PremiumScreen> {
     if (resultado == null) return; // cancelado
     if (resultado.estado != 'APPROVED') {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('El pago no se completó (estado: ${resultado.estado})'),
-        ),
+        SnackBar(content: Text(resultado.mensajeNoAprobado)),
       );
       return;
     }
     if (!context.mounted) return;
-    await context.read<AppProvider>().activarPremiumPeticion(
+    final error = await context.read<AppProvider>().activarPremiumPeticion(
       peticionId,
       resultado.transaccionId,
     );
+    if (!mounted || error == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
   }
 
   @override

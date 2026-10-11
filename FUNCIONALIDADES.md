@@ -23,7 +23,8 @@ del trabajo de grado.
   se confirma, la app muestra un aviso en el Perfil ("Reenviar correo" / "Ya verifiqué mi
   correo") y **bloquea "Aplicar" y "Publicar"** hasta que el correo quede verificado.
 - El celular **nunca se muestra públicamente** — solo se usa para abrir WhatsApp cuando un
-  empleador selecciona a ese trabajador.
+  empleador selecciona a ese trabajador. Tampoco se copia dentro de las publicaciones: se lee
+  del perfil en el momento de contactar (`AppProvider.celularDe`).
 - La sesión y el rol elegido se recuerdan entre aperturas de la app, así que no hay que
   volver a elegir rol ni iniciar sesión cada vez. "Cambiar de rol" (desde Perfil) alterna
   entre Empleador/Trabajador con la misma cuenta, **sin cerrar sesión**.
@@ -43,7 +44,10 @@ del trabajo de grado.
   transcurrido como subtítulo debajo. Foto (si tiene) con esquinas redondeadas. Categoría como
   etiqueta en la parte inferior.
 - **Geolocalización aproximada:** ordena el feed por cercanía real usando la ubicación del
-  teléfono, sin mostrar nunca coordenadas exactas (solo "cerca de ti" o "a ~X km").
+  teléfono, sin mostrar nunca coordenadas exactas (solo "cerca de ti" o "a ~X km"). La ubicación
+  de cada publicación se guarda redondeada a unos 100 metros.
+- El feed muestra solo trabajos abiertos: los finalizados siguen en Actividad para calificar.
+  Nadie puede aplicar a su propia publicación ni a una que ya terminó o ya tiene trabajador.
 - **Filtro por categoría** (ícono de embudo) y **búsqueda por barrio/zona/descripción o por
   nombre de una persona** (ícono de lupa) — se pueden combinar entre sí.
 - Al escribir un nombre que coincide con algún usuario registrado, aparece una franja

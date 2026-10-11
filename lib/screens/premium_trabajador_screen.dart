@@ -26,9 +26,7 @@ class PremiumTrabajadorScreen extends StatelessWidget {
     if (!context.mounted) return;
     if (resultado.estado != 'APPROVED') {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('El pago no se completó (estado: ${resultado.estado})'),
-        ),
+        SnackBar(content: Text(resultado.mensajeNoAprobado)),
       );
       return;
     }

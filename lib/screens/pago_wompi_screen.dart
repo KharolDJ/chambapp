@@ -12,6 +12,27 @@ class ResultadoPagoWompi {
   final String estado;
   final String transaccionId;
   const ResultadoPagoWompi({required this.estado, required this.transaccionId});
+
+  /// Mensaje para el usuario cuando [estado] no es `'APPROVED'`. PENDING no
+  /// es un rechazo: Nequi y PSE pueden aprobarse después de que la app dejó
+  /// de consultar, y sin webhook el beneficio no se activaría solo — por eso
+  /// se le da el id de la transacción para que soporte lo active.
+  String get mensajeNoAprobado {
+    switch (estado) {
+      case 'PENDING':
+        return 'Tu pago sigue en proceso en Wompi. Si se aprueba, contacta '
+            'soporte con el código $transaccionId para activar tu beneficio.';
+      case 'DECLINED':
+        return 'Wompi rechazó el pago. No se hizo ningún cobro.';
+      case 'VOIDED':
+        return 'El pago fue anulado. No se activó el beneficio.';
+      case 'NO_COINCIDE':
+        return 'No pudimos validar el pago. No se activó el beneficio.';
+      default:
+        return 'No pudimos confirmar el pago. Revisa tu conexión e '
+            'inténtalo de nuevo.';
+    }
+  }
 }
 
 /// Pantalla de pago con el Web Checkout de Wompi (Sandbox). Al terminar,

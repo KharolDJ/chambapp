@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 import '../models/peticion.dart';
 import '../providers/app_provider.dart';
 import '../services/cloudinary_service.dart';
+import '../utils/formatos.dart';
 import '../widgets/foto_image.dart';
 import 'login_screen.dart';
 
@@ -106,8 +107,8 @@ class _PublicarScreenState extends State<PublicarScreen> {
       final posicion = await Geolocator.getCurrentPosition();
       if (!mounted) return;
       setState(() {
-        _lat = posicion.latitude;
-        _lng = posicion.longitude;
+        _lat = redondearCoordenada(posicion.latitude);
+        _lng = redondearCoordenada(posicion.longitude);
         _obteniendoUbicacion = false;
       });
     } catch (_) {
